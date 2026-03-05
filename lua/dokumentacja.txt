@@ -1,0 +1,487 @@
+System Lua
+Dokumentacja tymczasowa. Gdy urośnie wystarczająco bardzo zostanie przepisana do przystępniejszego formatu.
+
+
+
+STRUKTURA
+Biblioteki (licencja MIT):
+- class.lua
+- json.lua
+
+Klasy:
+- Station.lua
+- Route.lua
+- Time.lua
+- ObjectID.lua
+- Track.lua
+- Switch.lua
+- Semaphore.lua
+- Itinerary.lua
+
+
+
+KONWENCJA NAZEWNICZA
+Stacje:
+	stosujemy skróty telegraficzne, wielkie litery, bez polskich znaków?
+	przykłady: St1, Tc, Eb, EZ
+Szlaki:
+	dwa skróty stacji małą literą, oddzielone myślnikiem
+	przykłady: St1-St2, Tc-Ps, BBG-BBT
+Tory:
+	w danych: liczba poprzedzona znakiem "t" dla torów i "z" dla zwrotnic
+	w symulacji: nazwa poprzedzona znakiem "I"
+	przykłady:
+		- tor 2 na stacji Tczew:
+			- w danych: t2
+			- w symulacji: Tc_It2
+		- zwrotnica 23 na stacji Bielsko Biała Główna:
+			- w danych: z23
+			- w symulacji: BBG_Iz23
+Tory szlakowe:
+	w danych: ?
+	w symulacji:
+		- dwa skróty stacji wraz z numerami torów oddzielone myślnikiem
+		- następnie ciąg znaków "@LK" i numer linii
+		- dodatkowo w przypadku szlaków wielotorowych kropka i numer toru
+	przykłady:
+		- tor szlakowy między Tropami a Elblągiem Zdrój:
+			- w symulacji: Tp1-EZ1@LK254
+		- tor szlakowy nr 2 między Tropami a Elblągiem:
+			- w symulacji: Tp2-Eb2@LK204.2
+Zwrotnice:
+	liczba (w formacie string!)
+	przykłady:
+		- zwrotnica 63 na stacji Tczew:
+			- w danych: 63
+			- w symulacji: Tc_63
+		- zwrotnica 23 na stacji Bielsko Biała Główna:
+			- w danych: 23
+			- w symulacji: BBG_23
+Semafory:
+	litera mała, dopuszczalne liczby
+	przykłady:
+		- semafor E6 na stacji Tczew:
+			- w danych: E6
+			- w symulacji: Tc_E6
+
+Linki z konwencją nazewniczą wg Ra:
+	Główny link: http://rainsted.com/pl/Symulator/MaSzyna/Sterowanie_ruchem_2016#Nazewnictwo
+	Izolacje: http://rainsted.com/pl/Symulator/MaSzyna/Odcinki_izolowane
+CZYTAĆ TYLKO NAZEWNICTWO OBIEKTÓW, NIE NAZEWNICTWO EVENTÓW!
+
+
+
+ROZRÓŻNIENIE POJĘĆ, KTÓRYCH NIE POWINNO SIĘ MYLIĆ
+Semaphore - semafor (i świetlny i kształtowy)
+Signal - sygnał służący do komunikacji między stacjami
+Image - obraz na semaforze (np. S13, Ms2)
+
+Route - szlak
+Itinerary - przebieg
+
+
+
+LEGENDA TYPÓW
+string, number, boolean - typy zwykłe
+np. Track, Station - obiekt danej klasy
+
+typ[] - lista obiektów danego typu, numerowana
+typ{} - lista obiektów danego typu, kluczowana
+!enum - obiekt danego typu ograniczony do konkretnego enuma
+typ/typ - obsługa różnych typów w tej samej zmiennej (niemożliwe w C++)
+
+
+
+ENUMY I INNE MAŁE STRUKTURY
+
+severity (number):
+1 - informacja
+2 - błąd
+3 - sukces (operacja zakończona pomyślnie)
+4 - błąd (operacja nie zakończona pomyślnie)
+
+weight (number):
+1 - tylko błędy
+2 - podstawowe informacje o operacjach, do namierzania podstawowych błędów
+3 - pełne informacje, do namierzania np. błędów kosmetycznych oraz debugowania
+
+semaphoretype (number):
+0 - semafor
+1 - tarcza manewrowa
+2 - tarcza zaporowa?
+3 - SBL?
+	- Nie będzie To ponieważ jest obsługiwane wewnętrznie w symulatorze.
+	- Nie będzie Sp ponieważ jest obsługiwane wewnętrznie w systemie (podczas podawania semafora).
+	- Typy oznaczone znakiem zapytania nie są jeszcze ostatecznie zatwierdzone.
+
+speed (number):
+0 - S1
+1 - Vmax
+2 - 40 km/h
+3 - 60 km/h
+4 - 100 km/h
+5 - Ms1
+6 - Ms2
+7 - Sz
+
+objecttype (string):
+track - tor
+switch - zwrotnica
+semaphore - semafor
+
+objectdata (table):
+Tabela o formacie: {"name"=(string),"stationN"/"routeN"=(string)}, gdzie:
+	- "name" to nazwa obiektu,
+	- "stationN" lub "routeN" (w zależności od miejsca na scenerii) to nazwa stacji/szlaku, na którym znajduje się obiekt.
+
+timedata (table):
+Tabela o formacie: {"day"?=(number),"hour"=(number),"minute"=(number),"second"=(number)}, gdzie:
+	- "day" (opcjonalne) to ilość dni w ramach odniesienia godzin bliskich północy,
+	- "hour" to godzina,
+	- "minute" to minuta,
+	- "second" to sekunda.
+
+
+
+OBJAŚNIENIE KLAS
+
+- Station
+
+	Pola:
+	- name (string) - Nazwa stacji.
+	- tracks (Track{}) - Lista torów (izolacji) znajdujących się na stacji.
+	- switches (Switch{}) - Lista zwrotnic znajdujących się na stacji.
+	- semaphores (Semaphore{}) - Lista semaforów na stacji.
+	
+	Parametry konstruktora:
+	- name (string) - Nazwa szlaku.
+	- data - Dane pobierane z pliku definicji zawartości scenerii - patrz format danych scenerii.
+	
+	Funkcje:
+	- tell(text, severity, weight) -> nil [użytek wewnętrzny]
+		Wypisuje do logu coś co stacja zrobiła.
+		Skrót dla logWrite.
+		
+		Parametry:
+		- text (string) - Co ma wypisać.
+		- severity (!severity) - "Typ" informacji. Patrz wyjaśnienie enuma.
+		- weight (!weight) - "Waga" informacji. Patrz wyjaśnienie enuma.
+	
+	- getSemaphore(semaphoreN) -> Semaphore
+		Zwraca semafor ze stacji szukając po nazwie.
+		Jeżeli nie istnieje nic nie jest zwracane oraz w logu pojawia się błąd.
+		
+		Parametry:
+		- semaphoreN (string) - Nazwa semafora.
+	
+	- getTrack(trackN) -> Track
+		Jw., zwraca tor.
+		
+		Parametry:
+		- trackN (string) - Nazwa toru.
+	
+	- getSwitch(switchN) -> Switch
+		Jw., zwraca zwrotnicę.
+		
+		Parametry:
+		- switchN (string) - Nazwa zwrotnicy.
+	
+	- getItinerary(semaphoreN, itineraryN) -> Itinerary
+		Jw., zwraca przebieg z podanego po nazwie semafora.
+		
+		Parametry:
+		- semaphoreN (string) - Nazwa semafora, z którego chcemy pozyskać przebieg.
+		- itineraryN (string) - Nazwa przebiegu.
+	
+	- canDispatch(semaphoreN, itineraryN) -> boolean
+		Zwraca informację, czy w danej chwili nastawienie podanego przebiegu jest możliwe.
+		
+		Parametry:
+		- semaphoreN (string) - Nazwa semafora, z którego chcemy pozyskać przebieg.
+		- itineraryN (string) - Nazwa przebiegu.
+	
+	- dispatch(semaphoreN, itineraryN) -> nil
+		Podaje przebieg, jeżeli jest to możliwe (patrz Station:canDispatch).
+		
+		Parametry:
+		- semaphoreN (string) - Nazwa semafora, z którego chcemy pozyskać przebieg.
+		- itineraryN (string) - Nazwa przebiegu.
+
+
+- Route
+	
+	Pola:
+	- name (string) - Nazwa szlaku.
+	- tracks (Track{}) - Lista torów składających się na szlak.
+	
+	Parametry konstruktora:
+	- name (string) - Nazwa szlaku.
+	- data - Dane pobierane z pliku definicji zawartości scenerii - patrz format danych scenerii.
+	
+	Funkcje:
+	- tell(text, severity, weight) -> nil [użytek wewnętrzny]
+		Patrz Station:tell.
+	
+	- getTrack(trackN) -> Track
+		Patrz Station:getTrack.
+
+
+- Time
+	
+	Pola:
+	- day (number) - Dzień. Domyślnie 0.
+	- hour (number) - Godzina.
+	- minute (number) - Minuta.
+	- second (number) - Sekunda.
+	
+	Parametry konstruktora:
+	- data (!timedata) - Tabela zawierająca dane o godzinie.
+	
+	Funkcje:
+	- strDays() -> string
+		Zwraca godzinę w formie d:(d) hh:mm:ss.
+	
+	- strSeconds() -> string
+		Zwraca godzinę w formacie hh:mm:ss.
+	
+	- str() -> string
+		Zwraca godzinę w formacie hh:mm.
+	
+	- fix() -> nil
+		Reorganizuje format czasu, aby godzina była w zakresie 0-23, a sekunda i minuta w zakresie 0-59.
+	
+	- getInt() -> number
+		Zwraca ilość sekund od godziny 00:00:00 dnia 0.
+	
+	Dozwolone operacje:
+	- porównywanie
+	- dodawanie
+	- odejmowanie
+
+
+- ObjectID
+	
+	Pola:
+	- objectN (string) - Nazwa obiektu.
+	- stationN (string) - Nazwa stacji lub szlaku(!).
+	- objectType (!objecttype) - Typ obiektu.
+	- isRoute (boolean) - jeżeli false, to pole stationN odwołuje się do stacji. Jeżeli true, to pole odwołuje się do szlaku.
+	
+	Parametry konstruktora:
+	- objectData (!objectdata) - Dane o obiekcie. Patrz wyjaśnienie enuma.
+	- objectType (!objecttype) - Typ obiektu.
+	
+	Funkcje:
+	- getStation() -> Station
+		Zwraca stację, na której znajduje się obiekt mający ten identyfikator.
+	
+	- getObject() -> Track/Switch/Semaphore
+		Zwraca obiekt, który posiada ten identyfikator.
+		W przypadku nieznalezienia tego obiektu nic nie jest zwracane, a do logu wypisywany jest błąd.
+	
+	- getSimName() -> string
+		Zwraca nazwę obiektu w symulatorze, do którego należy identyfikator.
+		Patrz: konwencja nazewnicza.
+
+
+- Track
+	
+	Pola:
+	- id (ObjectID) - Identyfikator obiektu.
+	- occupied (boolean) - Czy na torze znajduje się jakiś pojazd?
+	- reserved (boolean) - Czy tor jest zarezerwowany?
+	
+	Parametry konstruktora:
+	- idData (!objectdata) - Miejsce i nazwa obiektu.
+	
+	Funkcje:
+	- tell(text, severity, weight) -> nil [użytek wewnętrzny]
+		Patrz Station:tell.
+	
+	- isClear() -> boolean
+		Zwraca true, jeżeli tor nie jest zarezerwowany ani zajęty.
+	
+	- reserve() -> nil
+		Rezerwuje tor.
+	
+	- busy() -> nil
+		Oznacza ten tor jako zajęty przez pojazd.
+	
+	- free() -> nil
+		Zwalnia tor razem z rezerwacją.
+
+
+- Switch
+	
+	Pola:
+	- id (ObjectID) - Identyfikator obiektu.
+	- state (boolean) - false oznacza jazdę w kierunku plus (zazwyczaj na wprost)
+	
+	Parametry konstruktora:
+	- idData (!objectdata) - Miejsce i nazwa obiektu.
+	
+	Funkcje:
+	- tell(text, severity, weight) -> nil [użytek wewnętrzny]
+		Patrz Station:tell.
+	
+	- setState(state) -> nil
+		Zmienia stan zwrotnicy.
+		
+		Parametry:
+		- state (boolean) - Nowy stan zwrotnicy.
+
+
+- Semaphore
+	
+	Pola:
+	- id (ObjectID) - Identyfikator obiektu.
+	- type (!semaphoretype) - Typ semafora.
+	- prev (ObjectID[]) - Lista poprzednich semaforów.
+	- nextID (ObjectID/!speed) - Tymczasowy identyfikator następnego semafora. Szczegóły: "Teoria Semaforów".
+	- repeaters (string[]) - Nazwy powtarzaczy takie, jakie są w symulatorze. Zazwyczaj puste.
+	- speed (!speed) - Identyfikator maksymalnej prędkości przy tym semaforze.
+	- image (string) - Aktualny obraz semafora.
+		Dopuszczalne wartości: s(1-13),s1a,s(10-13)a,ms1,ms2,sz1,sr(1-3)
+		Wartości os(1-4),osp(1-4) nie są wykorzystywane. Tarcze ostrzegawcze obsługiwane są przez symulator, powtarzacze są obsługiwane inaczej.
+	- itineraries (Itinerary{}) - Lista przebiegów.
+	
+	Parametry konstruktora:
+	- idData (!objectdata) - Miejsce i nazwa obiektu.
+	- data - Dane pobierane z pliku definicji zawartości scenerii - patrz format danych scenerii.
+	
+	Funkcje:
+	- tell(text, severity, weight) -> nil [użytek wewnętrzny]
+		Patrz Station:tell.
+	
+	- getItinerary(itineraryN) -> Itinerary
+		Zwraca przebieg z semafora szukając po nazwie.
+		Jeżeli nie istnieje nic nie jest zwracane oraz w logu pojawia się błąd.
+		
+		Parametry:
+		- itineraryN (string) - Nazwa przebiegu.
+	
+	- setSpeed(speed, nextID) -> nil
+		Ustawia prędkość na semaforze oraz odświeża niezbędne do odświeżenia semafory.
+		
+		Parametry:
+		- speed (!speed) - Nowa prędkość od teraz obowiązująca na semaforze.
+		- nextID (ObjectID/!speed):
+			- Jeżeli typ to ObjectID, jest to identyfikator następnego semafora.
+			- Jeżeli typ to !speed, jest to stała prędkość nieprzypisana do żadnego semafora.
+			Na przykład 1 oznacza, że przy prędkości maksymalnej zostanie podany sygnał S2, a 2 oznacza, że zostanie podany S5.
+			- nil jest dopuszczalne tylko przy sygnałach niezależnych od następnego semafora (S1,Ms1,Ms2,Sz) jednak jest niezalecane.
+	
+	- stop() -> nil
+		Wyświetla sygnał zabraniający jazdy: s1,ms1,sr1.
+		Wydzielony w celu unikania wielokrotnego wygaszania semafora oraz rozwiązania problemu wygaszania przy różnych typach.
+	
+	- getStopSpeed() -> !speed [użytek wewnętrzny]
+		Zwraca 5 jeżeli jest to tarcza manewrowa. W przeciwnym wypadku 0.
+	
+	- getNextSpeed() -> !speed
+		Zwraca prędkość na następnym semaforze bądź na sztywno ustawioną.
+	
+	- refreshSim() -> nil
+		Odświeża obraz semafora do symulatora.
+
+
+- Itinerary
+	
+	Pola:
+	- stationN (string) - Nazwa stacji, na której znajduje się semafor z tym przebiegiem.
+	- semaphoreN (string) - Nazwa semafora z tym przebiegiem.
+	- speed (!speed) - Identyfikator maksymalnej prędkości.
+	- tracks (ObjectID[]) - Lista torów należących do przebiegu.
+	- switches (boolean{string}) - Lista zwrotnic.
+		Klucz: nazwa zwrotnicy.
+		Wartość: stan, jaki powinna mieć ta zwrotnica, aby przebieg był poprawnie ułożony.
+	- next (ObjectID/!speed) - Identyfikator następnego semafora, lub liczba jeżeli takowego nie ma.
+	
+	Parametry konstruktora:
+	- stationN (string) - Patrz objaśnienie pola.
+	- semaphoreN (string) - Patrz objaśnienie pola.
+	- data - Dane pobierane z pliku definicji zawartości scenerii - patrz format danych scenerii.
+	
+	Funkcje:
+	- getStation() -> Station
+		Zwraca stację, na której znajduje się semafor zawierający ten przebieg.
+	
+	- canDispatch() -> boolean
+		Zwraca prawdę, jeżeli nie ma żadnych przeciwwskazań do ułożenia przebiegu.
+	
+	- dispatch() -> nil
+		Układa przebieg.
+
+
+
+CO DO UDOKUMENTOWANIA
+- protokół logów (folder com)
+- funkcje w main, utils
+- format danych (na razie nie udokumentowany ze względu na duże zmiany zachodzące w strukturze)
+
+
+
+====================
+DOKUMENTACJA LOGU:
+
+Log dla każdej symulacji zapisywany jest w folderze `logs`, w pliku o nazwie w formacie `nazwa_scenerii@data_godzina.dsl`
+(data i godzina rozpoczęcia symulacji).
+
+Zawartość pliku jest następująca:
+- 70 A0 E0 07 - Sygnatura pliku, jeżeli błędna plik jest uszkodzony lub nie jest to plik logu. Każdy program czytający pliki logów
+				powinien upewnić się, czy te pierwsze cztery bajty są prawidłowe.
+- aa bb cc dd - Sygnatura wersji hostowanego skryptu uruchomionego na scenerii, w formacie major, minor, patch, revision.
+				Dla pełnych wersji przeznaczonych do produkcji np. 6.0.1r1 -> 06 00 01 01.
+
+Następnie są komendy sygnowane pojedynczym bajtem (opcode), które mogą mieć różną ilość parametrów.
+Po nich od razu następuje kolejna komenda, i tak aż do końca pliku.
+Nie ma stopki, a do pliku logu na bieżąco dodawane są kolejne fragmenty, co pozwala na stworzenie podglądu na żywo.
+
+MSB wielobajtowych wartości liczbowych jest na końcu, np. 01 3B oznacza 256 + 59 = 315.
+Wszystkie wartości tekstowe są null-terminated (bajt 00 oznacza koniec ciągu tekstowego).
+
+Opcode są następujące:
+
+- 12 - Zmiana stanu toru (odcinka izolowanego).
+	- SHORT: ID toru
+	- BYTE: stan toru:
+		- +1 - tor zajęty
+		- +2 - tor zarezerwowany
+- 13 - Zmiana stanu zwrotnicy.
+	- SHORT: ID zwrotnicy
+	- BYTE: stan zwrotnicy:
+		- 00 - położenie "-"
+		- 01 - położenie "+"
+- 14 - Zmiana stanu semafora.
+	- SHORT: ID semafora
+	- BYTE: stan semafora:
+		- 01 do 0D - S1 do S13
+		- 21 - S1a
+		- 2A do 2D - S10a do S13a
+		- 80 - Ms1
+		- 81 - Ms2
+		- FF - sygnał zastępczy
+
+- F0 - Inicjalizacja stacji.
+	- STRING: nazwa stacji
+- F1 - Inicjalizacja szlaku.
+	- STRING: nazwa szlaku
+- F2 - Inicjalizacja toru (odcinka izolowanego).
+	- STRING: nazwa toru
+- F3 - Inicjalizacja zwrotnicy.
+	- STRING: nazwa (numer) zwrotnicy
+- F4 - Inicjalizacja semafora.
+	- STRING: nazwa semafora
+	- BYTE: typ semafora:
+		- 00 - semafor półsamoczynny
+		- 01 - tarcza manewrowa
+
+- FF - Tick. Bez parametrów. Jest referencją upływu czasu w symulatorze, aby zdarzenia można było odnieść do określonego przedziału czasowego.
+	W chwili obecnej rozdzielczość czasu wynosi 1 tick na sekundę.
+
+Inicjalizacja obiektów:
+Każdy obiekt otrzymuje swój ID. Pula ID jest oddzielna dla każdego typu obiektu.
+Wyjątkiem są szlaki i stacje, które współdzielą przestrzeń ID.
+ID są nadawane obiektom w kolejności ich inicjalizacji, zaczynając od 1.
+ID są kodowane na dwóch bajtach, więc maksymalnie można zapisać 65 535 obiektów każdego typu.
+W związku z tym NIEZALECANE JEST tworzenie programów opierając całą logikę o numery ID. Służą one tylko jako forma kompresji pliku logu.

@@ -1,0 +1,74 @@
+Stacja "Mijanka":
+
+           -D---<2>---F-
+          /             \
+< <---A--1--C---<1>---E--2--B--->a>
+
+Tory: t1, t2, z1, z2
+Zwrotnice: 1, 2
+Semafory:
+	A: przebiegi 1 (Vmax), 2 (40)
+	B: przebiegi 1 (Vmax), 2 (40)
+	C: przebieg A (Vmax)
+	D: przebieg A (40)
+	E: przebieg B (Vmax)
+	F: przebieg B (40)
+Szlaki:
+	a: Mij-Kon
+
+Stacja "Koniec":
+
+---------A---<1>---B--------->a>
+
+Tory: t1
+Zwrotnice: ---
+Semafory:
+	A: przebieg A (Vmax)
+	B: przebieg B (Vmax)
+Szlaki:
+	a: Mij-Kon
+
+Szlak Mij-Kon:
+Tory: t1
+Stacje: "Mijanka", "Koniec"
+
+
+
+Stałe:
+
+- sygnał na semaforze:
+	0 Stop
+	1 Vmax
+	2 40
+	3 60
+	4 100
+	5 Ms2
+	6 Ms1
+	7 Sz
+
+- typ semafora:
+	0 semafor
+	1 Tm
+	2 Tz?
+	3 SBL?
+
+- verbose value:
+	1 tylko błędy
+	2 podstawowe informacje przy tworzeniu oraz informacje o stacji
+	3 rozszerzone informacje przy tworzeniu oraz informacje o elementach stacji
+
+CO WRZUCAĆ A CO NIE:
+	NIE WRZUCAMY:
+		- folderów
+		- plików: info.txt, data.json, main_gui.lua, start.bat
+
+KOMUNIKACJA:
+                      Emulator symulacji
+                  |====>| plik wymiany 1
+Aplikacja zewn.   |<====| plik wymiany 2
+Edytor + Debug    |
+                  |====>| plik command.txt
+                  |<====| plik log (możliwość odtworzenia przebiegu symulacji)
+                            SzaMyna
+
+Częstotl. odśw. = 1 s
