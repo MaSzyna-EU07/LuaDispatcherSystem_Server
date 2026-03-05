@@ -10,7 +10,7 @@ local Semaphore = class:derive("Semaphore")
 ---@param id string Pełna nazwa semafora, np. `"sta1_C"`.
 ---@param data table Dane semafora, wczytywane z pliku.
 function Semaphore:new(station, id, data)
-	_Com.initSemaphore(id, data.type or 0)
+	_Com.initSemaphore(station.name, id, data.type or 0)
 
 	self.station = station
 	self.id = id

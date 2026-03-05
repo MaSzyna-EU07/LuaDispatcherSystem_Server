@@ -14,7 +14,9 @@ function Route:new(name, data)
 
 	-- Tracks
 	for trackN, trackData in pairs(data.tracks) do
-		self.tracks[trackN] = Track(self, trackN, trackData)
+		local track = Track(self, trackN, trackData)
+		self.tracks[trackN] = track
+		_Tracks[trackN] = track
 	end
 
 	_LogWrite("Created route: " .. name, 3, 2)

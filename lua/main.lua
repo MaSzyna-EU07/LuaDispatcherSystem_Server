@@ -21,8 +21,16 @@ local Route = require("lua.Route")
 local tempEventCounters = {loop = 0}
 
 _CurrentTime = Time({hour=11,minute=30,second=0})
+---@type table<string, Station>
 _Stations = {}
+---@type table<string, Route>
 _Routes = {}
+---@type table<string, Track>
+_Tracks = {}
+---@type table<string, Switch>
+_Switches = {}
+---@type table<string, Semaphore>
+_Semaphores = {}
 
 function _Init(filename)
 	_LogWrite("\n     __                   \n    / /  DISPATCHER SYSTEM\n   / /     __  __  ____   \n  / /     / / / / / __ \\  \n / /___  / / / / / /_/ /_ \n/_____/ |_____/  \\______/ \n               for MaSzyna\n\nBrought to you by jakubg1\n\nVERSION: " .. VERSION, 1, 1)
@@ -75,6 +83,9 @@ function _SaveFile(path, data)
 	io.close(file)
 end
 
+---Returns a Station based on its simulation name (shortcut), or `nil` if it's not found.
+---@param stationN string Station shortcut.
+---@return Station?
 function _GetStation(stationN)
 	if not _Stations[stationN] then
 		_LogWrite("Tried to access a nonexistent station: " .. tostring(stationN), 2, 1)
@@ -82,6 +93,9 @@ function _GetStation(stationN)
 	return _Stations[stationN]
 end
 
+---Returns a Route based on its simulation name (shortcut), or `nil` if it's not found.
+---@param routeN string Route shortcut.
+---@return Route?
 function _GetRoute(routeN)
 	if not _Routes[routeN] then
 		_LogWrite("Tried to access a nonexistent route: " .. tostring(routeN), 2, 1)
@@ -89,6 +103,9 @@ function _GetRoute(routeN)
 	return _Routes[routeN]
 end
 
+---Returns a Station or Route based on its simulation name (shortcut), or `nil` if it's not found.
+---@param name string Station or route shortcut.
+---@return Station|Route?
 function _GetStationOrRoute(name)
 	local result = _Stations[name] or _Routes[name]
 	if not result then
@@ -101,36 +118,30 @@ end
 ---@param name string For example: `"Eb_It2"`
 ---@return Track?
 function _GetTrack(name)
-	local s = _StrSplit(name, "_")
-	local station = _GetStationOrRoute(s[1])
-	if not station then
+	if not _Tracks[name] then
 		_LogWrite("Tried to access an invalid track: " .. tostring(name), 2, 1)
 	end
-	return station and station:getTrack(s[2])
+	return _Tracks[name]
 end
 
 ---Returns a Switch based on its simulation name, or `nil` if it is not found.
 ---@param name string For example: `"Eb_39"`
 ---@return Switch?
 function _GetSwitch(name)
-	local s = _StrSplit(name, "_")
-	local station = _GetStation(s[1])
-	if not station then
+	if not _Switches[name] then
 		_LogWrite("Tried to access an invalid switch: " .. tostring(name), 2, 1)
 	end
-	return station and station:getSwitch(s[2])
+	return _Switches[name]
 end
 
 ---Returns a Semaphore based on its simulation name, or `nil` if it is not found.
 ---@param name string For example: `"Eb_A"`
 ---@return Semaphore?
 function _GetSemaphore(name)
-	local s = _StrSplit(name, "_")
-	local station = _GetStation(s[1])
-	if not station then
+	if not _Semaphores[name] then
 		_LogWrite("Tried to access an invalid semaphore: " .. tostring(name), 2, 1)
 	end
-	return station and station:getSemaphore(s[2])
+	return _Semaphores[name]
 end
 
 function _NextTimeTick()

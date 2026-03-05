@@ -19,15 +19,21 @@ function Station:new(name, data)
 
 	-- Tracks
 	for trackN, trackData in pairs(data.tracks) do
-		self.tracks[trackN] = Track(self, self.name .. "_" .. trackN, trackData)
+		local track = Track(self, self.name .. "_" .. trackN, trackData)
+		self.tracks[trackN] = track
+		_Tracks[self.name .. "_" .. trackN] = track
 	end
 	-- Switches
 	for i, switchN in ipairs(data.switches) do
-		self.switches[switchN] = Switch(self, self.name .. "_" .. switchN)
+		local switch = Switch(self, self.name .. "_" .. switchN)
+		self.switches[switchN] = switch
+		_Switches[self.name .. "_" .. switchN] = switch
 	end
 	-- Semaphores
 	for semaphoreN, semaphoreData in pairs(data.semaphores) do
-		self.semaphores[semaphoreN] = Semaphore(self, self.name .. "_" .. semaphoreN, semaphoreData)
+		local semaphore = Semaphore(self, self.name .. "_" .. semaphoreN, semaphoreData)
+		self.semaphores[semaphoreN] = semaphore
+		_Semaphores[self.name .. "_" .. semaphoreN] = semaphore
 	end
 end
 

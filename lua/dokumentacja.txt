@@ -432,6 +432,7 @@ Zawartość pliku jest następująca:
 				powinien upewnić się, czy te pierwsze cztery bajty są prawidłowe.
 - aa bb cc dd - Sygnatura wersji hostowanego skryptu uruchomionego na scenerii, w formacie major, minor, patch, revision.
 				Dla pełnych wersji przeznaczonych do produkcji np. 6.0.1r1 -> 06 00 01 01.
+				revision=255 oznacza wersję deweloperską, nie przeznaczoną do codziennego użytku.
 
 Następnie są komendy sygnowane pojedynczym bajtem (opcode), które mogą mieć różną ilość parametrów.
 Po nich od razu następuje kolejna komenda, i tak aż do końca pliku.

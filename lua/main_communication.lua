@@ -11,8 +11,8 @@ local COM_INPUT_FILE = "logs/command.txt"
 
 local com_path = ""
 local com_buffer = ""
----Example index: `com_ids.tracks.sta1.iz2.id`
----@type table<string, table<string, table>>
+---Example index: `com_ids.tracks.sta1_iz2.id`
+---@type table<string, table<string, {id: integer, sid: integer}>>
 local com_ids = {stations = {}, tracks = {}, switches = {}, semaphores = {}}
 local com_counters = {}
 
@@ -88,15 +88,11 @@ function com.idToBytes(id)
 end
 
 function com.getObjID(idTable, id)
-	local usedIDTable = idTable
-	local s = _StrSplit(id, "_")
-	usedIDTable = usedIDTable[s[1]]
-	usedIDTable = usedIDTable[s[2]]
-	if not usedIDTable then
+	if not idTable[id] then
 		_LogWrite("[COMMUNICATION] Tried to access a nonexistent ID: " .. tostring(id), 2, 1)
 		return {0, 0}
 	end
-	return com.idToBytes(usedIDTable.id)
+	return com.idToBytes(idTable[id].id)
 end
 
 -- WARNING! Multiple objects with same name existing in different stations will OVERWRITE each other, that's very important to fix that!!!
@@ -113,31 +109,22 @@ end
 
 function com.initStation(name)
 	com.initObject(0xF0, com_ids.stations, "station", name)
-	com_ids.tracks[name] = {}
-	com_ids.switches[name] = {}
-	com_ids.semaphores[name] = {}
 end
 
 function com.initRoute(name)
 	com.initObject(0xF1, com_ids.stations, "station", name)
-	com_ids.tracks[name] = {}
-	com_ids.switches[name] = {}
-	com_ids.semaphores[name] = {}
 end
 
-function com.initTrack(name)
-	local s = _StrSplit(name, "_")
-	com.initObject(0xF2, com_ids.tracks[s[1]], "track", s[2], com_ids.stations[s[1]].id)
+function com.initTrack(stationName, name)
+	com.initObject(0xF2, com_ids.tracks, "track", name, com_ids.stations[stationName].id)
 end
 
-function com.initSwitch(name)
-	local s = _StrSplit(name, "_")
-	com.initObject(0xF3, com_ids.switches[s[1]], "switch", s[2], com_ids.stations[s[1]].id)
+function com.initSwitch(stationName, name)
+	com.initObject(0xF3, com_ids.switches, "switch", name, com_ids.stations[stationName].id)
 end
 
-function com.initSemaphore(name, type)
-	local s = _StrSplit(name, "_")
-	com.initObject(0xF4, com_ids.semaphores[s[1]], "semaphore", s[2], com_ids.stations[s[1]].id)
+function com.initSemaphore(stationName, name, type)
+	com.initObject(0xF4, com_ids.semaphores, "semaphore", name, com_ids.stations[stationName].id)
 	com.sendBytes({type})
 end
 

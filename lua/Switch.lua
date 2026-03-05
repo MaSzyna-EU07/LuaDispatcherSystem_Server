@@ -5,7 +5,7 @@ local api = require "eu07.events"
 local Switch = class:derive("Switch")
 
 function Switch:new(station, id)
-	_Com.initSwitch(id)
+	_Com.initSwitch(station.name, id)
 
 	self.station = station
 	self.id = id

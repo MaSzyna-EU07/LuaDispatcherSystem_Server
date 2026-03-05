@@ -9,7 +9,7 @@ local Track = class:derive("Track")
 ---@param id string Pełna nazwa toru, np. `"sta1_Iz1"`.
 ---@param data table Dane toru, wczytywane z pliku.
 function Track:new(station, id, data)
-	_Com.initTrack(id)
+	_Com.initTrack(station.name, id)
 
 	self.station = station
 	self.id = id
