@@ -133,7 +133,7 @@ function Semaphore:refreshSim()
 	for i, repeaterN in ipairs(self.repeaters) do
 		api.event_dispatch_n(string.lower(repeaterN) .. "_" .. _SignalImageRepeater(self.speed), nil, 0)
 	end
-	_Com.setSemaphore(self.id, self.image)
+	_Com.setSemaphore(self.id, self.speed, nextSpeed, self.image)
 end
 
 return Semaphore

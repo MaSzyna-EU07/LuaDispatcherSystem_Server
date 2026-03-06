@@ -140,9 +140,10 @@ function com.setSwitch(id, state)
 	com.sendBytes({_Ternary(state, 1, 0)})
 end
 
-function com.setSemaphore(id, image)
+function com.setSemaphore(id, speed, nextSpeed, image)
 	com.sendBytes({0x14})
 	com.sendBytes(com.getObjID(com_ids.semaphores, id))
+	com.sendBytes({speed, nextSpeed or 0xFF})
 	com.sendBytes({COM_IMAGES[image]})
 end
 
