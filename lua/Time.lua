@@ -16,15 +16,15 @@ function Time.__tostring(o)
 end
 
 function Time:strDays()
-	return "d:" .. tostring(self.day) .. " " .. tostring(self.hour) .. _Ternary(self.minute < 10, ":0", ":") .. tostring(self.minute) .. _Ternary(self.second < 10, ":0", ":") .. tostring(self.second)
+	return string.format("d:%s %02d:%02d:%02d", self.day, self.hour, self.minute, self.second)
 end
 
 function Time:strSeconds()
-	return tostring(self.hour) .. _Ternary(self.minute < 10, ":0", ":") .. tostring(self.minute) .. _Ternary(self.second < 10, ":0", ":") .. tostring(self.second)
+	return string.format("%02d:%02d:%02d", self.hour, self.minute, self.second)
 end
 
 function Time:str()
-	return tostring(self.hour) .. _Ternary(self.minute < 10, ":0", ":") .. tostring(self.minute)
+	return string.format("%02d:%02d", self.hour, self.minute)
 end
 
 function Time.__eq(o1, o2)

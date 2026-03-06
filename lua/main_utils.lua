@@ -1,4 +1,5 @@
 local api = require("eu07.events")
+local json = require("lua.json")
 
 local verboseValue = 3
 local severityTable = {"INFO", "ERROR", "SUCCESS", "FAIL"}
@@ -13,8 +14,31 @@ function _Clamp(value, min, max)
 	return math.min(math.max(value, min), max)
 end
 
-function _Ternary(v, a, b)
-	if v then return a else return b end
+function _LoadFile(filename)
+	local file = io.open(filename, "r")
+	if not file then
+		return
+	end
+	io.input(file)
+	local contents = io.read("*a")
+	io.close(file)
+	return contents
+end
+
+function _GetDataFromFile(filename)
+	local contents = assert(_LoadFile(filename), "Could not open file at " .. tostring(filename))
+	return json.decode(contents)
+end
+
+---Saves a file to the given path with the given contents. Errors out if the file cannot be created.
+---@param path string The path to the file.
+---@param data string The contents of the file.
+function _SaveFile(path, data)
+	local file = io.open(path, "w")
+	assert(file, string.format("SAVE FILE FAIL: %s", path))
+	io.output(file)
+	io.write(data)
+	io.close(file)
 end
 
 ---Splits a string `s` with the delimiter being `k` and returns a list of results.
@@ -66,5 +90,5 @@ function _SignalImageRepeater(speed)
 end
 
 function _SwitchChar(state)
-	return _Ternary(state, "-", "+")
+	return state and "-" or "+"
 end

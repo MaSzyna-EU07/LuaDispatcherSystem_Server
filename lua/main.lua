@@ -3,7 +3,6 @@ require("lua.main_utils")
 _Com = require("lua.main_communication")
 
 local api = require "eu07.events"
-local json = require("lua.json")
 
 -- LOVE2D-specific code:
 local isGui = api.gui
@@ -54,33 +53,6 @@ function _Init(filename)
 	end
 
 	_CreateLoopEvent(_NextTimeTick, 1)
-end
-
-function _LoadFile(filename)
-	local file = io.open(filename, "r")
-	if not file then
-		return
-	end
-	io.input(file)
-	local contents = io.read("*a")
-	io.close(file)
-	return contents
-end
-
-function _GetDataFromFile(filename)
-	local contents = assert(_LoadFile(filename), "Could not open file at " .. tostring(filename))
-	return json.decode(contents)
-end
-
----Saves a file to the given path with the given contents. Errors out if the file cannot be created.
----@param path string The path to the file.
----@param data string The contents of the file.
-function _SaveFile(path, data)
-	local file = io.open(path, "w")
-	assert(file, string.format("SAVE FILE FAIL: %s", path))
-	io.output(file)
-	io.write(data)
-	io.close(file)
 end
 
 ---Returns a Station based on its simulation name (shortcut), or `nil` if it's not found.

@@ -21,6 +21,8 @@ function com.init()
 	_LogWrite("[COMMUNICATION] File Name: " .. com_path, 1, 1)
 	com.sendBytes({0x70, 0xA0, 0xE0, 0x07})
 	com.sendBytes({0x05, 0x00, 0x00, 0xFF}) -- version ID
+	-- Clear any residue commands so that they aren't executed right at the start of the next session.
+	_SaveFile(COM_INPUT_FILE, "")
 	_CreateLoopEvent(com.tick, COM_SAVE_INTERVAL)
 end
 
@@ -131,13 +133,13 @@ end
 function com.setTrack(id, occupied, reserved)
 	com.sendBytes({0x12})
 	com.sendBytes(com.getObjID(com_ids.tracks, id))
-	com.sendBytes({_Ternary(occupied, 1, 0) + _Ternary(reserved, 2, 0)})
+	com.sendBytes({(occupied and 1 or 0) + (reserved and 2 or 0)})
 end
 
 function com.setSwitch(id, state)
 	com.sendBytes({0x13})
 	com.sendBytes(com.getObjID(com_ids.switches, id))
-	com.sendBytes({_Ternary(state, 1, 0)})
+	com.sendBytes({state and 1 or 0})
 end
 
 function com.setSemaphore(id, speed, nextSpeed, image)
