@@ -11,6 +11,12 @@ if isGui then
 	FILENAME = "td.json"
 	function love.draw() love.graphics.print("This is the server.\nWhile it does provide a way to not need to wait a few minutes until the simulator loads,\nit does not provide any visual features.\nPlease use the client along with the server to view the traffic.\n\nVersion " .. VERSION .. " by jakubg1", 50, 50) end
 	function love.update(dt) api.update(dt) end
+else
+	-- Real module. Define extra functions.
+	-- TODO: Reimplement in the EXE directly!
+	function api.event_exists(name)
+		return tostring(api.event_find(name)) ~= "cdata<struct TEvent *>: NULL"
+	end
 end
 
 local Time = require("lua.Time")

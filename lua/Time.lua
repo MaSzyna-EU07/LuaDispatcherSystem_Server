@@ -11,8 +11,8 @@ function Time:new(data)
 	self:fix()
 end
 
-function Time.__tostring(o)
-	return o:strSeconds()
+function Time:__tostring()
+	return self:strSeconds()
 end
 
 function Time:strDays()

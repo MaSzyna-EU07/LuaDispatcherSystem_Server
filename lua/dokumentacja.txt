@@ -451,8 +451,8 @@ Opcode są następujące:
 - 13 - Zmiana stanu zwrotnicy.
 	- SHORT: ID zwrotnicy
 	- BYTE: stan zwrotnicy:
-		- 00 - położenie "-"
-		- 01 - położenie "+"
+		- +1 - położenie "+" (w przeciwnym wypadku "-")
+		- +16 - rozjazd rozpruty
 - 14 - Zmiana stanu semafora.
 	- SHORT: ID semafora
 	- BYTE: obecna prędkość:

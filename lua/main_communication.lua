@@ -141,10 +141,10 @@ function com.setTrack(id, occupied, reserved)
 	com.sendBytes({(occupied and 1 or 0) + (reserved and 2 or 0)})
 end
 
-function com.setSwitch(id, state)
+function com.setSwitch(id, state, forced)
 	com.sendBytes({0x13})
 	com.sendBytes(com.getObjID(com_ids.switches, id))
-	com.sendBytes({state and 1 or 0})
+	com.sendBytes({(state and 1 or 0) + (forced and 16 or 0)})
 end
 
 function com.setSemaphore(id, speed, nextSpeed, image)

@@ -47,8 +47,8 @@ function Semaphore:init()
 	_LogWrite("Created semaphore: " .. self.id, 3, 2)
 end
 
-function Semaphore.__tostring(o)
-	return tostring(o.id).." : image="..tostring(o.image)
+function Semaphore:__tostring()
+	return string.format("%s : image=%s", self.id, self.image)
 end
 
 function Semaphore:tell(text, severity, weight)
@@ -102,7 +102,7 @@ end
 
 ---Wyświetla sygnał zabraniający jazdy: S1, Ms1 lub Sr1.
 function Semaphore:stop()
-	if self.speed == self:getStopSpeed() or self.speed == 7 then
+	if self.speed == self:getStopSpeed() then
 		return
 	end
 	self.w24 = false
@@ -156,7 +156,13 @@ function Semaphore:refreshSim()
 	local nextSpeed = self:getNextSpeed()
 	self.image = _SignalImage(self.speed, nextSpeed)
 	self:tell("Refreshing image. Speeds: this=" .. tostring(self.speed) .. ", next=" .. tostring(nextSpeed) .. ", result: " .. self.image, 1, 3)
-	api.event_dispatch_n(string.lower(self.id) .. "_" .. self.image, nil, 0)
+	local eventID = string.lower(self.id) .. "_" .. self.image
+	if not api.event_exists(eventID) then
+		self:tell("WARNING! Image not found! Displaying Sz!", 1, 3)
+		-- TODO: This state should be also reflected in the log and everywhere else (next/prev breaks, repeater should stay at Sp1)
+		eventID = string.lower(self.id) .. "_sz1"
+	end
+	api.event_dispatch_n(eventID, nil, 0)
 	-- W24
 	if self.w24 then
 		api.event_dispatch_n(string.lower(self.id) .. "_w24", nil, 0)

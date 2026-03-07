@@ -26,8 +26,8 @@ function Track:init()
 	_LogWrite("Created track: " .. self.id, 3, 2)
 end
 
-function Track.__tostring(o)
-	return tostring(o.id).." : occupied="..tostring(o.occupied).." reserved="..tostring(o.reserved)
+function Track:__tostring()
+	return string.format("%s : occupied=%s reserved=%s", self.id, self.occupied, self.reserved)
 end
 
 function Track:tell(text, severity, weight)
@@ -63,7 +63,8 @@ function Track:busy()
 	self:tell("occupied", 1, 3)
 	self:refreshSim()
 	-- Display a stop signal on the semaphore that depends on this track.
-	if self.semaphore then
+	-- Sz ("Sygnał zastępczy") is exempt.
+	if self.semaphore and self.semaphore.speed ~= 7 then
 		self.semaphore:stop()
 	end
 	self:setSemaphore()
