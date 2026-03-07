@@ -13,8 +13,8 @@ function Route:new(name, data)
 	self.tracks = {}
 
 	-- Tracks
-	for trackN, trackData in pairs(data.tracks) do
-		local track = Track(self, trackN, trackData)
+	for i, trackN in ipairs(data.tracks) do
+		local track = Track(self, trackN)
 		self.tracks[trackN] = track
 		_Tracks[trackN] = track
 	end

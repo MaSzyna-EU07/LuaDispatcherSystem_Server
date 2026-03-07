@@ -59,7 +59,10 @@ end
 function com.doCommand(command)
 	local operands = _StrSplit(command, " ")
 	if operands[1] == "s" then
-		_GetSemaphore(operands[2]):setSpeed(assert(tonumber(operands[3]), "Missing speed parameter"), tonumber(operands[4]))
+		_GetSemaphore(operands[2]):setSpeed(assert(tonumber(operands[3]), "Missing speed parameter"), tonumber(operands[4]) or _GetSemaphore(operands[4]))
+	elseif operands[1] == "su" then
+		_GetSemaphore(operands[2]):stop()
+		_GetSemaphore(operands[2]):unreserveAllTracks()
 	elseif operands[1] == "j" then
 		_GetSwitch(operands[2]):setState(operands[3] == "+")
 	elseif operands[1] == "t" then
@@ -70,6 +73,8 @@ function com.doCommand(command)
 		elseif operands[3] == "res" then
 			_GetTrack(operands[2]):reserve()
 		end
+	elseif operands[1] == "tr" then
+		_GetTrack(operands[2]):reserve(operands[3] and _GetSemaphore(operands[3]))
 	elseif operands[1] == "i" then
 		_GetSemaphore(operands[2]):getItinerary(operands[3]):dispatch()
 	end

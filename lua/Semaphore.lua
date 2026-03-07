@@ -16,12 +16,15 @@ function Semaphore:new(station, id, data)
 	self.id = id
 	self.data = data
 	self.type = data.type or 0
-	self.prev = {}
+	self.prev = nil
 	self.next = nil
 	self.repeaters = data.repeaters
 	self.speed = self:getStopSpeed()
 	self.image = _SignalImage(self:getStopSpeed())
 	self.w24 = false
+
+	---@type table<Track, true>
+	self.reservedTracks = {} -- A list of tracks this Semaphore has reserved for itself.
 
 	---@type table<string, Itinerary>
 	self.itineraries = {}
@@ -30,11 +33,6 @@ end
 ---Inicjalizuje połączenia do innych obiektów. Należy wywołać tą funkcję po utworzeniu wszystkich obiektów.
 function Semaphore:init()
 	_LogWrite("Creating semaphore: " .. self.id, 1, 3)
-	_LogWrite("- Extracting previous semaphore list...", 1, 3)
-	for i, prevID in ipairs(self.data.prev) do
-		self.prev[i] = _GetSemaphore(prevID)
-		_LogWrite("  - " .. self.prev[i].id, 1, 3)
-	end
 	_LogWrite("- Creating itineraries...", 1, 3)
 	for itineraryN, itineraryData in pairs(self.data.itineraries) do
 		self.itineraries[itineraryN] = Itinerary(self.station, self, itineraryData, itineraryN)
@@ -76,13 +74,30 @@ end
 function Semaphore:setSpeed(speed, next)
 	self:tell("Setting speed " .. tostring(speed) .. ", next: " .. tostring(next), 1, 3)
 	self.speed = speed
-	self.next = next
-	for i, prevSemaphore in ipairs(self.prev) do
-		if prevSemaphore.next == self then
-			prevSemaphore:refreshSim()
-		end
+	self:setNext(next)
+	-- If this Semaphore has a previous one, refresh it.
+	if self.prev and self.prev.next == self then
+		self.prev:refreshSim()
 	end
 	self:refreshSim()
+end
+
+---Sets the next semaphore, if any. Affects that semaphore's `prev` field.
+---@private
+---@param next Semaphore|integer? The next semaphore or speed to be linked with.
+function Semaphore:setNext(next)
+	if self.next == next then
+		return
+	end
+	if self.next and type(self.next) == "table" then
+		self:tell("no longer linked to " .. self.next.id, 1, 3)
+		self.next.prev = nil
+	end
+	if next and type(next) == "table" then
+		self:tell("now linked to " .. next.id, 1, 3)
+		next.prev = self
+	end
+	self.next = next
 end
 
 ---Wyświetla sygnał zabraniający jazdy: S1, Ms1 lub Sr1.
@@ -111,10 +126,29 @@ end
 ---Zwraca prędkość na następnym semaforze bądź na sztywno ustawioną.
 ---@return integer?
 function Semaphore:getNextSpeed()
-	if type(self.next) == "number" then
-		return self.next
+	if type(self.next) == "table" then
+		return self.next.speed
 	end
-	return self.next and self.next.speed
+	return self.next
+end
+
+---Reserves a track for this Semaphore. This list is used to easily cancel a dynamic itinerary.
+---@param track Track The track to be reserved.
+function Semaphore:reserveTrack(track)
+	self.reservedTracks[track] = true
+end
+
+---Unreserves a track for this Semaphore.
+---@param track Track The track to be unreserved.
+function Semaphore:unreserveTrack(track)
+	self.reservedTracks[track] = nil
+end
+
+---Unreserves all tracks for this Semaphore and removes the reservation from Tracks themselves.
+function Semaphore:unreserveAllTracks()
+	for track, _ in pairs(self.reservedTracks) do
+		track:unreserve()
+	end
 end
 
 ---Odświeża obraz semafora do symulatora i loga.

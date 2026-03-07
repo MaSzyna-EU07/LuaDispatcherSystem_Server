@@ -18,8 +18,8 @@ function Station:new(name, data)
 	self.semaphores = {}
 
 	-- Tracks
-	for trackN, trackData in pairs(data.tracks) do
-		local track = Track(self, self.name .. "_" .. trackN, trackData)
+	for i, trackN in ipairs(data.tracks) do
+		local track = Track(self, self.name .. "_" .. trackN)
 		self.tracks[trackN] = track
 		_Tracks[self.name .. "_" .. trackN] = track
 	end
