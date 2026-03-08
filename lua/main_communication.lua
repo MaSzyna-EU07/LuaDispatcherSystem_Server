@@ -59,12 +59,15 @@ end
 function com.doCommand(command)
 	local operands = _StrSplit(command, " ")
 	if operands[1] == "s" then
+		_GetSemaphore(operands[2]):setW24(operands[5] == "w24")
 		_GetSemaphore(operands[2]):setSpeed(assert(tonumber(operands[3]), "Missing speed parameter"), tonumber(operands[4]) or _GetSemaphore(operands[4]))
 	elseif operands[1] == "su" then
 		_GetSemaphore(operands[2]):stop()
 		_GetSemaphore(operands[2]):unreserveAllTracks()
 	elseif operands[1] == "j" then
 		_GetSwitch(operands[2]):setState(operands[3] == "+")
+	elseif operands[1] == "ju" then
+		_GetSwitch(operands[2]):setForced(false)
 	elseif operands[1] == "t" then
 		if operands[3] == "free" then
 			_GetTrack(operands[2]):free()
