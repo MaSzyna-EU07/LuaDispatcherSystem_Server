@@ -38,11 +38,16 @@ function Semaphore:init()
 		self.itineraries[itineraryN] = Itinerary(self.station, self, itineraryData, itineraryN)
 	end
 
-	-- in some future, create only one callback depending on the semaphore type
 	_LogWrite("- Creating event callbacks...", 1, 3)
-	api.event_create(string.lower(self.id) .. "_s1", 0, 0, api.event_preparefunc(function(event, activator) self:stop() end))
-	api.event_create(string.lower(self.id) .. "_sr1", 0, 0, api.event_preparefunc(function(event, activator) self:stop() end))
-	api.event_create(string.lower(self.id) .. "_ms1", 0, 0, api.event_preparefunc(function(event, activator) self:stop() end))
+	if self.type == 0 then
+		api.event_create(string.lower(self.id) .. "_s1", 0, 0, api.event_preparefunc(function(event, activator) self:stop() end))
+		api.event_create(string.lower(self.id) .. "_sr1", 0, 0, api.event_preparefunc(function(event, activator) self:stop() end))
+	end
+	if self.type == 1 then
+		api.event_create(string.lower(self.id) .. "_ms1", 0, 0, api.event_preparefunc(function(event, activator) self:stop() end))
+	end
+	api.event_create(string.lower(self.id) .. "_uszk", 0, 0, api.event_preparefunc(function(event, activator) self:stop() end))
+	api.event_create(string.lower(self.id) .. "_wyg_sz", 0, 0, api.event_preparefunc(function(event, activator) self:unreserveAllTracks() end))
 
 	_LogWrite("Created semaphore: " .. self.id, 3, 2)
 end
