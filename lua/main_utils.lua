@@ -77,8 +77,20 @@ local signalImages = {
 	[8]="s1a"
 }
 
-function _SignalImage(speed, nextSpeed)
-	local first = signalImages[speed]
+local shapeSignalImages = {
+	[0]="sr1",
+	[1]="sr2",
+	[2]="sr3",
+	[3]="sr3",
+	[4]="sr3",
+	[5]="ms1",
+	[6]="ms2",
+	[7]="sz1",
+	[8]="s1a"
+}
+
+function _SignalImage(speed, nextSpeed, shape)
+	local first = shape and shapeSignalImages[speed] or signalImages[speed]
 	if type(first) == "string" then return first end
 	return first[nextSpeed] or first[0]
 end

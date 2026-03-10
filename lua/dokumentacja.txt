@@ -469,6 +469,7 @@ Opcode są następujące:
 		- 01 do 0D - S1 do S13
 		- 21 - S1a
 		- 2A do 2D - S10a do S13a
+		- 41 do 43 - Sr1 do Sr3
 		- 80 - Ms1
 		- 81 - Ms2
 		- FF - sygnał zastępczy

@@ -15,11 +15,12 @@ function Semaphore:new(station, id, data)
 	self.id = id
 	self.data = data
 	self.type = data.type or 0
+	self.shape = data.shape or false
 	self.prev = nil
 	self.next = nil
 	self.repeaters = data.repeaters
 	self.speed = self:getStopSpeed()
-	self.image = _SignalImage(self:getStopSpeed())
+	self.image = _SignalImage(self:getStopSpeed(), nil, self.shape)
 	self.w24 = false
 
 	---@type table<Track, true>
@@ -31,14 +32,13 @@ function Semaphore:init()
 	_LogWrite("Creating semaphore: " .. self.id, 1, 3)
 	_LogWrite("- Creating event callbacks...", 1, 3)
 	if self.type == 0 then
-		api.event_create(string.lower(self.id) .. "_s1", 0, 0, api.event_preparefunc(function(event, activator) self:stop() end))
-		api.event_create(string.lower(self.id) .. "_sr1", 0, 0, api.event_preparefunc(function(event, activator) self:stop() end))
+		api.event_create(string.lower(self.id) .. (self.shape and "_sr1" or "_s1"), 0, 0, api.event_preparefunc(function(event, activator) self:stop() end))
 	end
 	if self.type == 1 then
 		api.event_create(string.lower(self.id) .. "_ms1", 0, 0, api.event_preparefunc(function(event, activator) self:stop() end))
 	end
 	api.event_create(string.lower(self.id) .. "_uszk", 0, 0, api.event_preparefunc(function(event, activator) self:stop() end))
-	api.event_create(string.lower(self.id) .. "_wyg_sz", 0, 0, api.event_preparefunc(function(event, activator) self:unreserveAllTracks() end))
+	api.event_create(string.lower(self.id) .. (self.shape and "_sygsz_wyg90" or "_wyg_sz"), 0, 0, api.event_preparefunc(function(event, activator) self:unreserveAllTracks() end))
 
 	_LogWrite("Created semaphore: " .. self.id, 3, 2)
 end
@@ -51,7 +51,21 @@ function Semaphore:tell(text, severity, weight)
 	_LogWrite(tostring(self.id) .. ": " .. text, severity, weight)
 end
 
+---Returns whether this semaphore can physically display the specified signal.
+---@param speed integer Speed on this semaphore.
+---@param next Semaphore|integer? Next speed, or speed on the next semaphore.
+---@return boolean
+function Semaphore:canSetSpeed(speed, next)
+	if type(next) == "table" then
+		next = next.speed
+	end
+	local image = _SignalImage(speed, next, self.shape)
+	local eventID = string.lower(self.id) .. "_" .. image
+	return api.event_exists(eventID)
+end
+
 ---Ustawia prędkość na semaforze oraz odświeża niezbędne do odświeżenia semafory.
+---Jeżeli sygnał nie może być wyświetlony (brakuje eventu), wyświetlony zostanie sygnał zastępczy.
 ---@param speed integer Nowa prędkość od teraz obowiązująca na semaforze.
 ---@param next Semaphore|integer? Patrz niżej:
 ---- Jeżeli Semaphore, jest to następny semafor.
@@ -60,8 +74,12 @@ end
 ---- `nil` jest dopuszczalne tylko przy sygnałach niezależnych od następnego semafora (S1,Ms1,Ms2,Sz).
 function Semaphore:setSpeed(speed, next)
 	self:tell("Setting speed " .. tostring(speed) .. ", next: " .. tostring(next), 1, 3)
-	self.speed = speed
-	self:setNext(next)
+	local available = self:canSetSpeed(speed, next)
+	self.speed = available and speed or 7
+	self:setNext(available and next or nil)
+	if not available then
+		self:tell("The semaphore cannot display this signal, falling back to Sz!", 1, 3)
+	end
 	-- If this Semaphore has a previous one, refresh it.
 	if self.prev and self.prev.next == self then
 		self.prev:refreshSim()
@@ -141,15 +159,18 @@ end
 ---Odświeża obraz semafora do symulatora i loga.
 function Semaphore:refreshSim()
 	local nextSpeed = self:getNextSpeed()
-	self.image = _SignalImage(self.speed, nextSpeed)
-	self:tell("Refreshing image. Speeds: this=" .. tostring(self.speed) .. ", next=" .. tostring(nextSpeed) .. ", result: " .. self.image, 1, 3)
-	local eventID = string.lower(self.id) .. "_" .. self.image
-	if not api.event_exists(eventID) then
-		self:tell("WARNING! Image not found! Displaying Sz!", 1, 3)
-		-- TODO: This state should be also reflected in the log and everywhere else (next/prev breaks, repeater should stay at Sp1)
-		eventID = string.lower(self.id) .. "_sz1"
+	local image = _SignalImage(self.speed, nextSpeed, self.shape)
+	-- Avoid changing an image to the same image. Especially important for shape signals, which would play a sound while the signal doesn't change.
+	if self.image == image then
+		return
 	end
-	api.event_dispatch_n(eventID, nil, 0)
+	self.image = image
+	self:tell("Refreshing image. Speeds: this=" .. tostring(self.speed) .. ", next=" .. tostring(nextSpeed) .. ", result: " .. image, 1, 3)
+	api.event_dispatch_n(string.lower(self.id) .. "_" .. image, nil, 0)
+	-- Sz signal events on most semaphores end with `_sz1`, but on some end with `_sz` -_-
+	if image == "sz1" then
+		api.event_dispatch_n(string.lower(self.id) .. "_sz", nil, 0)
+	end
 	-- W24
 	if self.w24 then
 		api.event_dispatch_n(string.lower(self.id) .. "_w24", nil, 0)
