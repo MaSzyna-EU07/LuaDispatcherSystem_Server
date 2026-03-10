@@ -5,8 +5,8 @@
 			"tracks":["it1","it2","iz1","iz2"],
 			"switches":["1","2"],
 			"semaphores":{
-				"a":{"repeaters":[]},
-				"p":{"repeaters":[]},
+				"a":{},
+				"p":{},
 				"c":{"repeaters":["sta_ispc","sta_iispc"]},
 				"b":{"repeaters":["sta_ispb","sta_iispb"]},
 				"k":{"repeaters":["sta_ispk","sta_iispk"]},
@@ -18,8 +18,8 @@
 			"tracks":["it1"],
 			"switches":[],
 			"semaphores":{
-				"a":{"repeaters":[]},
-				"b":{"repeaters":[]}
+				"a":{},
+				"b":{}
 			}
 		}
 	},

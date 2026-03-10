@@ -9,27 +9,27 @@
             "tracks": ["t1"],
             "switches": [],
             "semaphores": {
-                "a": {"type": 0, "repeaters": []},
-                "b": {"type": 0, "repeaters": []}
+                "a": {"type": 0},
+                "b": {"type": 0}
             }
         },
         "Stacja": {
             "tracks": [],
             "switches": [],
             "semaphores": {
-                "tm2": {"type": 1, "repeaters": []}
+                "tm2": {"type": 1}
             }
         },
         "Mijanka": {
             "tracks": ["t2","t1","z2","z1"],
             "switches": ["1", "2"],
             "semaphores": {
-                "b": {"type": 0, "repeaters": []},
-                "f": {"type": 0, "repeaters": []},
-                "d": {"type": 0, "repeaters": []},
-                "a": {"type": 0, "repeaters": []},
-                "c": {"type": 0, "repeaters": []},
-                "e": {"type": 0, "repeaters": []}
+                "b": {"type": 0},
+                "f": {"type": 0},
+                "d": {"type": 0},
+                "a": {"type": 0},
+                "c": {"type": 0},
+                "e": {"type": 0}
             }
         }
     },

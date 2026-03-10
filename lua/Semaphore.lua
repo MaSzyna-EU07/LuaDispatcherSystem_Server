@@ -157,8 +157,10 @@ function Semaphore:refreshSim()
 		api.event_dispatch_n(string.lower(self.id) .. "_w24off", nil, 0)
 	end
 	-- refresh repeaters too
-	for i, repeaterN in ipairs(self.repeaters) do
-		api.event_dispatch_n(string.lower(repeaterN) .. "_" .. _SignalImageRepeater(self.speed), nil, 0)
+	if self.repeaters then
+		for i, repeaterN in ipairs(self.repeaters) do
+			api.event_dispatch_n(string.lower(repeaterN) .. "_" .. _SignalImageRepeater(self.speed), nil, 0)
+		end
 	end
 	_Com.setSemaphore(self.id, self.speed, nextSpeed, self.image)
 end
