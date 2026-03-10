@@ -1,6 +1,5 @@
 local class = require "lua.class"
 local api = require "eu07.events"
-local Itinerary = require("lua.Itinerary")
 
 ---@class Semaphore
 local Semaphore = class:derive("Semaphore")
@@ -25,19 +24,11 @@ function Semaphore:new(station, id, data)
 
 	---@type table<Track, true>
 	self.reservedTracks = {} -- A list of tracks this Semaphore has reserved for itself.
-
-	---@type table<string, Itinerary>
-	self.itineraries = {}
 end
 
 ---Inicjalizuje połączenia do innych obiektów. Należy wywołać tą funkcję po utworzeniu wszystkich obiektów.
 function Semaphore:init()
 	_LogWrite("Creating semaphore: " .. self.id, 1, 3)
-	_LogWrite("- Creating itineraries...", 1, 3)
-	for itineraryN, itineraryData in pairs(self.data.itineraries) do
-		self.itineraries[itineraryN] = Itinerary(self.station, self, itineraryData, itineraryN)
-	end
-
 	_LogWrite("- Creating event callbacks...", 1, 3)
 	if self.type == 0 then
 		api.event_create(string.lower(self.id) .. "_s1", 0, 0, api.event_preparefunc(function(event, activator) self:stop() end))
@@ -58,15 +49,6 @@ end
 
 function Semaphore:tell(text, severity, weight)
 	_LogWrite(tostring(self.id) .. ": " .. text, severity, weight)
-end
-
----Zwraca przebieg z semafora szukając po nazwie.
----Jeżeli nie istnieje zwraca `nil` oraz w logu pojawia się błąd.
----@param itineraryN string Nazwa przebiegu.
----@return Itinerary?
-function Semaphore:getItinerary(itineraryN)
-	if not self.itineraries[itineraryN] then self:tell("Tried to access a nonexistent itinerary: " .. tostring(itineraryN), 2, 1) end
-	return self.itineraries[itineraryN]
 end
 
 ---Ustawia prędkość na semaforze oraz odświeża niezbędne do odświeżenia semafory.

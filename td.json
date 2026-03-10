@@ -2,144 +2,33 @@
 	"stations":{
 		"sta":{
 			"name":"stacja1",
-			"tracks":{
-				"it1":{"semaphores":[]},
-				"it2":{"semaphores":[]},
-				"iz1":{"semaphores":["sta_a","sta_c","sta_b"]},
-				"iz2":{"semaphores":["sta_k","sta_j","sta_p"]}
-			},
+			"tracks":["it1","it2","iz1","iz2"],
 			"switches":["1","2"],
 			"semaphores":{
-				"a":{
-					"prev":["stb_a"],
-					"repeaters":[],
-					"itineraries":{
-						"1":{
-							"speed":1,
-							"tracks":["sta_iz1","sta_it1"],
-							"switches":{"sta_1":false},
-							"next":"sta_k"
-						},
-						"2":{
-							"speed":2,
-							"tracks":["sta_iz1","sta_it2"],
-							"switches":{"sta_1":true},
-							"next":"sta_j"
-						}
-					}
-				},
-				"p":{
-					"prev":["stb_b"],
-					"repeaters":[],
-					"itineraries":{
-						"1":{
-							"speed":1,
-							"tracks":["sta_iz2","sta_it1"],
-							"switches":{"sta_2":false},
-							"next":"sta_c"
-						},
-						"2":{
-							"speed":2,
-							"tracks":["sta_iz2","sta_it2"],
-							"switches":{"sta_2":true},
-							"next":"sta_b"
-						}
-					}
-				},
-				"c":{
-					"prev":["sta_p"],
-					"repeaters":["sta_ispc","sta_iispc"],
-					"itineraries":{
-						"A":{
-							"speed":1,
-							"tracks":["sta_iz1","stb1-sta1@pl-d99-102_it1"],
-							"switches":{"sta_1":false},
-							"next":1
-						}
-					}
-				},
-				"b":{
-					"prev":["sta_p"],
-					"repeaters":["sta_ispb","sta_iispb"],
-					"itineraries":{
-						"A":{
-							"speed":2,
-							"tracks":["sta_iz1","stb1-sta1@pl-d99-102_it1"],
-							"switches":{"sta_1":true},
-							"next":1
-						}
-					}
-				},
-				"k":{
-					"prev":["sta_a"],
-					"repeaters":["sta_ispk","sta_iispk"],
-					"itineraries":{
-						"B":{
-							"speed":1,
-							"tracks":["sta_iz2","sta1-stb1@pl-d99-101_it1"],
-							"switches":{"sta_2":false},
-							"next":1
-						}
-					}
-				},
-				"j":{
-					"prev":["sta_a"],
-					"repeaters":["sta_ispj","sta_iispj"],
-					"itineraries":{
-						"B":{
-							"speed":2,
-							"tracks":["sta_iz2","sta1-stb1@pl-d99-101_it1"],
-							"switches":{"sta_2":true},
-							"next":1
-						}
-					}
-				}
+				"a":{"repeaters":[]},
+				"p":{"repeaters":[]},
+				"c":{"repeaters":["sta_ispc","sta_iispc"]},
+				"b":{"repeaters":["sta_ispb","sta_iispb"]},
+				"k":{"repeaters":["sta_ispk","sta_iispk"]},
+				"j":{"repeaters":["sta_ispj","sta_iispj"]}
 			}
 		},
 		"stb":{
 			"name":"stacja2",
-			"tracks":{
-				"it1":{"semaphores":[]}
-			},
+			"tracks":["it1"],
 			"switches":[],
 			"semaphores":{
-				"a":{
-					"prev":[],
-					"repeaters":[],
-					"itineraries":{
-						"A":{
-							"speed":1,
-							"tracks":["stb1-sta1@pl-d99-102_it1"],
-							"switches":{},
-							"next":"sta_a"
-						}
-					}
-				},
-				"b":{
-					"prev":[],
-					"repeaters":[],
-					"itineraries":{
-						"B":{
-							"speed":1,
-							"tracks":["sta1-stb1@pl-d99-101_it1"],
-							"switches":{},
-							"next":"sta_p"
-						}
-					}
-				}
+				"a":{"repeaters":[]},
+				"b":{"repeaters":[]}
 			}
 		}
 	},
 	"routes":{
 		"sta1-stb1@pl-d99-101":{
-			"tracks":{
-				"it1":{"semaphores":["stb_b"]}
-			}
+			"tracks":["it1"]
 		},
 		"stb1-sta1@pl-d99-102":{
-			"tracks":{
-				"it1":{"semaphores":["stb_a"]}
-			}
+			"tracks":["it1"]
 		}
 	}
 }

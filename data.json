@@ -9,234 +9,27 @@
             "tracks": ["t1"],
             "switches": [],
             "semaphores": {
-                "a": {
-                    "type": 0,
-                    "itineraries": {
-                        "A": {
-                            "tracks": [],
-                            "next": 1,
-                            "switches": [],
-                            "speed": 1
-                        }
-                    },
-                    "repeaters": []
-                },
-                "b": {
-                    "type": 0,
-                    "itineraries": {
-                        "B": {
-                            "tracks": [
-                                {
-                                    "name": "t1",
-                                    "routeN": "Mij-Kon"
-                                }
-                            ],
-                            "next": {
-                                "name": "b",
-                                "stationN": "Mijanka"
-                            },
-                            "switches": [],
-                            "speed": 1
-                        }
-                    },
-                    "repeaters": []
-                }
+                "a": {"type": 0, "repeaters": []},
+                "b": {"type": 0, "repeaters": []}
             }
         },
         "Stacja": {
             "tracks": [],
             "switches": [],
             "semaphores": {
-                "tm2": {
-                    "type": 1,
-                    "itineraries": [],
-                    "repeaters": []
-                }
+                "tm2": {"type": 1, "repeaters": []}
             }
         },
         "Mijanka": {
             "tracks": ["t2","t1","z2","z1"],
-            "switches": [
-                "1",
-                "2"
-            ],
+            "switches": ["1", "2"],
             "semaphores": {
-                "b": {
-                    "type": 0,
-                    "itineraries": {
-                        "1": {
-                            "tracks": [
-                                {
-                                    "name": "z2",
-                                    "stationN": "Mijanka"
-                                },
-                                {
-                                    "name": "t1",
-                                    "stationN": "Mijanka"
-                                }
-                            ],
-                            "next": {
-                                "name": "c",
-                                "stationN": "Mijanka"
-                            },
-                            "switches": {
-                                "2": false
-                            },
-                            "speed": 1
-                        },
-                        "2": {
-                            "tracks": [
-                                {
-                                    "name": "z2",
-                                    "stationN": "Mijanka"
-                                },
-                                {
-                                    "name": "t2",
-                                    "stationN": "Mijanka"
-                                }
-                            ],
-                            "next": {
-                                "name": "d",
-                                "stationN": "Mijanka"
-                            },
-                            "switches": {
-                                "2": true
-                            },
-                            "speed": 2
-                        }
-                    },
-                    "repeaters": []
-                },
-                "f": {
-                    "type": 0,
-                    "itineraries": {
-                        "B": {
-                            "tracks": [
-                                {
-                                    "name": "z2",
-                                    "stationN": "Mijanka"
-                                },
-                                {
-                                    "name": "t1",
-                                    "routeN": "Mij-Kon"
-                                }
-                            ],
-                            "next": 1,
-                            "switches": {
-                                "2": true
-                            },
-                            "speed": 2
-                        }
-                    },
-                    "repeaters": []
-                },
-                "d": {
-                    "type": 0,
-                    "itineraries": {
-                        "A": {
-                            "tracks": [
-                                {
-                                    "name": "z1",
-                                    "stationN": "Mijanka"
-                                }
-                            ],
-                            "next": 1,
-                            "switches": {
-                                "1": true
-                            },
-                            "speed": 2
-                        }
-                    },
-                    "repeaters": []
-                },
-                "a": {
-                    "type": 0,
-                    "itineraries": {
-                        "1": {
-                            "tracks": [
-                                {
-                                    "name": "z1",
-                                    "stationN": "Mijanka"
-                                },
-                                {
-                                    "name": "t1",
-                                    "stationN": "Mijanka"
-                                }
-                            ],
-                            "next": {
-                                "name": "e",
-                                "stationN": "Mijanka"
-                            },
-                            "switches": {
-                                "1": false
-                            },
-                            "speed": 1
-                        },
-                        "2": {
-                            "tracks": [
-                                {
-                                    "name": "z1",
-                                    "stationN": "Mijanka"
-                                },
-                                {
-                                    "name": "t2",
-                                    "stationN": "Mijanka"
-                                }
-                            ],
-                            "next": {
-                                "name": "f",
-                                "stationN": "Mijanka"
-                            },
-                            "switches": {
-                                "1": true
-                            },
-                            "speed": 2
-                        }
-                    },
-                    "repeaters": []
-                },
-                "c": {
-                    "type": 0,
-                    "itineraries": {
-                        "A": {
-                            "tracks": [
-                                {
-                                    "name": "z1",
-                                    "stationN": "Mijanka"
-                                }
-                            ],
-                            "next": 1,
-                            "switches": {
-                                "1": false
-                            },
-                            "speed": 1
-                        }
-                    },
-                    "repeaters": []
-                },
-                "e": {
-                    "type": 0,
-                    "itineraries": {
-                        "B": {
-                            "tracks": [
-                                {
-                                    "name": "z2",
-                                    "stationN": "Mijanka"
-                                },
-                                {
-                                    "name": "t1",
-                                    "routeN": "Mij-Kon"
-                                }
-                            ],
-                            "next": 1,
-                            "switches": {
-                                "2": false
-                            },
-                            "speed": 1
-                        }
-                    },
-                    "repeaters": []
-                }
+                "b": {"type": 0, "repeaters": []},
+                "f": {"type": 0, "repeaters": []},
+                "d": {"type": 0, "repeaters": []},
+                "a": {"type": 0, "repeaters": []},
+                "c": {"type": 0, "repeaters": []},
+                "e": {"type": 0, "repeaters": []}
             }
         }
     },

@@ -61,10 +61,6 @@ function Station:getSemaphore(semaphoreN)
 	return self.semaphores[semaphoreN]
 end
 
-function Station:getItinerary(semaphoreN, itineraryN)
-	return self:getSemaphore(semaphoreN):getItinerary(itineraryN)
-end
-
 function Station:getTrack(trackN)
 	if not self.tracks[trackN] then self:tell("Tried to access a nonexistent track: " .. tostring(trackN), 2, 1) end
 	return self.tracks[trackN]
@@ -73,18 +69,6 @@ end
 function Station:getSwitch(switchN)
 	if not self.switches[switchN] then self:tell("Tried to access a nonexistent switch: " .. tostring(switchN), 2, 1) end
 	return self.switches[switchN]
-end
-
-function Station:canDispatch(semaphoreN, itineraryN)
-	return self:getItinerary(semaphoreN, itineraryN):canDispatch()
-end
-
-function Station:dispatch(semaphoreN, itineraryN)
-	if self:canDispatch(semaphoreN, itineraryN) then
-		self:getItinerary(semaphoreN, itineraryN):dispatch()
-	else
-		self:tell("Could not dispatch itinerary " .. semaphoreN .. " -> " .. itineraryN, 4, 2)
-	end
 end
 
 return Station

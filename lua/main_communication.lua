@@ -1,7 +1,7 @@
 local com = {}
 
 local COM_IMAGES = {
-	sz=0xFF,
+	sz1=0xFF,
 	s1=0x01, s2=0x02, s3=0x03, s4=0x04, s5=0x05, s6=0x06, s7=0x07, s8=0x08, s9=0x09, s10=0x0A, s11=0x0B, s12=0x0C, s13=0x0D,
 	s1a=0x21, s10a=0x2A, s11a=0x2B, s12a=0x2C, s13a=0x2D,
 	ms1=0x80, ms2=0x81
@@ -78,8 +78,6 @@ function com.doCommand(command)
 		end
 	elseif operands[1] == "tr" then
 		_GetTrack(operands[2]):reserve(operands[3] and _GetSemaphore(operands[3]))
-	elseif operands[1] == "i" then
-		_GetSemaphore(operands[2]):getItinerary(operands[3]):dispatch()
 	end
 end
 
