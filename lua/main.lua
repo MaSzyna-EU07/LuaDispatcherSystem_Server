@@ -25,7 +25,7 @@ local Route = require("lua.Route")
 
 local tempEventCounters = {loop = 0}
 
-_CurrentTime = Time({hour=11,minute=30,second=0})
+_CurrentTime = Time({hour=11,minute=30})
 ---@type table<string, Station>
 _Stations = {}
 ---@type table<string, Route>

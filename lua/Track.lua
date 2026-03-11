@@ -15,14 +15,15 @@ function Track:new(station, id)
 	self.occupied = false
 	self.reserved = false
 	self.semaphore = nil
+	self.trains = {}
 end
 
 ---Inicjalizuje połączenia do innych obiektów. Należy wywołać tą funkcję po utworzeniu wszystkich obiektów.
 function Track:init()
 	_LogWrite("Creating track: " .. self.id, 1, 3)
 	_LogWrite("- Creating event callbacks...", 1, 3)
-	api.event_create(string.lower(self.id) .. ":busy", 0, 0, api.event_preparefunc(function(event, activator) self:busy() end))
-	api.event_create(string.lower(self.id) .. ":free", 0, 0, api.event_preparefunc(function(event, activator) self:free() end))
+	api.event_create(string.lower(self.id) .. ":busy", 0, 0, api.event_preparefunc(function(event, activator) self:busy(); self:setTrain(activator) end))
+	api.event_create(string.lower(self.id) .. ":free", 0, 0, api.event_preparefunc(function(event, activator) self:free(); self:setTrain() end))
 	_LogWrite("Created track: " .. self.id, 3, 2)
 end
 
@@ -95,6 +96,21 @@ function Track:setSemaphore(semaphore)
 		semaphore:reserveTrack(self)
 	end
 	self.semaphore = semaphore
+end
+
+---Sets a train that is on this track.
+---@param train TDynamicObject*? The train which is on this track. Pass `nil` to remove a train from this track.
+function Track:setTrain(train)
+	self.trains = {train}
+end
+
+---Gives a new timetable to the train which is on this track.
+---@param name string The timetable name.
+function Track:giveTimetable(name)
+	if not self.trains[1] then
+		return
+	end
+	api.dynobj_putvalues(self.trains[1], {str = "Timetable:luascript/" .. name, num1 = 0, num2 = 0})
 end
 
 ---Odświeża obecny stan toru do loga.

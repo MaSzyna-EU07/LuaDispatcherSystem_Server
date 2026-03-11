@@ -7,7 +7,7 @@ function Time:new(data)
 	self.day = data.day or 0
 	self.hour = data.hour
 	self.minute = data.minute
-	self.second = data.second
+	self.second = data.second or 0
 	self:fix()
 end
 

@@ -79,6 +79,8 @@ function com.doCommand(command)
 		end
 	elseif operands[1] == "tr" then
 		_GetTrack(operands[2]):reserve(operands[3] and _GetSemaphore(operands[3]))
+	elseif operands[1] == "tt" then
+		_GetTrack(operands[2]):giveTimetable(operands[3])
 	end
 end
 
