@@ -10,10 +10,6 @@ function _LogWrite(text, severity, weight)
 	end
 end
 
-function _Clamp(value, min, max)
-	return math.min(math.max(value, min), max)
-end
-
 function _LoadFile(filename)
 	local file = io.open(filename, "r")
 	if not file then

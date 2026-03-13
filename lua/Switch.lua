@@ -11,9 +11,11 @@ function Switch:new(station, id)
 	self.id = id
 	self.state = false
 	self.forced = false
+
+	self:init()
 end
 
----Connects this object to other objects in the world and to the simulator.
+---Initializes callbacks which listen for the changes in the simulator.
 function Switch:init()
 	_LogWrite("Creating switch: " .. self.id, 1, 3)
 	_LogWrite("- Creating event callbacks...", 1, 3)
@@ -48,7 +50,9 @@ function Switch:forceState(state)
 end
 
 function Switch:refreshSim()
-	api.event_dispatch_n(string.lower(self.id) .. _SwitchChar(self.state), nil, 0)
+	if not self.forced then
+		api.event_dispatch_n(string.lower(self.id) .. _SwitchChar(self.state), nil, 0)
+	end
 	_Com.setSwitch(self.id, self.state, self.forced)
 end
 

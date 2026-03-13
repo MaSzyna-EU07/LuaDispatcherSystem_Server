@@ -16,16 +16,10 @@ function Route:new(name, data)
 	for i, trackN in ipairs(data.tracks) do
 		local track = Track(self, trackN)
 		self.tracks[trackN] = track
-		_Tracks[trackN] = track
+		_Tracks[string.lower(trackN)] = track
 	end
 
 	_LogWrite("Created route: " .. name, 3, 2)
-end
-
-function Route:init()
-	for name, track in pairs(self.tracks) do
-		track:init()
-	end
 end
 
 function Route:tell(text, severity, weight)

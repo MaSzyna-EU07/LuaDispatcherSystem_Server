@@ -25,9 +25,11 @@ function Semaphore:new(station, id, data)
 
 	---@type table<Track, true>
 	self.reservedTracks = {} -- A list of tracks this Semaphore has reserved for itself.
+
+	self:init()
 end
 
----Inicjalizuje połączenia do innych obiektów. Należy wywołać tą funkcję po utworzeniu wszystkich obiektów.
+---Initializes callbacks which listen for the changes in the simulator.
 function Semaphore:init()
 	_LogWrite("Creating semaphore: " .. self.id, 1, 3)
 	_LogWrite("- Creating event callbacks...", 1, 3)

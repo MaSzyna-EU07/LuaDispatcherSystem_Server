@@ -443,6 +443,9 @@ Wszystkie wartości tekstowe są null-terminated (bajt 00 oznacza koniec ciągu 
 
 Opcode są następujące:
 
+- 01 - Debug printout.
+	- STRING: wiadomość
+
 - 12 - Zmiana stanu toru (odcinka izolowanego).
 	- SHORT: ID toru
 	- BYTE: stan toru:

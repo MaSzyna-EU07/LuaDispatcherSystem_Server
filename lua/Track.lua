@@ -16,14 +16,38 @@ function Track:new(station, id)
 	self.reserved = false
 	self.semaphore = nil
 	self.trains = {}
+	self.vehicles = {}
+
+	self:init()
 end
 
----Inicjalizuje połączenia do innych obiektów. Należy wywołać tą funkcję po utworzeniu wszystkich obiektów.
+-- Prepare the functions once for all tracks.
+-- Each `api.event_preparefunc` call creates a new FFI callback, and only so many can be defined.
+local busy = api.event_preparefunc(function(event, activator)
+	local track = _GetTrackFromEvent(event)
+	if track then track:busy(); track:setTrain(activator) end
+end)
+local free = api.event_preparefunc(function(event, activator)
+	local track = _GetTrackFromEvent(event)
+	if track then track:free(); track:setTrain() end
+end)
+local inc = api.event_preparefunc(function(event, activator)
+	local track = _GetTrackFromEvent(event)
+	if track then track:addVehicle(activator) end
+end)
+local dec = api.event_preparefunc(function(event, activator)
+	local track = _GetTrackFromEvent(event)
+	if track then track:removeVehicle(activator) end
+end)
+
+---Initializes callbacks which listen for the changes in the simulator.
 function Track:init()
 	_LogWrite("Creating track: " .. self.id, 1, 3)
 	_LogWrite("- Creating event callbacks...", 1, 3)
-	api.event_create(string.lower(self.id) .. ":busy", 0, 0, api.event_preparefunc(function(event, activator) self:busy(); self:setTrain(activator) end))
-	api.event_create(string.lower(self.id) .. ":free", 0, 0, api.event_preparefunc(function(event, activator) self:free(); self:setTrain() end))
+	api.event_create(string.lower(self.id) .. ":busy", 0, 0, busy)
+	api.event_create(string.lower(self.id) .. ":free", 0, 0, free)
+	api.event_create(string.lower(self.id) .. ":inc", 0, 0, inc)
+	api.event_create(string.lower(self.id) .. ":dec", 0, 0, dec)
 	_LogWrite("Created track: " .. self.id, 3, 2)
 end
 
@@ -31,6 +55,10 @@ function Track:__tostring()
 	return string.format("%s : occupied=%s reserved=%s", self.id, self.occupied, self.reserved)
 end
 
+---Sends an information about this track to the log.
+---@param text string The message.
+---@param severity integer Severity.
+---@param weight integer Weight.
 function Track:tell(text, severity, weight)
 	_LogWrite(tostring(self.id) .. ": " .. text, severity, weight)
 end
@@ -104,13 +132,30 @@ function Track:setTrain(train)
 	self.trains = {train}
 end
 
----Gives a new timetable to the train which is on this track.
----@param name string The timetable name.
-function Track:giveTimetable(name)
-	if not self.trains[1] then
-		return
+---Adds the specified vehicle to this track. Duplicates are ignored.
+---@param vehicle TDynamicObject* The vehicle to be added to this track.
+function Track:addVehicle(vehicle)
+	self.vehicles[vehicle] = true
+end
+
+---Removes the specified vehicle from this track.
+---@param vehicle TDynamicObject* The vehicle to be removed from this track.
+function Track:removeVehicle(vehicle)
+	self.vehicles[vehicle] = nil
+end
+
+---Sends a command to the train which is on the track.
+---@param str string The command string.
+---@param num1 number The first parameter.
+---@param num2 number The second parameter.
+function Track:sendCommand(str, num1, num2)
+	self:tell(string.format("Sending command: %s %s %s", str, num1, num2), 1, 3)
+	local sent = 0
+	for vehicle, _ in pairs(self.vehicles) do
+		api.dynobj_putvalues(vehicle, {str = str, num1 = num1, num2 = num2})
+		sent = sent + 1
 	end
-	api.dynobj_putvalues(self.trains[1], {str = "Timetable:luascript/" .. name, num1 = 0, num2 = 0})
+	self:tell("Sent to " .. sent .. " vehicles!", 1, 3)
 end
 
 ---Odświeża obecny stan toru do loga.

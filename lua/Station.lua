@@ -21,40 +21,27 @@ function Station:new(name, data)
 	for i, trackN in ipairs(data.tracks) do
 		local track = Track(self, self.name .. "_" .. trackN)
 		self.tracks[trackN] = track
-		_Tracks[self.name .. "_" .. trackN] = track
+		_Tracks[string.lower(self.name .. "_" .. trackN)] = track
 	end
 	-- Switches
 	for i, switchN in ipairs(data.switches) do
 		local switch = Switch(self, self.name .. "_" .. switchN)
 		self.switches[switchN] = switch
-		_Switches[self.name .. "_" .. switchN] = switch
+		_Switches[string.lower(self.name .. "_" .. switchN)] = switch
 	end
 	-- Semaphores
 	for semaphoreN, semaphoreData in pairs(data.semaphores) do
 		local semaphore = Semaphore(self, self.name .. "_" .. semaphoreN, semaphoreData)
 		self.semaphores[semaphoreN] = semaphore
-		_Semaphores[self.name .. "_" .. semaphoreN] = semaphore
+		_Semaphores[string.lower(self.name .. "_" .. semaphoreN)] = semaphore
 	end
-end
-
-function Station:init()
-	_LogWrite("Creating station: " .. self.name, 1, 3)
-	for name, track in pairs(self.tracks) do
-		track:init()
-	end
-	for name, switch in pairs(self.switches) do
-		switch:init()
-	end
-	for name, semaphore in pairs(self.semaphores) do
-		semaphore:init()
-	end
-
-	_LogWrite("Created station: " .. self.name, 3, 2)
 end
 
 function Station:tell(text, severity, weight)
 	_LogWrite("station: " .. self.name .. ": " .. text, severity, weight)
 end
+
+-- TODO: Potentially remove these three functions:
 
 function Station:getSemaphore(semaphoreN)
 	if not self.semaphores[semaphoreN] then self:tell("Tried to access a nonexistent semaphore: " .. tostring(semaphoreN), 2, 1) end

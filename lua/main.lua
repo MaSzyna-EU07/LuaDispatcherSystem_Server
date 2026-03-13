@@ -30,6 +30,7 @@ _CurrentTime = Time({hour=11,minute=30})
 _Stations = {}
 ---@type table<string, Route>
 _Routes = {}
+-- Keys for `_Tracks`, `_Switches` and `_Semaphores` are guaranteed to be lowercase.
 ---@type table<string, Track>
 _Tracks = {}
 ---@type table<string, Switch>
@@ -49,13 +50,6 @@ function _Init(filename)
 	end
 	for routeN, routeData in pairs(fileData.routes) do
 		_Routes[routeN] = Route(routeN, routeData)
-	end
-	-- Actually initialize data when all stations, tracks, switches, etc. are added to the database.
-	for name, station in pairs(_Stations) do
-		station:init()
-	end
-	for name, route in pairs(_Routes) do
-		route:init()
 	end
 
 	_CreateLoopEvent(_NextTimeTick, 1)
@@ -93,9 +87,10 @@ function _GetStationOrRoute(name)
 end
 
 ---Returns a Track based on its simulation name, or `nil` if it is not found.
----@param name string For example: `"Eb_It2"`
+---@param name string For example: `"Eb_It2"`. Case-insensitive.
 ---@return Track?
 function _GetTrack(name)
+	name = string.lower(name)
 	if not _Tracks[name] then
 		_LogWrite("Tried to access an invalid track: " .. tostring(name), 2, 1)
 	end
@@ -103,9 +98,10 @@ function _GetTrack(name)
 end
 
 ---Returns a Switch based on its simulation name, or `nil` if it is not found.
----@param name string For example: `"Eb_39"`
+---@param name string For example: `"Eb_39"`. Case-insensitive.
 ---@return Switch?
 function _GetSwitch(name)
+	name = string.lower(name)
 	if not _Switches[name] then
 		_LogWrite("Tried to access an invalid switch: " .. tostring(name), 2, 1)
 	end
@@ -113,13 +109,22 @@ function _GetSwitch(name)
 end
 
 ---Returns a Semaphore based on its simulation name, or `nil` if it is not found.
----@param name string For example: `"Eb_A"`
+---@param name string For example: `"Eb_A"`. Case-insensitive.
 ---@return Semaphore?
 function _GetSemaphore(name)
+	name = string.lower(name)
 	if not _Semaphores[name] then
 		_LogWrite("Tried to access an invalid semaphore: " .. tostring(name), 2, 1)
 	end
 	return _Semaphores[name]
+end
+
+---Returns a Track based on its event, or `nil` if it is not found.
+---@param event TEvent* The event from `api.event_preparefunc`.
+---@return Track?
+function _GetTrackFromEvent(event)
+	local name = api.event_getname(event)
+	return _GetTrack(name:sub(1, name:find(":") - 1))
 end
 
 function _NextTimeTick()
