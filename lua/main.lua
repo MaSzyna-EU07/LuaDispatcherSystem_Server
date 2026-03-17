@@ -22,21 +22,14 @@ end
 local Time = require("lua.Time")
 local Station = require("lua.Station")
 local Route = require("lua.Route")
+local Objects = require("lua.Objects")
 
 local tempEventCounters = {loop = 0}
 
 _CurrentTime = Time({hour=11,minute=30})
----@type table<string, Station>
-_Stations = {}
----@type table<string, Route>
-_Routes = {}
--- Keys for `_Tracks`, `_Switches` and `_Semaphores` are guaranteed to be lowercase.
----@type table<string, Track>
-_Tracks = {}
----@type table<string, Switch>
-_Switches = {}
----@type table<string, Semaphore>
-_Semaphores = {}
+
+---@type Objects
+_Obj = Objects()
 
 function _Init(filename)
 	_LogWrite("\n     __                   \n    / /  DISPATCHER SYSTEM\n   / /     __  __  ____   \n  / /     / / / / / __ \\  \n / /___  / / / / / /_/ /_ \n/_____/ |_____/  \\______/ \n               for MaSzyna\n\nBrought to you by jakubg1\n\nVERSION: " .. VERSION, 1, 1)
@@ -46,85 +39,13 @@ function _Init(filename)
 	-- decode the contents and store in a table
 	local fileData = _GetDataFromFile(filename)
 	for stationN, stationData in pairs(fileData.stations) do
-		_Stations[stationN] = Station(stationN, stationData)
+		_Obj:addStation(Station(stationN, stationData))
 	end
 	for routeN, routeData in pairs(fileData.routes) do
-		_Routes[routeN] = Route(routeN, routeData)
+		_Obj:addRoute(Route(routeN, routeData))
 	end
 
 	_CreateLoopEvent(_NextTimeTick, 1)
-end
-
----Returns a Station based on its simulation name (shortcut), or `nil` if it's not found.
----@param stationN string Station shortcut.
----@return Station?
-function _GetStation(stationN)
-	if not _Stations[stationN] then
-		_LogWrite("Tried to access a nonexistent station: " .. tostring(stationN), 2, 1)
-	end
-	return _Stations[stationN]
-end
-
----Returns a Route based on its simulation name (shortcut), or `nil` if it's not found.
----@param routeN string Route shortcut.
----@return Route?
-function _GetRoute(routeN)
-	if not _Routes[routeN] then
-		_LogWrite("Tried to access a nonexistent route: " .. tostring(routeN), 2, 1)
-	end
-	return _Routes[routeN]
-end
-
----Returns a Station or Route based on its simulation name (shortcut), or `nil` if it's not found.
----@param name string Station or route shortcut.
----@return Station|Route?
-function _GetStationOrRoute(name)
-	local result = _Stations[name] or _Routes[name]
-	if not result then
-		_LogWrite("Tried to access a nonexistent station/route: " .. tostring(result), 2, 1)
-	end
-	return result
-end
-
----Returns a Track based on its simulation name, or `nil` if it is not found.
----@param name string For example: `"Eb_It2"`. Case-insensitive.
----@return Track?
-function _GetTrack(name)
-	name = string.lower(name)
-	if not _Tracks[name] then
-		_LogWrite("Tried to access an invalid track: " .. tostring(name), 2, 1)
-	end
-	return _Tracks[name]
-end
-
----Returns a Switch based on its simulation name, or `nil` if it is not found.
----@param name string For example: `"Eb_39"`. Case-insensitive.
----@return Switch?
-function _GetSwitch(name)
-	name = string.lower(name)
-	if not _Switches[name] then
-		_LogWrite("Tried to access an invalid switch: " .. tostring(name), 2, 1)
-	end
-	return _Switches[name]
-end
-
----Returns a Semaphore based on its simulation name, or `nil` if it is not found.
----@param name string For example: `"Eb_A"`. Case-insensitive.
----@return Semaphore?
-function _GetSemaphore(name)
-	name = string.lower(name)
-	if not _Semaphores[name] then
-		_LogWrite("Tried to access an invalid semaphore: " .. tostring(name), 2, 1)
-	end
-	return _Semaphores[name]
-end
-
----Returns a Track based on its event, or `nil` if it is not found.
----@param event TEvent* The event from `api.event_preparefunc`.
----@return Track?
-function _GetTrackFromEvent(event)
-	local name = api.event_getname(event)
-	return _GetTrack(name:sub(1, name:find(":") - 1))
 end
 
 function _NextTimeTick()

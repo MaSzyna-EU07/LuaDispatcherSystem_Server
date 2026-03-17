@@ -24,19 +24,19 @@ end
 -- Prepare the functions once for all tracks.
 -- Each `api.event_preparefunc` call creates a new FFI callback, and only so many can be defined.
 local busy = api.event_preparefunc(function(event, activator)
-	local track = _GetTrackFromEvent(event)
+	local track = _Obj:getTrackFromEvent(event)
 	if track then track:busy(); track:setTrain(activator) end
 end)
 local free = api.event_preparefunc(function(event, activator)
-	local track = _GetTrackFromEvent(event)
+	local track = _Obj:getTrackFromEvent(event)
 	if track then track:free(); track:setTrain() end
 end)
 local inc = api.event_preparefunc(function(event, activator)
-	local track = _GetTrackFromEvent(event)
+	local track = _Obj:getTrackFromEvent(event)
 	if track then track:addVehicle(activator) end
 end)
 local dec = api.event_preparefunc(function(event, activator)
-	local track = _GetTrackFromEvent(event)
+	local track = _Obj:getTrackFromEvent(event)
 	if track then track:removeVehicle(activator) end
 end)
 

@@ -1,3 +1,7 @@
+local Track = require("lua.Track")
+local Switch = require("lua.Switch")
+local Semaphore = require("lua.Semaphore")
+
 local com = {}
 
 local COM_IMAGES = {
@@ -61,35 +65,37 @@ function com.doCommand(command)
 	local operands = _StrSplit(command, " ")
 	if operands[1] == "s" then
 		-- Sets a semaphore. `s <semaphore_id> <speed> [next] ["w24"]`
-		_GetSemaphore(operands[2]):setW24(operands[5] == "w24")
-		_GetSemaphore(operands[2]):setSpeed(assert(tonumber(operands[3]), "Missing speed parameter"), tonumber(operands[4]) or (operands[4] and _GetSemaphore(operands[4])))
+		_Obj:getSemaphore(operands[2]):setW24(operands[5] == "w24")
+		_Obj:getSemaphore(operands[2]):setSpeed(assert(tonumber(operands[3]), "Missing speed parameter"), tonumber(operands[4]) or (operands[4] and _Obj:getSemaphore(operands[4])))
 	elseif operands[1] == "su" then
 		-- Stops a semaphore and unreserves all claimed tracks. `s <semaphore_id>`
-		_GetSemaphore(operands[2]):stop()
-		_GetSemaphore(operands[2]):unreserveAllTracks()
+		_Obj:getSemaphore(operands[2]):stop()
+		_Obj:getSemaphore(operands[2]):unreserveAllTracks()
 	elseif operands[1] == "j" then
 		-- Sets a switch. `j <switch_id> <"+"|"-">`
-		_GetSwitch(operands[2]):setState(operands[3] == "+")
+		_Obj:getSwitch(operands[2]):setState(operands[3] == "+")
 	elseif operands[1] == "ju" then
 		-- Unforces a switch. `ju <switch_id>`
-		_GetSwitch(operands[2]):setForced(false)
+		_Obj:getSwitch(operands[2]):setForced(false)
 	elseif operands[1] == "t" then
 		-- Sets a track. `t <track_id> <"free"|"busy"|"res">`
 		if operands[3] == "free" then
-			_GetTrack(operands[2]):free()
+			_Obj:getTrack(operands[2]):free()
 		elseif operands[3] == "busy" then
-			_GetTrack(operands[2]):busy()
+			_Obj:getTrack(operands[2]):busy()
 		elseif operands[3] == "res" then
-			_GetTrack(operands[2]):reserve()
+			_Obj:getTrack(operands[2]):reserve()
 		end
 	elseif operands[1] == "tr" then
 		-- Reserves a track with a semaphore. `tr <track_id> [semaphore_id]`
-		_GetTrack(operands[2]):reserve(operands[3] and _GetSemaphore(operands[3]))
+		_Obj:getTrack(operands[2]):reserve(operands[3] and _Obj:getSemaphore(operands[3]))
 	elseif operands[1] == "tc" then
 		-- Sends a command to the specified train on a track. `tc <track_id> <str> [num1] [num2]`
-		_GetTrack(operands[2]):sendCommand(operands[3], tonumber(operands[4]) or 0, tonumber(operands[5]) or 0)
+		_Obj:getTrack(operands[2]):sendCommand(operands[3], tonumber(operands[4]) or 0, tonumber(operands[5]) or 0)
 	elseif operands[1] == "nt" then
-
+		-- Registers a new track. `nt <station_or_route_id> <track_id>`
+		-- This DOES NOT WORK !!!
+		_Obj:addTrack(Track(_Obj:getStationOrRoute(operands[2]), operands[3]))
 	end
 end
 

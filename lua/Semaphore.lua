@@ -13,7 +13,6 @@ function Semaphore:new(station, id, data)
 
 	self.station = station
 	self.id = id
-	self.data = data
 	self.type = data.type or 0
 	self.shape = data.shape or false
 	self.prev = nil
@@ -29,18 +28,29 @@ function Semaphore:new(station, id, data)
 	self:init()
 end
 
+-- Prepare the functions once for all semaphores.
+-- Each `api.event_preparefunc` call creates a new FFI callback, and only so many can be defined.
+local stop = api.event_preparefunc(function(event, activator)
+	local semaphore = _Obj:getSemaphoreFromEvent(event)
+	if semaphore then semaphore:stop() end
+end)
+local unreserve = api.event_preparefunc(function(event, activator)
+	local semaphore = _Obj:getSemaphoreFromEvent(event)
+	if semaphore then semaphore:unreserveAllTracks() end
+end)
+
 ---Initializes callbacks which listen for the changes in the simulator.
 function Semaphore:init()
 	_LogWrite("Creating semaphore: " .. self.id, 1, 3)
 	_LogWrite("- Creating event callbacks...", 1, 3)
 	if self.type == 0 then
-		api.event_create(string.lower(self.id) .. (self.shape and "_sr1" or "_s1"), 0, 0, api.event_preparefunc(function(event, activator) self:stop() end))
+		api.event_create(string.lower(self.id) .. (self.shape and "_sr1" or "_s1"), 0, 0, stop)
 	end
 	if self.type == 1 then
-		api.event_create(string.lower(self.id) .. "_ms1", 0, 0, api.event_preparefunc(function(event, activator) self:stop() end))
+		api.event_create(string.lower(self.id) .. "_ms1", 0, 0, stop)
 	end
-	api.event_create(string.lower(self.id) .. "_uszk", 0, 0, api.event_preparefunc(function(event, activator) self:stop() end))
-	api.event_create(string.lower(self.id) .. (self.shape and "_sygsz_wyg90" or "_wyg_sz"), 0, 0, api.event_preparefunc(function(event, activator) self:unreserveAllTracks() end))
+	api.event_create(string.lower(self.id) .. "_uszk", 0, 0, stop)
+	api.event_create(string.lower(self.id) .. (self.shape and "_sygsz_wyg90" or "_wyg_sz"), 0, 0, unreserve)
 
 	_LogWrite("Created semaphore: " .. self.id, 3, 2)
 end

@@ -9,14 +9,10 @@ function Route:new(name, data)
 	_Com.initRoute(name)
 
 	self.name = name
-	---@type table<string, Track>
-	self.tracks = {}
 
 	-- Tracks
 	for i, trackN in ipairs(data.tracks) do
-		local track = Track(self, trackN)
-		self.tracks[trackN] = track
-		_Tracks[string.lower(trackN)] = track
+		_Obj:addTrack(Track(self, trackN))
 	end
 
 	_LogWrite("Created route: " .. name, 3, 2)
@@ -24,11 +20,6 @@ end
 
 function Route:tell(text, severity, weight)
 	_LogWrite("route: " .. self.name .. ": " .. text, severity, weight)
-end
-
-function Route:getTrack(trackN)
-	if not self.tracks[trackN] then self:tell("Tried to access a nonexistent track: " .. tostring(trackN), 2, 1) end
-	return self.tracks[trackN]
 end
 
 return Route
