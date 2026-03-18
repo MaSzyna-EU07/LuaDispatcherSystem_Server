@@ -11,14 +11,16 @@
             "semaphores": {
                 "a": {"type": 0},
                 "b": {"type": 0}
-            }
+            },
+            "prefixDeviceNames": true
         },
         "Stacja": {
             "tracks": [],
             "switches": [],
             "semaphores": {
                 "tm2": {"type": 1}
-            }
+            },
+            "prefixDeviceNames": true
         },
         "Mijanka": {
             "tracks": ["t2","t1","z2","z1"],
@@ -30,7 +32,8 @@
                 "a": {"type": 0},
                 "c": {"type": 0},
                 "e": {"type": 0}
-            }
+            },
+            "prefixDeviceNames": true
         }
     },
     "display_data": {

@@ -134,9 +134,20 @@ end
 ---@return Semaphore?
 function Objects:getSemaphoreFromEvent(event)
 	local name = api.event_getname(event)
-    -- We are splitting at the second underscore, because the ID is always <station_id>_<semaphore_id>, for exmaple `eb_a` and `eb_szn1`.
+    -- I wish we could split at the second underscore, because the ID should always be <station_id>_<semaphore_id>, for exmaple `eb_a` and `eb_szn1`.
+	-- But this is not always the case, so we will do very dirty stuff here. Kinky, even.
+	-- Check for any suffixes. I wonder if this will crash in the future if I add something new to Semaphore.lua and forget to add it here too.
     -- The event suffixes can have additional underscores, such as `bc_p_sr1` vs `bc_p_sygsz_wyg90`.
-	return self:getSemaphore(name:sub(1, name:find("_", name:find("_") + 1) - 1))
+	local doubleUnderscore = _StrEndsWith(name, "_sygsz_wyg90") or _StrEndsWith(name, "_wyg_sz")
+	local underscores = {}
+	while true do
+		local pos = name:find("_", (underscores[#underscores] or 0) + 1)
+		if not pos then
+			break
+		end
+		table.insert(underscores, pos)
+	end
+	return self:getSemaphore(name:sub(1, underscores[#underscores - (doubleUnderscore and 2 or 1)]))
 end
 
 return Objects

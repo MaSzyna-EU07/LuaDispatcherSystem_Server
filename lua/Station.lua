@@ -13,15 +13,18 @@ function Station:new(name, data)
 
 	-- Tracks
 	for i, trackN in ipairs(data.tracks) do
-		_Obj:addTrack(Track(self, self.name .. "_" .. trackN))
+		local id = data.prefixDeviceNames and (self.name .. "_" .. trackN) or trackN
+		_Obj:addTrack(Track(self, id))
 	end
 	-- Switches
 	for i, switchN in ipairs(data.switches) do
-		_Obj:addSwitch(Switch(self, self.name .. "_" .. switchN))
+		local id = data.prefixDeviceNames and (self.name .. "_" .. switchN) or switchN
+		_Obj:addSwitch(Switch(self, id))
 	end
 	-- Semaphores
 	for semaphoreN, semaphoreData in pairs(data.semaphores) do
-		_Obj:addSemaphore(Semaphore(self, self.name .. "_" .. semaphoreN, semaphoreData))
+		local id = data.prefixDeviceNames and (self.name .. "_" .. semaphoreN) or semaphoreN
+		_Obj:addSemaphore(Semaphore(self, id, semaphoreData))
 	end
 end
 

@@ -11,7 +11,8 @@
 				"b":{"repeaters":["sta_ispb","sta_iispb"]},
 				"k":{"repeaters":["sta_ispk","sta_iispk"]},
 				"j":{"repeaters":["sta_ispj","sta_iispj"]}
-			}
+			},
+            "prefixDeviceNames": true
 		},
 		"stb":{
 			"name":"stacja2",
@@ -20,7 +21,8 @@
 			"semaphores":{
 				"a":{},
 				"b":{}
-			}
+			},
+            "prefixDeviceNames": true
 		}
 	},
 	"routes":{

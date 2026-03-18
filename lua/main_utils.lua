@@ -56,6 +56,14 @@ function _StrSplit(s, k)
 	end
 end
 
+---Returns `true` if the string `s` ends with the clause `c`.
+---@param s string The string to be searched.
+---@param c string The expected ending of the string `s`.
+---@return boolean
+function _StrEndsWith(s, c)
+	return s:sub(s:len() - c:len() + 1) == c
+end
+
 function _FindLast(text, toFind)
 	local a, b = string.find(text:reverse(), toFind:reverse())
 	return #text - b + 1, #text - a + 1
