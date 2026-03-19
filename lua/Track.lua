@@ -1,5 +1,6 @@
 local class = require "lua.class"
 local api = require "eu07.events"
+local Monitoring = require("lua.Monitoring")
 
 ---@class Track
 local Track = class:derive("Track")
@@ -14,9 +15,11 @@ function Track:new(station, id)
 	self.id = id
 	self.occupied = false
 	self.reserved = false
+	---@type Semaphore?
 	self.semaphore = nil
 	self.trains = {}
 	self.vehicles = {}
+	self.monitoring = Monitoring()
 
 	self:init()
 end
@@ -97,6 +100,7 @@ function Track:busy()
 		self.semaphore:stop()
 	end
 	self:setSemaphore()
+	self:call("busy")
 end
 
 ---Zwalnia tor razem z rezerwacją.
@@ -106,6 +110,7 @@ function Track:free()
 	self:tell("freed", 1, 3)
 	self:refreshSim()
 	self:setSemaphore()
+	self:call("free")
 end
 
 ---Assigns or unassigns this Track from a semaphore. Affects the semaphore state.
@@ -156,6 +161,23 @@ function Track:sendCommand(str, num1, num2)
 		sent = sent + 1
 	end
 	self:tell("Sent to " .. sent .. " vehicles!", 1, 3)
+end
+
+-- Wow, the following two functions would not be here if only Lua was like Java and included interfaces!
+-- Oh well...
+
+---Subscribes the track to the specified action. When that action is performed, the specified function will be called.
+---@param action "busy"|"free" The action to be listening for.
+---@param f function The function to be called when the action happens.
+---@param ... any Parameters for the function to be executed with.
+function Track:monitor(action, f, ...)
+	self.monitoring:monitor(action, f, ...)
+end
+
+---Performs the specified action for the listeners to handle. Executes all previously subscribed functions.
+---@param action "busy"|"free" The action to be listening for.
+function Track:call(action)
+	self.monitoring:call(action)
 end
 
 ---Odświeża obecny stan toru do loga.

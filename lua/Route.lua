@@ -1,5 +1,7 @@
 local class = require "lua.class"
 local Track = require("lua.Track")
+local Semaphore = require("lua.Semaphore")
+local Blockade = require("lua.Blockade")
 
 ---@class Route
 local Route = class:derive("Route")
@@ -13,6 +15,19 @@ function Route:new(name, data)
 	-- Tracks
 	for i, trackN in ipairs(data.tracks) do
 		_Obj:addTrack(Track(self, trackN))
+	end
+	-- Semaphores
+	if data.semaphores then
+		for semaphoreN, semaphoreData in pairs(data.semaphores) do
+			_Obj:addSemaphore(Semaphore(self, semaphoreN, semaphoreData))
+		end
+	end
+	-- Blockades
+	self.blockades = {}
+	if data.blockades then
+		for i, blockade in ipairs(data.blockades) do
+			self.blockades[i] = Blockade(self, blockade)
+		end
 	end
 
 	_LogWrite("Created route: " .. name, 3, 2)

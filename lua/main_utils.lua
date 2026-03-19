@@ -4,6 +4,10 @@ local json = require("lua.json")
 local verboseValue = 3
 local severityTable = {"INFO", "ERROR", "SUCCESS", "FAIL"}
 
+---Writes a message to the MaSzyna's log file.
+---@param text string The message to be printed.
+---@param severity integer The severity.
+---@param weight integer The verbosity. The higher the value, the less important output.
 function _LogWrite(text, severity, weight)
 	if verboseValue >= weight then
 		api.writelog("LuaDispatcher -> [" .. severityTable[severity] .. "] " .. text)

@@ -45,7 +45,11 @@ function _Init(filename)
 		_Obj:addRoute(Route(routeN, routeData))
 	end
 
-	_CreateLoopEvent(_NextTimeTick, 1)
+	_CreateLoopEvent(_Loop, 1)
+end
+
+function _Loop()
+	_NextTimeTick()
 end
 
 function _NextTimeTick()

@@ -15,11 +15,14 @@ function Semaphore:new(station, id, data)
 	self.id = id
 	self.type = data.type or 0
 	self.shape = data.shape or false
+	---@type Semaphore?
 	self.prev = nil
+	---@type Semaphore|integer?
 	self.next = nil
 	self.repeaters = data.repeaters
 	self.speed = self:getStopSpeed()
 	self.image = _SignalImage(self:getStopSpeed(), nil, self.shape)
+	---@type boolean
 	self.w24 = false
 
 	---@type table<Track, true>
@@ -64,6 +67,7 @@ function Semaphore:tell(text, severity, weight)
 end
 
 ---Returns whether this semaphore can physically display the specified signal.
+---@private
 ---@param speed integer Speed on this semaphore.
 ---@param next Semaphore|integer? Next speed, or speed on the next semaphore.
 ---@return boolean
