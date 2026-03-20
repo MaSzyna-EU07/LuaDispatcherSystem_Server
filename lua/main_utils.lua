@@ -1,15 +1,14 @@
 local json = require("lua.json")
 
 local verboseValue = 3
-local severityTable = {"INFO", "ERROR", "SUCCESS", "FAIL"}
 
 ---Writes a message to the MaSzyna's log file.
 ---@param text string The message to be printed.
----@param severity integer The severity.
+---@param severity Severity The severity.
 ---@param weight integer The verbosity. The higher the value, the less important output.
 function _LogWrite(text, severity, weight)
 	if verboseValue >= weight then
-		_API:log("LuaDispatcher -> [" .. severityTable[severity] .. "] " .. text)
+		_API:log("LuaDispatcher -> [" .. severity .. "] " .. text)
 	end
 end
 
@@ -67,6 +66,18 @@ function _StrEndsWith(s, c)
 	return s:sub(s:len() - c:len() + 1) == c
 end
 
+---Returns a list of all keys in table `t`, sorted alphabetically.
+---@param t table The table from which the keys will be sourced.
+---@return table
+function _TableGetSortedKeys(t)
+	local keys = {}
+	for k, v in pairs(t) do
+		table.insert(keys, k)
+	end
+	table.sort(keys)
+	return keys
+end
+
 function _FindLast(text, toFind)
 	local a, b = string.find(text:reverse(), toFind:reverse())
 	return #text - b + 1, #text - a + 1
@@ -96,6 +107,11 @@ local shapeSignalImages = {
 	[8]="s1a"
 }
 
+---Returns the image on the semaphore for the specified conditions.
+---@param speed Speed The speed on this semaphore.
+---@param nextSpeed Speed? The speed on the next semaphore. Can only be omitted in specific cases.
+---@param shape boolean? If `true`, the image will be evaluated for a shape signal.
+---@return string
 function _SignalImage(speed, nextSpeed, shape)
 	local first = shape and shapeSignalImages[speed] or signalImages[speed]
 	if type(first) == "string" then return first end

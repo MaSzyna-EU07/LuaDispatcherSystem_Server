@@ -8,11 +8,11 @@ local Semaphore = class:derive("Semaphore")
 ---@param id string Pełna nazwa semafora, np. `"sta1_C"`.
 ---@param data table Dane semafora, wczytywane z pliku.
 function Semaphore:new(station, id, data)
-	_Com.initSemaphore(station.name, id, data.type or 0)
+	_Com.initSemaphore(station.name, id, data.type or SemaphoreType.SEM)
 
 	self.station = station
 	self.id = id
-	self.type = data.type or 0
+	self.type = data.type or SemaphoreType.SEM
 	self.shape = data.shape or false
 	---@type Semaphore?
 	self.prev = nil
@@ -37,32 +37,36 @@ local unreserve = _API:eventPrepareFunction(function(event, activator) _Obj:getS
 
 ---Initializes callbacks which listen for the changes in the simulator.
 function Semaphore:init()
-	_LogWrite("Creating semaphore: " .. self.id, 1, 3)
-	_LogWrite("- Creating event callbacks...", 1, 3)
-	if self.type == 0 then
+	_LogWrite("Creating semaphore: " .. self.id, Severity.INFO, 3)
+	_LogWrite("- Creating event callbacks...", Severity.INFO, 3)
+	if self.type == SemaphoreType.SEM then
 		_API:eventCreate(string.lower(self.id) .. (self.shape and "_sr1" or "_s1"), 0, 0, stop)
 	end
-	if self.type == 1 then
+	if self.type == SemaphoreType.TM then
 		_API:eventCreate(string.lower(self.id) .. "_ms1", 0, 0, stop)
 	end
 	_API:eventCreate(string.lower(self.id) .. "_uszk", 0, 0, stop)
 	_API:eventCreate(string.lower(self.id) .. (self.shape and "_sygsz_wyg90" or "_wyg_sz"), 0, 0, unreserve)
 
-	_LogWrite("Created semaphore: " .. self.id, 3, 2)
+	_LogWrite("Created semaphore: " .. self.id, Severity.SUCCESS, 2)
 end
 
 function Semaphore:__tostring()
 	return string.format("%s : image=%s", self.id, self.image)
 end
 
+---Sends an information about this semaphore to the log.
+---@param text string The message.
+---@param severity Severity Severity.
+---@param weight integer Weight.
 function Semaphore:tell(text, severity, weight)
 	_LogWrite(tostring(self.id) .. ": " .. text, severity, weight)
 end
 
 ---Returns whether this semaphore can physically display the specified signal.
 ---@private
----@param speed integer Speed on this semaphore.
----@param next Semaphore|integer? Next speed, or speed on the next semaphore.
+---@param speed Speed Speed on this semaphore.
+---@param next Semaphore|Speed? Next speed, or speed on the next semaphore.
 ---@return boolean
 function Semaphore:canSetSpeed(speed, next)
 	if type(next) == "table" then
@@ -75,19 +79,19 @@ end
 
 ---Ustawia prędkość na semaforze oraz odświeża niezbędne do odświeżenia semafory.
 ---Jeżeli sygnał nie może być wyświetlony (brakuje eventu), wyświetlony zostanie sygnał zastępczy.
----@param speed integer Nowa prędkość od teraz obowiązująca na semaforze.
----@param next Semaphore|integer? Patrz niżej:
+---@param speed Speed Nowa prędkość od teraz obowiązująca na semaforze.
+---@param next Semaphore|Speed? Patrz niżej:
 ---- Jeżeli Semaphore, jest to następny semafor.
 ---- Jeżeli liczba, jest to stała prędkość nieprzypisana do żadnego semafora.
 ---Na przykład `1` oznacza, że przy prędkości maksymalnej zostanie podany sygnał S2, a `2` oznacza, że zostanie podany S4.
 ---- `nil` jest dopuszczalne tylko przy sygnałach niezależnych od następnego semafora (S1,Ms1,Ms2,Sz).
 function Semaphore:setSpeed(speed, next)
-	self:tell("Setting speed " .. tostring(speed) .. ", next: " .. tostring(next), 1, 3)
+	self:tell("Setting speed " .. tostring(speed) .. ", next: " .. tostring(next), Severity.INFO, 3)
 	local available = self:canSetSpeed(speed, next)
-	self.speed = available and speed or 7
+	self.speed = available and speed or Speed.SZ
 	self:setNext(available and next or nil)
 	if not available then
-		self:tell("The semaphore cannot display this signal, falling back to Sz!", 1, 3)
+		self:tell("The semaphore cannot display this signal, falling back to Sz!", Severity.FAIL, 3)
 	end
 	-- If this Semaphore has a previous one, refresh it.
 	if self.prev and self.prev.next == self then
@@ -98,17 +102,17 @@ end
 
 ---Sets the next semaphore, if any. Affects that semaphore's `prev` field.
 ---@private
----@param next Semaphore|integer? The next semaphore or speed to be linked with.
+---@param next Semaphore|Speed? The next semaphore or speed to be linked with.
 function Semaphore:setNext(next)
 	if self.next == next then
 		return
 	end
 	if self.next and type(self.next) == "table" then
-		self:tell("no longer linked to " .. self.next.id, 1, 3)
+		self:tell("no longer linked to " .. self.next.id, Severity.INFO, 3)
 		self.next.prev = nil
 	end
 	if next and type(next) == "table" then
-		self:tell("now linked to " .. next.id, 1, 3)
+		self:tell("now linked to " .. next.id, Severity.INFO, 3)
 		next.prev = self
 	end
 	self.next = next
@@ -132,13 +136,13 @@ end
 
 ---Zwraca `5` jeżeli semafor ten jest skonfigurowany jako tarcza manewrowa. W przeciwnym wypadku `0`.
 ---@private
----@return integer
+---@return Speed
 function Semaphore:getStopSpeed()
-	return self.type == 1 and 5 or 0
+	return self.type == SemaphoreType.TM and Speed.MS1 or Speed.STOP
 end
 
 ---Zwraca prędkość na następnym semaforze bądź na sztywno ustawioną.
----@return integer?
+---@return Speed?
 function Semaphore:getNextSpeed()
 	if type(self.next) == "table" then
 		return self.next.speed
@@ -174,7 +178,7 @@ function Semaphore:refreshSim()
 		return
 	end
 	self.image = image
-	self:tell("Refreshing image. Speeds: this=" .. tostring(self.speed) .. ", next=" .. tostring(nextSpeed) .. ", result: " .. image, 1, 3)
+	self:tell(string.format("Refreshing image. Speeds: this=%s, next=%s, result: %s", self.speed, nextSpeed, image), Severity.INFO, 3)
 	_API:eventDispatch(string.lower(self.id) .. "_" .. image)
 	-- Sz signal events on most semaphores end with `_sz1`, but on some end with `_sz` -_-
 	if image == "sz1" then

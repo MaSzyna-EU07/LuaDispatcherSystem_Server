@@ -10,7 +10,7 @@ function api.writelog(txt)
 end
 
 function api.event_preparefunc(func)
-	return
+	return func
 end
 
 function api.event_create(name, delay, randomdelay, func)

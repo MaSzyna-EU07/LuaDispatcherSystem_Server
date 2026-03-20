@@ -21,30 +21,34 @@ local forced1 = _API:eventPrepareFunction(function(event, activator) _Obj:getSwi
 
 ---Initializes callbacks which listen for the changes in the simulator.
 function Switch:init()
-	_LogWrite("Creating switch: " .. self.id, 1, 3)
-	_LogWrite("- Creating event callbacks...", 1, 3)
+	_LogWrite("Creating switch: " .. self.id, Severity.INFO, 3)
+	_LogWrite("- Creating event callbacks...", Severity.INFO, 3)
 	_API:eventCreate(string.lower(self.id) .. ":forced-", 0, 0, forced0)
 	_API:eventCreate(string.lower(self.id) .. ":forced+", 0, 0, forced1)
-	_LogWrite("Created switch: " .. self.id, 3, 2)
+	_LogWrite("Created switch: " .. self.id, Severity.SUCCESS, 2)
 end
 
 function Switch:__tostring()
 	return string.format("%s : state=%s forced=%s", self.id, self.state, self.forced)
 end
 
+---Sends an information about this switch to the log.
+---@param text string The message.
+---@param severity Severity Severity.
+---@param weight integer Weight.
 function Switch:tell(text, severity, weight)
 	_LogWrite(tostring(self.id) .. ": " .. text, severity, weight)
 end
 
 function Switch:setState(state)
 	self.state = state
-	self:tell("state=>"..tostring(state), 1, 3)
+	self:tell("state=>"..tostring(state), Severity.INFO, 3)
 	self:refreshSim()
 end
 
 function Switch:setForced(forced)
 	self.forced = forced
-	self:tell("forced=>"..tostring(forced), 1, 3)
+	self:tell("forced=>"..tostring(forced), Severity.INFO, 3)
 	self:refreshSim()
 end
 

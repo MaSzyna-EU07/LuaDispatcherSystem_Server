@@ -9,7 +9,7 @@ local Blockade = Class:derive("Blockade")
 ---@param route Route The route this blockade is assigned to.
 ---@param data table The blockade data.
 function Blockade:new(route, data)
-	_LogWrite("Creating blockade for route: " .. route.name, 1, 3)
+	_LogWrite("Creating blockade for route: " .. route.name, Severity.INFO, 3)
     self.route = route
     self.type = data.type
     self.bidirectional = data.bidirectional
@@ -25,12 +25,12 @@ function Blockade:new(route, data)
         -- By default, all blocks are free. If a block is occupied at the start, it will trigger an appropriate callback when vehicles are placed.
         self:freeBlock(i)
     end
-	_LogWrite("Created blockade for route: " .. route.name, 3, 2)
+	_LogWrite("Created blockade for route: " .. route.name, Severity.SUCCESS, 2)
 end
 
 ---Sends an information about this blockade to the log.
 ---@param text string The message.
----@param severity integer Severity.
+---@param severity Severity Severity.
 ---@param weight integer Weight.
 function Blockade:tell(text, severity, weight)
 	_LogWrite("Blockade(" .. tostring(self.route.name) .. "): " .. text, severity, weight)
@@ -39,7 +39,7 @@ end
 ---Marks the n-th block in this blockade as occupied.
 ---@param n integer The block index to be occupied.
 function Blockade:occupyBlock(n)
-    self:tell("Block " .. n .. " : occupied", 1, 3)
+    self:tell("Block " .. n .. " : occupied", Severity.INFO, 3)
     self:setSemaphoreForBlock(n, 0)
     -- TODO: Handle semaphores in the other direction.
 end
@@ -47,7 +47,7 @@ end
 ---Marks the n-th block in this blockade as freed.
 ---@param n integer The block index to be freed.
 function Blockade:freeBlock(n)
-    self:tell("Block " .. n .. " : freed", 1, 3)
+    self:tell("Block " .. n .. " : freed", Severity.INFO, 3)
     self:setSemaphoreForBlock(n, 1)
     -- TODO: Handle semaphores in the other direction.
 end
@@ -55,7 +55,7 @@ end
 ---Sets the speed for the semaphore for the `n`-th block of this blockade.
 ---@private
 ---@param n integer The block index.
----@param speed integer The speed for the semaphore.
+---@param speed Speed The speed for the semaphore.
 function Blockade:setSemaphoreForBlock(n, speed)
     if n < 1 or n > #self.blocks then
         -- Wrong block!
@@ -71,7 +71,7 @@ end
 ---Gets the next semaphore or speed for the `n`-th block of this blockade.
 ---@private
 ---@param n integer The block index.
----@return integer|Semaphore?
+---@return Speed|Semaphore?
 function Blockade:getNextForBlock(n)
     local block = assert(self.blocks[n])
     local nextBlock = self.blocks[n + 1]

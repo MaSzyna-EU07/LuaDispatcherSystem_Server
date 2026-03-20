@@ -23,7 +23,7 @@ local com_counters = {}
 
 function com.init()
 	com_path = "logs/" .. SCENARIO .. "@" .. os.date("%Y-%m-%d_%H-%M-%S") .. ".dsl"
-	_LogWrite("[COMMUNICATION] File Name: " .. com_path, 1, 1)
+	_LogWrite("[COMMUNICATION] File Name: " .. com_path, Severity.INFO, 1)
 	com.sendBytes({0x70, 0xA0, 0xE0, 0x07})
 	com.sendBytes({0x05, 0x00, 0x00, 0xFF}) -- version ID
 	-- Clear any residue commands so that they aren't executed right at the start of the next session.
@@ -55,7 +55,7 @@ function com.readCommands()
 	for i, line in ipairs(lines) do
 		local success, result = pcall(function() com.doCommand(line) end)
 		if not success then
-			_LogWrite("[COMMUNICATION] Error executing command `" .. line .. "`: " .. result, 2, 1)
+			_LogWrite("[COMMUNICATION] Error executing command `" .. line .. "`: " .. result, Severity.ERROR, 1)
 		end
 	end
 	_SaveFile(COM_INPUT_FILE, "")
@@ -115,13 +115,11 @@ end
 
 function com.getObjID(idTable, id)
 	if not idTable[id] then
-		_LogWrite("[COMMUNICATION] Tried to access a nonexistent ID: " .. tostring(id), 2, 1)
+		_LogWrite("[COMMUNICATION] Tried to access a nonexistent ID: " .. tostring(id), Severity.ERROR, 1)
 		return {0, 0}
 	end
 	return com.idToBytes(idTable[id].id)
 end
-
--- WARNING! Multiple objects with same name existing in different stations will OVERWRITE each other, that's very important to fix that!!!
 
 function com.initObject(typeByte, idTable, counter, name, stationID)
 	com_counters[counter] = (com_counters[counter] or 0) + 1

@@ -53,7 +53,7 @@ end
 ---@return Station?
 function Objects:getStation(name)
 	if not self.stations[name] then
-		_LogWrite("Tried to access a nonexistent station: " .. tostring(name), 2, 1)
+		_LogWrite("Tried to access a nonexistent station: " .. tostring(name), Severity.ERROR, 1)
 	end
 	return self.stations[name]
 end
@@ -63,7 +63,7 @@ end
 ---@return Route?
 function Objects:getRoute(name)
 	if not self.routes[name] then
-		_LogWrite("Tried to access a nonexistent route: " .. tostring(name), 2, 1)
+		_LogWrite("Tried to access a nonexistent route: " .. tostring(name), Severity.ERROR, 1)
 	end
 	return self.routes[name]
 end
@@ -74,7 +74,7 @@ end
 function Objects:getStationOrRoute(name)
 	local result = self.stations[name] or self.routes[name]
 	if not result then
-		_LogWrite("Tried to access a nonexistent station/route: " .. tostring(name), 2, 1)
+		_LogWrite("Tried to access a nonexistent station/route: " .. tostring(name), Severity.ERROR, 1)
 	end
 	return result
 end
@@ -85,7 +85,7 @@ end
 function Objects:getTrack(name)
 	name = string.lower(name)
 	if not self.tracks[name] then
-		_LogWrite("Tried to access an invalid track: " .. tostring(name), 2, 1)
+		_LogWrite("Tried to access an invalid track: " .. tostring(name), Severity.ERROR, 1)
 	end
 	return self.tracks[name]
 end
@@ -96,7 +96,7 @@ end
 function Objects:getSwitch(name)
 	name = string.lower(name)
 	if not self.switches[name] then
-		_LogWrite("Tried to access an invalid switch: " .. tostring(name), 2, 1)
+		_LogWrite("Tried to access an invalid switch: " .. tostring(name), Severity.ERROR, 1)
 	end
 	return self.switches[name]
 end
@@ -107,9 +107,27 @@ end
 function Objects:getSemaphore(name)
 	name = string.lower(name)
 	if not self.semaphores[name] then
-		_LogWrite("Tried to access an invalid semaphore: " .. tostring(name), 2, 1)
+		_LogWrite("Tried to access an invalid semaphore: " .. tostring(name), Severity.ERROR, 1)
 	end
 	return self.semaphores[name]
+end
+
+---Returns a list of track IDs, sorted alphabetically.
+---@return string[]
+function Objects:getTrackList()
+	return _TableGetSortedKeys(self.tracks)
+end
+
+---Returns a list of switch IDs, sorted alphabetically.
+---@return string[]
+function Objects:getSwitchList()
+	return _TableGetSortedKeys(self.switches)
+end
+
+---Returns a list of semaphore IDs, sorted alphabetically.
+---@return string[]
+function Objects:getSemaphoreList()
+	return _TableGetSortedKeys(self.semaphores)
 end
 
 ---Returns a Track based on its event, or `nil` if it is not found.

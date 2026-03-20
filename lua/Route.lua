@@ -7,7 +7,7 @@ local Blockade = require("lua.Blockade")
 local Route = class:derive("Route")
 
 function Route:new(name, data)
-	_LogWrite("Creating route: " .. name, 1, 3)
+	_LogWrite("Creating route: " .. name, Severity.INFO, 3)
 	_Com.initRoute(name)
 
 	self.name = name
@@ -30,7 +30,7 @@ function Route:new(name, data)
 		end
 	end
 
-	_LogWrite("Created route: " .. name, 3, 2)
+	_LogWrite("Created route: " .. name, Severity.SUCCESS, 2)
 end
 
 function Route:tell(text, severity, weight)
