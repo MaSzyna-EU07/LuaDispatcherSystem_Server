@@ -1,5 +1,4 @@
 local Class = require("lua.class")
-local api = require "eu07.events"
 
 ---@class Objects : Class
 ---@overload fun(): Objects
@@ -117,7 +116,7 @@ end
 ---@param event TEvent* The event from `api.event_preparefunc`.
 ---@return Track?
 function Objects:getTrackFromEvent(event)
-	local name = api.event_getname(event)
+	local name = _API:eventGetName(event)
 	return self:getTrack(name:sub(1, name:find(":") - 1))
 end
 
@@ -125,7 +124,7 @@ end
 ---@param event TEvent* The event from `api.event_preparefunc`.
 ---@return Switch?
 function Objects:getSwitchFromEvent(event)
-	local name = api.event_getname(event)
+	local name = _API:eventGetName(event)
 	return self:getSwitch(name:sub(1, name:find(":") - 1))
 end
 
@@ -133,7 +132,7 @@ end
 ---@param event TEvent* The event from `api.event_preparefunc`.
 ---@return Semaphore?
 function Objects:getSemaphoreFromEvent(event)
-	local name = api.event_getname(event)
+	local name = _API:eventGetName(event)
     -- I wish we could split at the second underscore, because the ID should always be <station_id>_<semaphore_id>, for exmaple `eb_a` and `eb_szn1`.
 	-- But this is not always the case, so we will do very dirty stuff here. Kinky, even.
 	-- Check for any suffixes. I wonder if this will crash in the future if I add something new to Semaphore.lua and forget to add it here too.

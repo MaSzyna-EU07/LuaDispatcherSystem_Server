@@ -1,5 +1,4 @@
 local class = require "lua.class"
-local api = require "eu07.events"
 
 ---@class Switch
 local Switch = class:derive("Switch")
@@ -17,21 +16,15 @@ end
 
 -- Prepare the functions once for all switches.
 -- Each `api.event_preparefunc` call creates a new FFI callback, and only so many can be defined.
-local forced0 = api.event_preparefunc(function(event, activator)
-	local switch = _Obj:getSwitchFromEvent(event)
-	if switch then switch:forceState(true) end
-end)
-local forced1 = api.event_preparefunc(function(event, activator)
-	local switch = _Obj:getSwitchFromEvent(event)
-	if switch then switch:forceState(false) end
-end)
+local forced0 = _API:eventPrepareFunction(function(event, activator) _Obj:getSwitchFromEvent(event):forceState(true) end)
+local forced1 = _API:eventPrepareFunction(function(event, activator) _Obj:getSwitchFromEvent(event):forceState(false) end)
 
 ---Initializes callbacks which listen for the changes in the simulator.
 function Switch:init()
 	_LogWrite("Creating switch: " .. self.id, 1, 3)
 	_LogWrite("- Creating event callbacks...", 1, 3)
-	api.event_create(string.lower(self.id) .. ":forced-", 0, 0, forced0)
-	api.event_create(string.lower(self.id) .. ":forced+", 0, 0, forced1)
+	_API:eventCreate(string.lower(self.id) .. ":forced-", 0, 0, forced0)
+	_API:eventCreate(string.lower(self.id) .. ":forced+", 0, 0, forced1)
 	_LogWrite("Created switch: " .. self.id, 3, 2)
 end
 
@@ -62,7 +55,7 @@ end
 
 function Switch:refreshSim()
 	if not self.forced then
-		api.event_dispatch_n(string.lower(self.id) .. _SwitchChar(self.state), nil, 0)
+		_API:eventDispatch(string.lower(self.id) .. _SwitchChar(self.state))
 	end
 	_Com.setSwitch(self.id, self.state, self.forced)
 end

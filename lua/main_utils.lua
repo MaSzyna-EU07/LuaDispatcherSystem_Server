@@ -1,4 +1,3 @@
-local api = require("eu07.events")
 local json = require("lua.json")
 
 local verboseValue = 3
@@ -10,7 +9,7 @@ local severityTable = {"INFO", "ERROR", "SUCCESS", "FAIL"}
 ---@param weight integer The verbosity. The higher the value, the less important output.
 function _LogWrite(text, severity, weight)
 	if verboseValue >= weight then
-		api.writelog("LuaDispatcher -> [" .. severityTable[severity] .. "] " .. text)
+		_API:log("LuaDispatcher -> [" .. severityTable[severity] .. "] " .. text)
 	end
 end
 

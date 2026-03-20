@@ -1,22 +1,14 @@
 VERSION = "5.0 Edition (2025 Reboot Alpha)"
 require("lua.main_utils")
+_API = require("lua.API")
 _Com = require("lua.main_communication")
 
-local api = require "eu07.events"
-
 -- LOVE2D-specific code:
-local isGui = api.gui
-if isGui then
+if _API:isGui() then
 	SCENARIO = "td"
 	FILENAME = "td.json"
 	function love.draw() love.graphics.print("This is the server.\nWhile it does provide a way to not need to wait a few minutes until the simulator loads,\nit does not provide any visual features.\nPlease use the client along with the server to view the traffic.\n\nVersion " .. VERSION .. " by jakubg1", 50, 50) end
-	function love.update(dt) api.update(dt) end
-else
-	-- Real module. Define extra functions.
-	-- TODO: Reimplement in the EXE directly!
-	function api.event_exists(name)
-		return tostring(api.event_find(name)) ~= "cdata<struct TEvent *>: NULL"
-	end
+	function love.update(dt) _API:update(dt) end
 end
 
 local Time = require("lua.Time")
@@ -45,7 +37,7 @@ function _Init(filename)
 		_Obj:addRoute(Route(routeN, routeData))
 	end
 
-	_CreateLoopEvent(_Loop, 1)
+	_CreateLoopEvent("loop", _Loop, 1)
 end
 
 function _Loop()
@@ -58,43 +50,9 @@ function _NextTimeTick()
 	_LogWrite("Time: " .. tostring(_CurrentTime), 1, 2)
 end
 
-
-
-
-
-
-
-function _ObtainTempEventName(name)
-	local n = "lua_temp_" .. name .. tostring(tempEventCounters[name])
-	tempEventCounters[name] = tempEventCounters[name] + 1
-	_LogWrite("Obtained a new temporary event name: " .. n, 1, 3)
-	return n
+function _CreateLoopEvent(name, func, delay, randomDelay)
+	_API:eventCreate(name, delay, randomDelay or 0, function(event, activator) func(); _API:eventDispatch(name) end)
+	_API:eventDispatch(name)
 end
-
-function _CreateLoopEvent(func, delay)
-	if isGui then
-		api.createLoopEvent(func, delay)
-	else
-		local name = _ObtainTempEventName("loop")
-		local f = function(event, activator)
-			func()
-			api.event_dispatch_n(name, nil, 0)
-		end
-
-		api.event_create(name, delay, 0, f)
-		api.event_dispatch_n(name, nil, 0)
-	end
-end
-
-
-
-
-
-
 
 _Init(FILENAME)
-
---for i = 1, 40 do
---	local t = Time({hour=14,minute=36,second=32}) - i * 2000
---	print(t:strDays(), t:getInt())
---end

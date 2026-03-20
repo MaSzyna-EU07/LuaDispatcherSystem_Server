@@ -1,5 +1,4 @@
 local class = require "lua.class"
-local api = require "eu07.events"
 local Monitoring = require("lua.Monitoring")
 
 ---@class Track
@@ -17,7 +16,6 @@ function Track:new(station, id)
 	self.reserved = false
 	---@type Semaphore?
 	self.semaphore = nil
-	self.trains = {}
 	self.vehicles = {}
 	self.monitoring = Monitoring()
 
@@ -26,31 +24,19 @@ end
 
 -- Prepare the functions once for all tracks.
 -- Each `api.event_preparefunc` call creates a new FFI callback, and only so many can be defined.
-local busy = api.event_preparefunc(function(event, activator)
-	local track = _Obj:getTrackFromEvent(event)
-	if track then track:busy(); track:setTrain(activator) end
-end)
-local free = api.event_preparefunc(function(event, activator)
-	local track = _Obj:getTrackFromEvent(event)
-	if track then track:free(); track:setTrain() end
-end)
-local inc = api.event_preparefunc(function(event, activator)
-	local track = _Obj:getTrackFromEvent(event)
-	if track then track:addVehicle(activator) end
-end)
-local dec = api.event_preparefunc(function(event, activator)
-	local track = _Obj:getTrackFromEvent(event)
-	if track then track:removeVehicle(activator) end
-end)
+local busy = _API:eventPrepareFunction(function(event, activator) _Obj:getTrackFromEvent(event):busy() end)
+local free = _API:eventPrepareFunction(function(event, activator) _Obj:getTrackFromEvent(event):free() end)
+local inc = _API:eventPrepareFunction(function(event, activator) _Obj:getTrackFromEvent(event):addVehicle(activator) end)
+local dec = _API:eventPrepareFunction(function(event, activator) _Obj:getTrackFromEvent(event):removeVehicle(activator) end)
 
 ---Initializes callbacks which listen for the changes in the simulator.
 function Track:init()
 	_LogWrite("Creating track: " .. self.id, 1, 3)
 	_LogWrite("- Creating event callbacks...", 1, 3)
-	api.event_create(string.lower(self.id) .. ":busy", 0, 0, busy)
-	api.event_create(string.lower(self.id) .. ":free", 0, 0, free)
-	api.event_create(string.lower(self.id) .. ":inc", 0, 0, inc)
-	api.event_create(string.lower(self.id) .. ":dec", 0, 0, dec)
+	_API:eventCreate(string.lower(self.id) .. ":busy", 0, 0, busy)
+	_API:eventCreate(string.lower(self.id) .. ":free", 0, 0, free)
+	_API:eventCreate(string.lower(self.id) .. ":inc", 0, 0, inc)
+	_API:eventCreate(string.lower(self.id) .. ":dec", 0, 0, dec)
 	_LogWrite("Created track: " .. self.id, 3, 2)
 end
 
@@ -131,12 +117,6 @@ function Track:setSemaphore(semaphore)
 	self.semaphore = semaphore
 end
 
----Sets a train that is on this track.
----@param train TDynamicObject*? The train which is on this track. Pass `nil` to remove a train from this track.
-function Track:setTrain(train)
-	self.trains = {train}
-end
-
 ---Adds the specified vehicle to this track. Duplicates are ignored.
 ---@param vehicle TDynamicObject* The vehicle to be added to this track.
 function Track:addVehicle(vehicle)
@@ -157,7 +137,7 @@ function Track:sendCommand(str, num1, num2)
 	self:tell(string.format("Sending command: %s %s %s", str, num1, num2), 1, 3)
 	local sent = 0
 	for vehicle, _ in pairs(self.vehicles) do
-		api.dynobj_putvalues(vehicle, {str = str, num1 = num1, num2 = num2})
+		_API:dynobjCommand(vehicle, {str = str, num1 = num1, num2 = num2})
 		sent = sent + 1
 	end
 	self:tell("Sent to " .. sent .. " vehicles!", 1, 3)

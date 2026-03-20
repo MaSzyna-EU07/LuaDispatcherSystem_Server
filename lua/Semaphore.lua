@@ -1,5 +1,4 @@
 local class = require "lua.class"
-local api = require "eu07.events"
 
 ---@class Semaphore
 local Semaphore = class:derive("Semaphore")
@@ -33,27 +32,21 @@ end
 
 -- Prepare the functions once for all semaphores.
 -- Each `api.event_preparefunc` call creates a new FFI callback, and only so many can be defined.
-local stop = api.event_preparefunc(function(event, activator)
-	local semaphore = _Obj:getSemaphoreFromEvent(event)
-	if semaphore then semaphore:stop() end
-end)
-local unreserve = api.event_preparefunc(function(event, activator)
-	local semaphore = _Obj:getSemaphoreFromEvent(event)
-	if semaphore then semaphore:unreserveAllTracks() end
-end)
+local stop = _API:eventPrepareFunction(function(event, activator) _Obj:getSemaphoreFromEvent(event):stop() end)
+local unreserve = _API:eventPrepareFunction(function(event, activator) _Obj:getSemaphoreFromEvent(event):unreserveAllTracks() end)
 
 ---Initializes callbacks which listen for the changes in the simulator.
 function Semaphore:init()
 	_LogWrite("Creating semaphore: " .. self.id, 1, 3)
 	_LogWrite("- Creating event callbacks...", 1, 3)
 	if self.type == 0 then
-		api.event_create(string.lower(self.id) .. (self.shape and "_sr1" or "_s1"), 0, 0, stop)
+		_API:eventCreate(string.lower(self.id) .. (self.shape and "_sr1" or "_s1"), 0, 0, stop)
 	end
 	if self.type == 1 then
-		api.event_create(string.lower(self.id) .. "_ms1", 0, 0, stop)
+		_API:eventCreate(string.lower(self.id) .. "_ms1", 0, 0, stop)
 	end
-	api.event_create(string.lower(self.id) .. "_uszk", 0, 0, stop)
-	api.event_create(string.lower(self.id) .. (self.shape and "_sygsz_wyg90" or "_wyg_sz"), 0, 0, unreserve)
+	_API:eventCreate(string.lower(self.id) .. "_uszk", 0, 0, stop)
+	_API:eventCreate(string.lower(self.id) .. (self.shape and "_sygsz_wyg90" or "_wyg_sz"), 0, 0, unreserve)
 
 	_LogWrite("Created semaphore: " .. self.id, 3, 2)
 end
@@ -77,7 +70,7 @@ function Semaphore:canSetSpeed(speed, next)
 	end
 	local image = _SignalImage(speed, next, self.shape)
 	local eventID = string.lower(self.id) .. "_" .. image
-	return api.event_exists(eventID)
+	return _API:eventExists(eventID)
 end
 
 ---Ustawia prędkość na semaforze oraz odświeża niezbędne do odświeżenia semafory.
@@ -182,21 +175,21 @@ function Semaphore:refreshSim()
 	end
 	self.image = image
 	self:tell("Refreshing image. Speeds: this=" .. tostring(self.speed) .. ", next=" .. tostring(nextSpeed) .. ", result: " .. image, 1, 3)
-	api.event_dispatch_n(string.lower(self.id) .. "_" .. image, nil, 0)
+	_API:eventDispatch(string.lower(self.id) .. "_" .. image)
 	-- Sz signal events on most semaphores end with `_sz1`, but on some end with `_sz` -_-
 	if image == "sz1" then
-		api.event_dispatch_n(string.lower(self.id) .. "_sz", nil, 0)
+		_API:eventDispatch(string.lower(self.id) .. "_sz")
 	end
 	-- W24
 	if self.w24 then
-		api.event_dispatch_n(string.lower(self.id) .. "_w24", nil, 0)
+		_API:eventDispatch(string.lower(self.id) .. "_w24")
 	else
-		api.event_dispatch_n(string.lower(self.id) .. "_w24off", nil, 0)
+		_API:eventDispatch(string.lower(self.id) .. "_w24off")
 	end
 	-- refresh repeaters too
 	if self.repeaters then
 		for i, repeaterN in ipairs(self.repeaters) do
-			api.event_dispatch_n(string.lower(repeaterN) .. "_" .. _SignalImageRepeater(self.speed), nil, 0)
+			_API:eventDispatch(string.lower(repeaterN) .. "_" .. _SignalImageRepeater(self.speed))
 		end
 	end
 	_Com.setSemaphore(self.id, self.speed, nextSpeed, self.image)

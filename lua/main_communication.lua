@@ -28,7 +28,7 @@ function com.init()
 	com.sendBytes({0x05, 0x00, 0x00, 0xFF}) -- version ID
 	-- Clear any residue commands so that they aren't executed right at the start of the next session.
 	_SaveFile(COM_INPUT_FILE, "")
-	_CreateLoopEvent(com.tick, COM_SAVE_INTERVAL)
+	_CreateLoopEvent("tick_com", com.tick, COM_SAVE_INTERVAL)
 end
 
 function com.sendBytes(bytes)
