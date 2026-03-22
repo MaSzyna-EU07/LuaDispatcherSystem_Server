@@ -71,7 +71,7 @@ function com.doCommand(command)
 		local next = tonumber(operands[4]) or (operands[4] and _Obj:getSemaphore(operands[4]))
 		-- Semaphore names like 442 should still be treated as semaphore references and not as numbers, as these speeds don't exist.
 		-- TODO: What about very low SBL semaphore IDs?
-		if type(next) == "number" and not _SignalImage(next) then
+		if type(next) == "number" and next > 9 then
 			next = _Obj:getSemaphore(tostring(next))
 		end
 		_Obj:getSemaphore(operands[2]):setSpeed(assert(tonumber(operands[3]), "Missing speed parameter"), next)
