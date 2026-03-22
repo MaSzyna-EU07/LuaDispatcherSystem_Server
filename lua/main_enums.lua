@@ -1,5 +1,6 @@
 ---@enum Speed
 Speed = {
+    DIM = -1,
 	STOP = 0,
 	VMAX = 1,
 	["40"] = 2,

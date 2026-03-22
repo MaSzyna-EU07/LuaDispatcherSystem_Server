@@ -29,7 +29,7 @@ function Switch:init()
 end
 
 function Switch:__tostring()
-	return string.format("%s : state=%s forced=%s", self.id, self.state, self.forced)
+	return string.format("J[%s : state=%s forced=%s]", self.id, self.state, self.forced)
 end
 
 ---Sends an information about this switch to the log.

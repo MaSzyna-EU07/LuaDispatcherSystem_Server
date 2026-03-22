@@ -41,7 +41,7 @@ function Track:init()
 end
 
 function Track:__tostring()
-	return string.format("%s : occupied=%s reserved=%s", self.id, self.occupied, self.reserved)
+	return string.format("T[%s : occupied=%s reserved=%s]", self.id, self.occupied, self.reserved)
 end
 
 ---Sends an information about this track to the log.

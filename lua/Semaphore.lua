@@ -14,14 +14,16 @@ function Semaphore:new(station, id, data)
 	self.id = id
 	self.type = data.type or SemaphoreType.SEM
 	self.shape = data.shape or false
+	self.fourPhase = data.fourPhase or false
+	---@type string|Speed?
+	self.nextDefault = data.next
+	self.repeaters = data.repeaters
 	---@type Semaphore?
 	self.prev = nil
-	---@type Semaphore|integer?
+	---@type Semaphore|Speed?
 	self.next = nil
-	self.repeaters = data.repeaters
 	self.speed = self:getStopSpeed()
-	self.image = _SignalImage(self:getStopSpeed(), nil, self.shape)
-	self.fourPhase = data.fourPhase
+	self.image = self:getSupportedImage(self:getStopSpeed())
 	---@type boolean
 	self.w24 = false
 
@@ -34,6 +36,7 @@ end
 -- Prepare the functions once for all semaphores.
 -- Each `api.event_preparefunc` call creates a new FFI callback, and only so many can be defined.
 local stop = _API:eventPrepareFunction(function(event, activator) _Obj:getSemaphoreFromEvent(event):stop() end)
+local dim = _API:eventPrepareFunction(function(event, activator) _Obj:getSemaphoreFromEvent(event):dim() end)
 local unreserve = _API:eventPrepareFunction(function(event, activator) _Obj:getSemaphoreFromEvent(event):unreserveAllTracks() end)
 
 ---Initializes callbacks which listen for the changes in the simulator.
@@ -46,14 +49,14 @@ function Semaphore:init()
 	if self.type == SemaphoreType.TM then
 		_API:eventCreate(string.lower(self.id) .. "_ms1", 0, 0, stop)
 	end
-	_API:eventCreate(string.lower(self.id) .. "_uszk", 0, 0, stop)
+	_API:eventCreate(string.lower(self.id) .. "_uszk", 0, 0, dim)
 	_API:eventCreate(string.lower(self.id) .. (self.shape and "_sygsz_wyg90" or "_wyg_sz"), 0, 0, unreserve)
 
 	_LogWrite("Created semaphore: " .. self.id, Severity.SUCCESS, 2)
 end
 
 function Semaphore:__tostring()
-	return string.format("%s : image=%s", self.id, self.image)
+	return string.format("S[%s : image=%s]", self.id, self.image)
 end
 
 ---Sends an information about this semaphore to the log.
@@ -64,20 +67,37 @@ function Semaphore:tell(text, severity, weight)
 	_LogWrite(tostring(self.id) .. ": " .. text, severity, weight)
 end
 
----Returns whether this semaphore can physically display the specified signal.
+---Returns whether this semaphore can physically display the specified image.
+---@private
+---@param image string Image of this semaphore.
+---@return boolean
+function Semaphore:canSetImage(image)
+	return _API:eventExists(string.lower(self.id) .. "_" .. image)
+end
+
+---Returns the first supported image which can be set on this semaphore for the specified speeds, or `nil` if no matching image can be set.
 ---@private
 ---@param speed Speed Speed on this semaphore.
 ---@param nextSpeed Speed? Speed on the next semaphore.
----@return boolean
-function Semaphore:canSetSpeed(speed, nextSpeed)
-	return _API:eventExists(string.lower(self.id) .. "_" .. _SignalImage(speed, nextSpeed, self.shape))
+---@return string?
+function Semaphore:getSupportedImage(speed, nextSpeed)
+	local images = _SignalImage(speed, nextSpeed, self.shape)
+	if type(images) == "string" then
+		return self:canSetImage(images) and images or nil
+	elseif type(images) == "table" then
+		for i, image in ipairs(images) do
+			if self:canSetImage(image) then
+				return image
+			end
+		end
+	end
 end
 
 ---Returns whether this semaphore can physically display the signal it would display now in its current state.
 ---@private
 ---@return boolean
 function Semaphore:canSetNow()
-	return self:canSetSpeed(self.speed, self:getMutatedNextSpeed())
+	return self:getSupportedImage(self.speed, self:getDisplayedNextSpeed()) ~= nil
 end
 
 ---Ustawia prędkość na semaforze oraz odświeża niezbędne do odświeżenia semafory.
@@ -89,6 +109,9 @@ end
 ---Na przykład `1` oznacza, że przy prędkości maksymalnej zostanie podany sygnał S2, a `2` oznacza, że zostanie podany S4.
 ---- `nil` jest dopuszczalne tylko przy sygnałach niezależnych od następnego semafora (S1,Ms1,Ms2,Sz).
 function Semaphore:setSpeed(speed, next)
+	-- Resolve the default next parameter.
+	---@type Semaphore|Speed?
+	next = next or (type(self.nextDefault) == "string" and _Obj:getSemaphore(self.nextDefault) or self.nextDefault)
 	self:tell("Setting speed " .. tostring(speed) .. ", next: " .. tostring(next), Severity.INFO, 3)
 	-- Set the semaphore state and see if we can get away with that.
 	self.speed = speed
@@ -138,6 +161,12 @@ function Semaphore:stop()
 	self:setSpeed(self:getStopSpeed())
 end
 
+---Dims the semaphore so that no signal is displayed on it at all.
+function Semaphore:dim()
+	self.w24 = false
+	self:setSpeed(Speed.DIM)
+end
+
 ---Ustawia czy następne wywołanie `Semaphore:setSpeed()` wyświetli wskaźnik W24.
 ---Wskaźniki są kasowane po wywołaniu `Semaphore:stop()`.
 ---@param w24 boolean Czy ma być wyświetlony wskaźnik W24.
@@ -164,7 +193,7 @@ end
 ---Returns the displayed speed on the next semaphore instead of the actual one.
 ---An example on how this could happen is an S3 signal on a 4-phase SBL.
 ---@return Speed?
-function Semaphore:getMutatedNextSpeed()
+function Semaphore:getDisplayedNextSpeed()
 	local nextSpeed = self:getNextSpeed()
 	if nextSpeed == Speed.VMAX and self.fourPhase and self:isNextNextStop() then
 		return Speed["100"]
@@ -176,7 +205,7 @@ end
 ---@private
 ---@return boolean
 function Semaphore:isNextNextStop()
-	return type(self.next) == "table" and self.next:getMutatedNextSpeed() == Speed.STOP
+	return type(self.next) == "table" and self.next:getDisplayedNextSpeed() == Speed.STOP
 end
 
 ---Reserves a track for this Semaphore. This list is used to easily cancel a dynamic itinerary.
@@ -200,8 +229,8 @@ end
 
 ---Odświeża obraz semafora do symulatora i loga.
 function Semaphore:refreshSim()
-	local nextSpeed = self:getMutatedNextSpeed()
-	local image = _SignalImage(self.speed, nextSpeed, self.shape)
+	local nextSpeed = self:getDisplayedNextSpeed()
+	local image = self:getSupportedImage(self.speed, nextSpeed) or self:getSupportedImage(self:getStopSpeed())
 	-- Avoid changing an image to the same image. Especially important for shape signals, which would play a sound while the signal doesn't change.
 	if self.image == image then
 		return
@@ -209,10 +238,6 @@ function Semaphore:refreshSim()
 	self.image = image
 	self:tell(string.format("Refreshing image. Speeds: this=%s, next=%s, result: %s", self.speed, nextSpeed, image), Severity.INFO, 3)
 	_API:eventDispatch(string.lower(self.id) .. "_" .. image)
-	-- Sz signal events on most semaphores end with `_sz1`, but on some end with `_sz` -_-
-	if image == "sz1" then
-		_API:eventDispatch(string.lower(self.id) .. "_sz")
-	end
 	-- W24
 	if self.w24 then
 		_API:eventDispatch(string.lower(self.id) .. "_w24")

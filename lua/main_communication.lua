@@ -5,11 +5,13 @@ local Semaphore = require("lua.Semaphore")
 local com = {}
 
 local COM_IMAGES = {
-	sz1=0xFF,
+	uszk=0x00, ciemny=0x00,
 	s1=0x01, s2=0x02, s3=0x03, s4=0x04, s5=0x05, s6=0x06, s7=0x07, s8=0x08, s9=0x09, s10=0x0A, s11=0x0B, s12=0x0C, s13=0x0D,
+	os1=0x05, os2=0x02, os3=0x03, os4=0x04,
 	s1a=0x21, s10a=0x2A, s11a=0x2B, s12a=0x2C, s13a=0x2D,
 	sr1=0x41, sr2=0x42, sr3=0x43,
-	ms1=0x80, ms2=0x81
+	ms1=0x80, ms2=0x81,
+	sz=0xFF, sz1=0xFF
 }
 local COM_SAVE_INTERVAL = 1
 local COM_INPUT_FILE = "logs/command.txt"
@@ -33,7 +35,7 @@ end
 
 function com.sendBytes(bytes)
 	for i, n in ipairs(bytes) do
-		com_buffer = com_buffer .. string.char(n)
+		com_buffer = com_buffer .. string.char(n % 256)
 	end
 end
 

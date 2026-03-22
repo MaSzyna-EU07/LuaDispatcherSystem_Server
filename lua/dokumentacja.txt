@@ -459,16 +459,18 @@ Opcode są następujące:
 - 14 - Zmiana stanu semafora.
 	- SHORT: ID semafora
 	- BYTE: obecna prędkość:
-		00 - S1
-		01 - Vmax
-		02 - 40 km/h
-		03 - 60 km/h
-		04 - 100 km/h
-		05 - Ms1
-		06 - Ms2
-		07 - Sz
+		- 00 - S1
+		- 01 - Vmax
+		- 02 - 40 km/h
+		- 03 - 60 km/h
+		- 04 - 100 km/h
+		- 05 - Ms1
+		- 06 - Ms2
+		- 07 - Sz
+		- FF - wygaszony
 	- BYTE: następna prędkość - jak wyżej
 	- BYTE: stan semafora:
+		- 00 - wygaszony
 		- 01 do 0D - S1 do S13
 		- 21 - S1a
 		- 2A do 2D - S10a do S13a

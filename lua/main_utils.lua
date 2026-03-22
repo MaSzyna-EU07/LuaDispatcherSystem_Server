@@ -84,18 +84,20 @@ function _FindLast(text, toFind)
 end
 
 local signalImages = {
+	[-1]={[0]={"uszk","ciemny"}},
 	[0]="s1",
-	[1]={[0]="s5",[1]="s2",[2]="s4",[3]="s4",[4]="s3"},
+	[1]={[0]={"s5","os1"},[1]={"s2","os2"},[2]={"s4","os4"},[3]={"s4","os4"},[4]={"s3","os3"}},
 	[2]={[0]="s13",[1]="s10",[2]="s12",[3]="s12",[4]="s11"},
 	[3]={[0]="s13a",[1]="s10a",[2]="s12a",[3]="s12a",[4]="s11a"},
 	[4]={[0]="s9",[1]="s6",[2]="s8",[3]="s8",[4]="s7"},
 	[5]="ms1",
 	[6]="ms2",
-	[7]="sz1",
+	[7]={[0]={"sz1","sz"}},
 	[8]="s1a"
 }
 
 local shapeSignalImages = {
+	[-1]="sr1",
 	[0]="sr1",
 	[1]="sr2",
 	[2]="sr3",
@@ -107,11 +109,11 @@ local shapeSignalImages = {
 	[8]="s1a"
 }
 
----Returns the image on the semaphore for the specified conditions.
+---Returns the image or a list of possibile images on the semaphore for the specified conditions.
 ---@param speed Speed The speed on this semaphore.
 ---@param nextSpeed Speed? The speed on the next semaphore. Can only be omitted in specific cases.
 ---@param shape boolean? If `true`, the image will be evaluated for a shape signal.
----@return string
+---@return string|string[]
 function _SignalImage(speed, nextSpeed, shape)
 	local first = shape and shapeSignalImages[speed] or signalImages[speed]
 	if type(first) == "string" then return first end

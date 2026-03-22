@@ -40,49 +40,38 @@ end
 ---@param n integer The block index to be occupied.
 function Blockade:occupyBlock(n)
     self:tell("Block " .. n .. " : occupied", Severity.INFO, 3)
-    self:setSemaphoreForBlock(n, 0)
-    -- TODO: Handle semaphores in the other direction.
+    self:setSemaphoreForBlock(n, Speed.STOP, n == 1 and Speed.STOP or Speed.DIM)
 end
 
 ---Marks the n-th block in this blockade as freed.
 ---@param n integer The block index to be freed.
 function Blockade:freeBlock(n)
     self:tell("Block " .. n .. " : freed", Severity.INFO, 3)
-    self:setSemaphoreForBlock(n, 1)
-    -- TODO: Handle semaphores in the other direction.
+    self:setSemaphoreForBlock(n, Speed.VMAX, n == 1 and Speed.VMAX or Speed.DIM)
 end
 
 ---Sets the speed for the semaphore for the `n`-th block of this blockade.
 ---@private
 ---@param n integer The block index.
----@param speed Speed The speed for the semaphore.
-function Blockade:setSemaphoreForBlock(n, speed)
+---@param speed Speed? The speed for the semaphore.
+---@param speedN Speed? The speed for the semaphore in the opposite direction.
+function Blockade:setSemaphoreForBlock(n, speed, speedN)
     if n < 1 or n > #self.blocks then
-        -- Wrong block!
-        -- TODO: Log
+        self:tell(string.format("Attempt to get block %s out of %s", n, #self.blocks), Severity.ERROR, 3)
         return
     end
-    local semaphore = _Obj:getSemaphore(self.blocks[n].semaphore)
-    if semaphore then
-        semaphore:setSpeed(speed, self:getNextForBlock(n))
-    end -- Otherwise, data error (pointing to nonexistent semaphore).
-end
-
----Gets the next semaphore or speed for the `n`-th block of this blockade.
----@private
----@param n integer The block index.
----@return Speed|Semaphore?
-function Blockade:getNextForBlock(n)
-    local block = assert(self.blocks[n])
-    local nextBlock = self.blocks[n + 1]
-    if block.next then
-        -- If `block.next` is defined, use that.
-        return type(block.next) == "string" and _Obj:getSemaphore(block.next) or block.next
-    elseif nextBlock then
-        -- Otherwise, use the next block's semaphore, if it exists.
-        return _Obj:getSemaphore(nextBlock.semaphore)
+    if speed and self.blocks[n].semaphore then
+        local semaphore = _Obj:getSemaphore(self.blocks[n].semaphore)
+        if semaphore then
+            semaphore:setSpeed(speed)
+        end -- Otherwise, data error (semaphore not found).
     end
-    return 1
+    if speedN and self.blocks[n].semaphoreN then
+        local semaphore = _Obj:getSemaphore(self.blocks[n].semaphoreN)
+        if semaphore then
+            semaphore:setSpeed(speedN)
+        end -- Otherwise, data error (semaphore not found).
+    end
 end
 
 return Blockade

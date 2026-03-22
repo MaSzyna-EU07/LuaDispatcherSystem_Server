@@ -164,7 +164,7 @@ function Objects:getSemaphoreFromEvent(event)
 		end
 		table.insert(underscores, pos)
 	end
-	return self:getSemaphore(name:sub(1, underscores[#underscores - (doubleUnderscore and 2 or 1)]))
+	return self:getSemaphore(name:sub(1, underscores[#underscores - (doubleUnderscore and 1 or 0)] - 1))
 end
 
 return Objects
