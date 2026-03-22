@@ -76,6 +76,10 @@ end
 ---@param activator TDynamicObject*? The vehicle to dispatch this event as, if any.
 ---@param delay number? The delay between calling this function and dispatching the event.
 function API:eventDispatch(event, activator, delay)
+    if not self:eventExists(event) then
+        api.writeerrorlog("Failed to find event: " .. tostring(event))
+        return
+    end
     api.event_dispatch_n(event, activator, delay or 0)
 end
 

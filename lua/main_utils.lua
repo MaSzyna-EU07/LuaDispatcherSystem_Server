@@ -136,6 +136,10 @@ function _SignalImageRepeater(speed)
 	return signalImagesRepeater[speed] or signalImagesRepeater[0]
 end
 
+function _IsSpeedStopIsh(speed)
+	return speed ~= Speed.VMAX and speed ~= Speed["40"] and speed ~= Speed["60"] and speed ~= Speed["100"]
+end
+
 function _SwitchChar(state)
 	return state and "-" or "+"
 end

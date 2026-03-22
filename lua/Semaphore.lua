@@ -15,6 +15,8 @@ function Semaphore:new(station, id, data)
 	self.type = data.type or SemaphoreType.SEM
 	self.shape = data.shape or false
 	self.fourPhase = data.fourPhase or false
+	---@type Speed?
+	self.shortSpeed = data.shortSpeed
 	---@type string|Speed?
 	self.nextDefault = data.next
 	self.repeaters = data.repeaters
@@ -97,7 +99,7 @@ end
 ---@private
 ---@return boolean
 function Semaphore:canSetNow()
-	return self:getSupportedImage(self.speed, self:getDisplayedNextSpeed()) ~= nil
+	return self:getSupportedImage(self:getDisplayedSpeed(), self:getDisplayedNextSpeed()) ~= nil
 end
 
 ---Ustawia prędkość na semaforze oraz odświeża niezbędne do odświeżenia semafory.
@@ -181,11 +183,21 @@ function Semaphore:getStopSpeed()
 	return self.type == SemaphoreType.TM and Speed.MS1 or Speed.STOP
 end
 
+---Returns the displayed speed on the next semaphore instead of the actual one.
+---An example on how this could happen is when the short speed is set.
+---@return Speed
+function Semaphore:getDisplayedSpeed()
+	if self.shortSpeed and self.speed == Speed.VMAX and _IsSpeedStopIsh(self:getNextSpeed()) then
+		return self.shortSpeed
+	end
+	return self.speed
+end
+
 ---Zwraca prędkość na następnym semaforze bądź na sztywno ustawioną.
 ---@return Speed?
 function Semaphore:getNextSpeed()
 	if type(self.next) == "table" then
-		return self.next.speed
+		return self.next:getDisplayedSpeed()
 	end
 	return self.next
 end
@@ -195,7 +207,7 @@ end
 ---@return Speed?
 function Semaphore:getDisplayedNextSpeed()
 	local nextSpeed = self:getNextSpeed()
-	if nextSpeed == Speed.VMAX and self.fourPhase and self:isNextNextStop() then
+	if self.fourPhase and nextSpeed == Speed.VMAX and self:isNextNextStop() then
 		return Speed["100"]
 	end
 	return nextSpeed
@@ -229,14 +241,15 @@ end
 
 ---Odświeża obraz semafora do symulatora i loga.
 function Semaphore:refreshSim()
+	local speed = self:getDisplayedSpeed()
 	local nextSpeed = self:getDisplayedNextSpeed()
-	local image = self:getSupportedImage(self.speed, nextSpeed) or self:getSupportedImage(self:getStopSpeed())
+	local image = self:getSupportedImage(speed, nextSpeed) or self:getSupportedImage(self:getStopSpeed())
 	-- Avoid changing an image to the same image. Especially important for shape signals, which would play a sound while the signal doesn't change.
 	if self.image == image then
 		return
 	end
 	self.image = image
-	self:tell(string.format("Refreshing image. Speeds: this=%s, next=%s, result: %s", self.speed, nextSpeed, image), Severity.INFO, 3)
+	self:tell(string.format("Refreshing image. Speeds: this=%s, next=%s, result: %s", speed, nextSpeed, image), Severity.INFO, 3)
 	_API:eventDispatch(string.lower(self.id) .. "_" .. image)
 	-- W24
 	if self.w24 then
@@ -247,10 +260,10 @@ function Semaphore:refreshSim()
 	-- refresh repeaters too
 	if self.repeaters then
 		for i, repeaterN in ipairs(self.repeaters) do
-			_API:eventDispatch(string.lower(repeaterN) .. "_" .. _SignalImageRepeater(self.speed))
+			_API:eventDispatch(string.lower(repeaterN) .. "_" .. _SignalImageRepeater(speed))
 		end
 	end
-	_Com.setSemaphore(self.id, self.speed, nextSpeed, self.image)
+	_Com.setSemaphore(self.id, speed, nextSpeed, self.image)
 end
 
 return Semaphore

@@ -68,7 +68,13 @@ function com.doCommand(command)
 	if operands[1] == "s" then
 		-- Sets a semaphore. `s <semaphore_id> <speed> [next] ["w24"]`
 		_Obj:getSemaphore(operands[2]):setW24(operands[5] == "w24")
-		_Obj:getSemaphore(operands[2]):setSpeed(assert(tonumber(operands[3]), "Missing speed parameter"), tonumber(operands[4]) or (operands[4] and _Obj:getSemaphore(operands[4])))
+		local next = tonumber(operands[4]) or (operands[4] and _Obj:getSemaphore(operands[4]))
+		-- Semaphore names like 442 should still be treated as semaphore references and not as numbers, as these speeds don't exist.
+		-- TODO: What about very low SBL semaphore IDs?
+		if type(next) == "number" and not _SignalImage(next) then
+			next = _Obj:getSemaphore(tostring(next))
+		end
+		_Obj:getSemaphore(operands[2]):setSpeed(assert(tonumber(operands[3]), "Missing speed parameter"), next)
 	elseif operands[1] == "su" then
 		-- Stops a semaphore and unreserves all claimed tracks. `s <semaphore_id>`
 		_Obj:getSemaphore(operands[2]):stop()
