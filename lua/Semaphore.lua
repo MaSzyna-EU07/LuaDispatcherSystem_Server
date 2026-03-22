@@ -21,6 +21,7 @@ function Semaphore:new(station, id, data)
 	self.repeaters = data.repeaters
 	self.speed = self:getStopSpeed()
 	self.image = _SignalImage(self:getStopSpeed(), nil, self.shape)
+	self.fourPhase = data.fourPhase
 	---@type boolean
 	self.w24 = false
 
@@ -66,15 +67,17 @@ end
 ---Returns whether this semaphore can physically display the specified signal.
 ---@private
 ---@param speed Speed Speed on this semaphore.
----@param next Semaphore|Speed? Next speed, or speed on the next semaphore.
+---@param nextSpeed Speed? Speed on the next semaphore.
 ---@return boolean
-function Semaphore:canSetSpeed(speed, next)
-	if type(next) == "table" then
-		next = next.speed
-	end
-	local image = _SignalImage(speed, next, self.shape)
-	local eventID = string.lower(self.id) .. "_" .. image
-	return _API:eventExists(eventID)
+function Semaphore:canSetSpeed(speed, nextSpeed)
+	return _API:eventExists(string.lower(self.id) .. "_" .. _SignalImage(speed, nextSpeed, self.shape))
+end
+
+---Returns whether this semaphore can physically display the signal it would display now in its current state.
+---@private
+---@return boolean
+function Semaphore:canSetNow()
+	return self:canSetSpeed(self.speed, self:getMutatedNextSpeed())
 end
 
 ---Ustawia prędkość na semaforze oraz odświeża niezbędne do odświeżenia semafory.
@@ -87,15 +90,23 @@ end
 ---- `nil` jest dopuszczalne tylko przy sygnałach niezależnych od następnego semafora (S1,Ms1,Ms2,Sz).
 function Semaphore:setSpeed(speed, next)
 	self:tell("Setting speed " .. tostring(speed) .. ", next: " .. tostring(next), Severity.INFO, 3)
-	local available = self:canSetSpeed(speed, next)
-	self.speed = available and speed or Speed.SZ
-	self:setNext(available and next or nil)
-	if not available then
+	-- Set the semaphore state and see if we can get away with that.
+	self.speed = speed
+	self:setNext(next)
+	-- Check whether we can actually display the image on the semaphore. If not, fall back to Sz.
+	if not self:canSetNow() then
+		self.speed = Speed.SZ
+		self:setNext()
 		self:tell("The semaphore cannot display this signal, falling back to Sz!", Severity.FAIL, 3)
 	end
 	-- If this Semaphore has a previous one, refresh it.
 	if self.prev and self.prev.next == self then
 		self.prev:refreshSim()
+		-- HACK: For 4-phase SBL, we need to update two semaphores back.
+		-- Fix this so an update happens only when actually needed!
+		if self.prev.prev then
+			self.prev.prev:refreshSim()
+		end
 	end
 	self:refreshSim()
 end
@@ -150,6 +161,24 @@ function Semaphore:getNextSpeed()
 	return self.next
 end
 
+---Returns the displayed speed on the next semaphore instead of the actual one.
+---An example on how this could happen is an S3 signal on a 4-phase SBL.
+---@return Speed?
+function Semaphore:getMutatedNextSpeed()
+	local nextSpeed = self:getNextSpeed()
+	if nextSpeed == Speed.VMAX and self.fourPhase and self:isNextNextStop() then
+		return Speed["100"]
+	end
+	return nextSpeed
+end
+
+---Returns `true` if the next semaphore is showing that its next semaphore is showing a stop signal.
+---@private
+---@return boolean
+function Semaphore:isNextNextStop()
+	return type(self.next) == "table" and self.next:getMutatedNextSpeed() == Speed.STOP
+end
+
 ---Reserves a track for this Semaphore. This list is used to easily cancel a dynamic itinerary.
 ---@param track Track The track to be reserved.
 function Semaphore:reserveTrack(track)
@@ -171,7 +200,7 @@ end
 
 ---Odświeża obraz semafora do symulatora i loga.
 function Semaphore:refreshSim()
-	local nextSpeed = self:getNextSpeed()
+	local nextSpeed = self:getMutatedNextSpeed()
 	local image = _SignalImage(self.speed, nextSpeed, self.shape)
 	-- Avoid changing an image to the same image. Especially important for shape signals, which would play a sound while the signal doesn't change.
 	if self.image == image then
