@@ -98,6 +98,9 @@ function com.doCommand(command)
 		-- Registers a new track. `nt <station_or_route_id> <track_id>`
 		-- This DOES NOT WORK !!!
 		_Obj:addTrack(Track(_Obj:getStationOrRoute(operands[2]), operands[3]))
+	elseif operands[1] == "b" then
+		-- Switches the blockade direction. `b <route_id> <blockade_id> <n|p>`
+		_Obj:getRoute(operands[2]):getBlockade(tonumber(operands[3]) or 1):setDirection(operands[4] == "n")
 	end
 end
 

@@ -37,4 +37,11 @@ function Route:tell(text, severity, weight)
 	_LogWrite("route: " .. self.name .. ": " .. text, severity, weight)
 end
 
+---Returns tne n-th blockade on this route, or `nil` if it does not exist.
+---@param n integer The blockade index.
+---@return Blockade?
+function Route:getBlockade(n)
+	return self.blockades[n]
+end
+
 return Route

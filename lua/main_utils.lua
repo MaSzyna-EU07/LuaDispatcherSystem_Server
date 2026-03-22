@@ -78,6 +78,16 @@ function _TableGetSortedKeys(t)
 	return keys
 end
 
+---Returns `true` if the table does not contain any keys.
+---@param t table The potentially empty table.
+---@return boolean
+function _TableIsEmpty(t)
+	for k, v in pairs(t) do
+		return false
+	end
+	return true
+end
+
 function _FindLast(text, toFind)
 	local a, b = string.find(text:reverse(), toFind:reverse())
 	return #text - b + 1, #text - a + 1

@@ -13,6 +13,8 @@ function Blockade:new(route, data)
     self.route = route
     self.type = data.type
     self.bidirectional = data.bidirectional
+    ---@type table<integer, true>
+    self.occupiedBlocks = {}
     ---@type {track: string, semaphore: string, semaphoreN: string?, next: string|integer?}[]
     self.blocks = data.blocks
     for i, block in ipairs(data.blocks) do
@@ -25,6 +27,7 @@ function Blockade:new(route, data)
         -- By default, all blocks are free. If a block is occupied at the start, it will trigger an appropriate callback when vehicles are placed.
         self:freeBlock(i)
     end
+    self.direction = false
 	_LogWrite("Created blockade for route: " .. route.name, Severity.SUCCESS, 2)
 end
 
@@ -40,14 +43,24 @@ end
 ---@param n integer The block index to be occupied.
 function Blockade:occupyBlock(n)
     self:tell("Block " .. n .. " : occupied", Severity.INFO, 3)
-    self:setSemaphoreForBlock(n, Speed.STOP, n == 1 and Speed.STOP or Speed.DIM)
+    self.occupiedBlocks[n] = true
+    if not self.direction then
+        self:setSemaphoreForBlock(n, Speed.STOP, n == 1 and Speed.STOP or Speed.DIM)
+    else
+        self:setSemaphoreForBlock(n, n == #self.blocks and Speed.STOP or Speed.DIM, Speed.STOP)
+    end
 end
 
 ---Marks the n-th block in this blockade as freed.
 ---@param n integer The block index to be freed.
 function Blockade:freeBlock(n)
     self:tell("Block " .. n .. " : freed", Severity.INFO, 3)
-    self:setSemaphoreForBlock(n, Speed.VMAX, n == 1 and Speed.VMAX or Speed.DIM)
+    self.occupiedBlocks[n] = nil
+    if not self.direction then
+        self:setSemaphoreForBlock(n, Speed.VMAX, n == 1 and Speed.VMAX or Speed.DIM)
+    else
+        self:setSemaphoreForBlock(n, n == #self.blocks and Speed.VMAX or Speed.DIM, Speed.VMAX)
+    end
 end
 
 ---Sets the speed for the semaphore for the `n`-th block of this blockade.
@@ -71,6 +84,37 @@ function Blockade:setSemaphoreForBlock(n, speed, speedN)
         if semaphore then
             semaphore:setSpeed(speedN)
         end -- Otherwise, data error (semaphore not found).
+    end
+end
+
+---Returns whether all blocks are free in this blockade.
+---@return boolean
+function Blockade:isFree()
+    return _TableIsEmpty(self.occupiedBlocks)
+end
+
+---Sets the direction on this blockade.
+---@param direction boolean `true` for the blockade to go the other way, `false` to set it to its primary direction.
+function Blockade:setDirection(direction)
+    -- Can only switch direction if the blockade has this possibility and is free.
+    if not self.bidirectional or not self:isFree() or self.direction == direction then
+        return
+    end
+    self:tell("Switching direction to " .. (direction and "N" or "P"), Severity.INFO, 3)
+    self.direction = direction
+    -- Reset all semaphores to the other direction.
+    -- The direction in which we update the semaphores is crucial, because when dimming semaphores back to front,
+    -- the semaphore behind schedules itself to display an S5 signal just before it is dimmed itself.
+    -- However, in the MaSzyna events, the S5 event - unlike the dim (_uszk) event - has a small delay.
+    -- This means that the semaphore is dimmed at first, but shortly afterwards it starts displaying the S5 signal.
+    if direction then
+        for i = 1, #self.blocks do
+            self:freeBlock(i)
+        end
+    else
+        for i = #self.blocks, 1, -1 do
+            self:freeBlock(i)
+        end
     end
 end
 
