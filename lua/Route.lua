@@ -1,40 +1,44 @@
 local class = require "lua.class"
-local Track = require("lua.Track")
-local Semaphore = require("lua.Semaphore")
 local Blockade = require("lua.Blockade")
 
 ---@class Route
 local Route = class:derive("Route")
 
-function Route:new(name, data)
-	_LogWrite("Creating route: " .. name, Severity.INFO, 3)
-	_Com.initRoute(name)
+---Creates a Route.
+---@param shortcut string The route shortcut.
+---@param data table? Data for the route.
+function Route:new(shortcut, data)
+	_LogWrite("Creating route: " .. shortcut, Severity.INFO, 3)
+	_Com.initRoute(shortcut)
 
-	self.name = name
+	self.shortcut = shortcut
 
-	-- Tracks
-	for i, trackN in ipairs(data.tracks) do
-		_Obj:addTrack(Track(self, trackN))
-	end
-	-- Semaphores
-	if data.semaphores then
-		for semaphoreN, semaphoreData in pairs(data.semaphores) do
-			_Obj:addSemaphore(Semaphore(self, semaphoreN, semaphoreData))
-		end
-	end
-	-- Blockades
+	---@type Blockade[]
 	self.blockades = {}
-	if data.blockades then
-		for i, blockade in ipairs(data.blockades) do
-			self.blockades[i] = Blockade(self, blockade)
+	if data then
+		-- Tracks
+		for i, trackN in ipairs(data.tracks) do
+			_Obj:addTrack(trackN)
+		end
+		-- Semaphores
+		if data.semaphores then
+			for semaphoreN, semaphoreData in pairs(data.semaphores) do
+				_Obj:addSemaphore(semaphoreN, semaphoreData)
+			end
+		end
+		-- Blockades
+		if data.blockades then
+			for i, blockade in ipairs(data.blockades) do
+				self.blockades[i] = Blockade(self, blockade)
+			end
 		end
 	end
 
-	_LogWrite("Created route: " .. name, Severity.SUCCESS, 2)
+	_LogWrite("Created route: " .. shortcut, Severity.SUCCESS, 2)
 end
 
 function Route:tell(text, severity, weight)
-	_LogWrite("route: " .. self.name .. ": " .. text, severity, weight)
+	_LogWrite("route: " .. self.shortcut .. ": " .. text, severity, weight)
 end
 
 ---Returns tne n-th blockade on this route, or `nil` if it does not exist.

@@ -5,12 +5,10 @@ local Monitoring = require("lua.Monitoring")
 local Track = class:derive("Track")
 
 ---Tworzy tor.
----@param station Station Stacja (lub szlak) na której znajduje się tor.
 ---@param id string Pełna nazwa toru, np. `"sta1_Iz1"`.
-function Track:new(station, id)
-	_Com.initTrack(station.name, id)
+function Track:new(id)
+	_Com.initTrack(id)
 
-	self.station = station
 	self.id = id
 	self.occupied = false
 	self.reserved = false

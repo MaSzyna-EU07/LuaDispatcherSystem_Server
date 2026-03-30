@@ -1,4 +1,9 @@
 local Class = require("lua.class")
+local Station = require("lua.Station")
+local Route = require("lua.Route")
+local Track = require("lua.Track")
+local Switch = require("lua.Switch")
+local Semaphore = require("lua.Semaphore")
 
 ---@class Objects : Class
 ---@overload fun(): Objects
@@ -19,97 +24,120 @@ function Objects:new()
 end
 
 ---Adds a station to the station list. The index is the station name, e.g. "Eb".
----@param station Station The station to be added.
-function Objects:addStation(station)
-    self.stations[station.name] = station
+---@param id string The station ID (shortcut).
+---@param data table? The station data. If `nil`, the intiialized station will not have any data.
+function Objects:addStation(id, data)
+    self.stations[id] = Station(id, data)
 end
 
 ---Adds a route to the route list. The index is the route name, e.g. "Eb-Tp".
----@param route Route The route to be added.
-function Objects:addRoute(route)
-    self.routes[route.name] = route
+---@param id string The route ID (shortcut).
+---@param data table The route data.
+function Objects:addRoute(id, data)
+    self.routes[id] = Route(id, data)
 end
 
 ---Adds a track to the track list. The index is the track ID, converted to lowercase, e.g. "Eb_It2" -> "eb_it2".
----@param track Track The track to be added.
-function Objects:addTrack(track)
-    self.tracks[string.lower(track.id)] = track
+---@param id string The track ID.
+function Objects:addTrack(id)
+    self.tracks[string.lower(id)] = Track(id)
 end
 
 ---Adds a switch to the switch list. The index is the switch ID, converted to lowercase, e.g. "Eb_25ab" -> "eb_25ab".
----@param switch Switch The switch to be added.
-function Objects:addSwitch(switch)
-    self.switches[string.lower(switch.id)] = switch
+---@param id string The switch ID.
+function Objects:addSwitch(id)
+    self.switches[string.lower(id)] = Switch(id)
 end
 
 ---Adds a semaphore to the semaphore list. The index is the semaphore ID, converted to lowercase, e.g. "Eb_A" -> "eb_a".
----@param semaphore Semaphore The semaphore to be added.
-function Objects:addSemaphore(semaphore)
-    self.semaphores[string.lower(semaphore.id)] = semaphore
+---@param id string The semaphore ID.
+---@param data table The semaphore data.
+function Objects:addSemaphore(id, data)
+    self.semaphores[string.lower(id)] = Semaphore(id, data)
 end
 
 ---Returns a Station based on its simulation name (shortcut), or `nil` if it's not found.
 ---@param name string Station shortcut.
 ---@return Station?
 function Objects:getStation(name)
-	if not self.stations[name] then
-		_LogWrite("Tried to access a nonexistent station: " .. tostring(name), Severity.ERROR, 1)
-	end
 	return self.stations[name]
+end
+
+---Returns a Station based on its simulation name (shortcut), or throws an error if it's not found.
+---@param name string Station shortcut.
+---@return Station
+function Objects:assertGetStation(name)
+	return assert(self:getStation(name), "Tried to access a nonexistent station: " .. tostring(name))
 end
 
 ---Returns a Route based on its simulation name (shortcut), or `nil` if it's not found.
 ---@param name string Route shortcut.
 ---@return Route?
 function Objects:getRoute(name)
-	if not self.routes[name] then
-		_LogWrite("Tried to access a nonexistent route: " .. tostring(name), Severity.ERROR, 1)
-	end
 	return self.routes[name]
+end
+
+---Returns a Route based on its simulation name (shortcut), or throws an error if it's not found.
+---@param name string Route shortcut.
+---@return Route
+function Objects:assertGetRoute(name)
+	return assert(self:getRoute(name), "Tried to access a nonexistent route: " .. tostring(name))
 end
 
 ---Returns a Station or Route based on its simulation name (shortcut), or `nil` if it's not found.
 ---@param name string Station or route shortcut.
 ---@return Station|Route?
 function Objects:getStationOrRoute(name)
-	local result = self.stations[name] or self.routes[name]
-	if not result then
-		_LogWrite("Tried to access a nonexistent station/route: " .. tostring(name), Severity.ERROR, 1)
-	end
-	return result
+	return self.stations[name] or self.routes[name]
+end
+
+---Returns a Station or Route based on its simulation name (shortcut), or throws an error if it's not found.
+---@param name string Station or route shortcut.
+---@return Station|Route
+function Objects:assertGetStationOrRoute(name)
+	return assert(self:getStationOrRoute(name), "Tried to access a nonexistent station/route: " .. tostring(name))
 end
 
 ---Returns a Track based on its simulation name, or `nil` if it is not found.
 ---@param name string For example: `"Eb_It2"`. Case-insensitive.
 ---@return Track?
 function Objects:getTrack(name)
-	name = string.lower(name)
-	if not self.tracks[name] then
-		_LogWrite("Tried to access an invalid track: " .. tostring(name), Severity.ERROR, 1)
-	end
-	return self.tracks[name]
+	return self.tracks[string.lower(name)]
+end
+
+---Returns a Track based on its simulation name, or throws an error if it is not found.
+---@param name string For example: `"Eb_It2"`. Case-insensitive.
+---@return Track
+function Objects:assertGetTrack(name)
+	return assert(self:getTrack(name), "Tried to access an invalid track: " .. tostring(name):lower())
 end
 
 ---Returns a Switch based on its simulation name, or `nil` if it is not found.
 ---@param name string For example: `"Eb_39"`. Case-insensitive.
 ---@return Switch?
 function Objects:getSwitch(name)
-	name = string.lower(name)
-	if not self.switches[name] then
-		_LogWrite("Tried to access an invalid switch: " .. tostring(name), Severity.ERROR, 1)
-	end
-	return self.switches[name]
+	return self.switches[string.lower(name)]
+end
+
+---Returns a Switch based on its simulation name, or throws an error if it is not found.
+---@param name string For example: `"Eb_39"`. Case-insensitive.
+---@return Switch
+function Objects:assertGetSwitch(name)
+	return assert(self:getSwitch(name), "Tried to access an invalid switch: " .. tostring(name):lower())
 end
 
 ---Returns a Semaphore based on its simulation name, or `nil` if it is not found.
 ---@param name string For example: `"Eb_A"`. Case-insensitive.
 ---@return Semaphore?
 function Objects:getSemaphore(name)
-	name = string.lower(name)
-	if not self.semaphores[name] then
-		_LogWrite("Tried to access an invalid semaphore: " .. tostring(name), Severity.ERROR, 1)
-	end
-	return self.semaphores[name]
+	return self.semaphores[string.lower(name)]
+end
+
+---Returns a Semaphore based on its simulation name, or throws an error if it is not found.
+---@param name string For example: `"Eb_A"`. Case-insensitive.
+---@return Semaphore
+function Objects:assertGetSemaphore(name)
+	return assert(self:getSemaphore(name), "Tried to access an invalid semaphore: " .. tostring(name):lower())
 end
 
 ---Returns a list of track IDs, sorted alphabetically.

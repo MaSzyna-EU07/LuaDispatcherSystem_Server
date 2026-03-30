@@ -9,7 +9,7 @@ local Blockade = Class:derive("Blockade")
 ---@param route Route The route this blockade is assigned to.
 ---@param data table The blockade data.
 function Blockade:new(route, data)
-	_LogWrite("Creating blockade for route: " .. route.name, Severity.INFO, 3)
+	_LogWrite("Creating blockade for route: " .. route.shortcut, Severity.INFO, 3)
     self.route = route
     self.type = data.type
     self.bidirectional = data.bidirectional
@@ -28,7 +28,7 @@ function Blockade:new(route, data)
         self:freeBlock(i)
     end
     self.direction = false
-	_LogWrite("Created blockade for route: " .. route.name, Severity.SUCCESS, 2)
+	_LogWrite("Created blockade for route: " .. route.shortcut, Severity.SUCCESS, 2)
 end
 
 ---Sends an information about this blockade to the log.
@@ -36,7 +36,7 @@ end
 ---@param severity Severity Severity.
 ---@param weight integer Weight.
 function Blockade:tell(text, severity, weight)
-	_LogWrite("Blockade(" .. tostring(self.route.name) .. "): " .. text, severity, weight)
+	_LogWrite("Blockade(" .. tostring(self.route.shortcut) .. "): " .. text, severity, weight)
 end
 
 ---Marks the n-th block in this blockade as occupied.

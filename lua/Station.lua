@@ -1,35 +1,53 @@
 local class = require "lua.class"
-local Track = require("lua.Track")
-local Switch = require("lua.Switch")
-local Semaphore = require("lua.Semaphore")
+local Schematic = require("lua.Schematic")
 
 ---@class Station
 local Station = class:derive("Station")
 
-function Station:new(name, data)
-	_Com.initStation(name)
+---Creates a Station.
+---@param shortcut string The station shortcut.
+---@param data table? Data for the station. If `nil`, the station will be a dummy and a `:loadSchematic()` call is expected.
+function Station:new(shortcut, data)
+	_Com.initStation(shortcut)
 
-	self.name = name
+	self.shortcut = shortcut
 
-	-- Tracks
-	for i, trackN in ipairs(data.tracks) do
-		local id = data.prefixDeviceNames and (self.name .. "_" .. trackN) or trackN
-		_Obj:addTrack(Track(self, id))
+	if data then
+		-- Tracks
+		for i, trackN in ipairs(data.tracks) do
+			local id = data.prefixDeviceNames and (self.shortcut .. "_" .. trackN) or trackN
+			_Obj:addTrack(id)
+		end
+		-- Switches
+		for i, switchN in ipairs(data.switches) do
+			local id = data.prefixDeviceNames and (self.shortcut .. "_" .. switchN) or switchN
+			_Obj:addSwitch(id)
+		end
+		-- Semaphores
+		for semaphoreN, semaphoreData in pairs(data.semaphores) do
+			local id = data.prefixDeviceNames and (self.shortcut .. "_" .. semaphoreN) or semaphoreN
+			_Obj:addSemaphore(id, semaphoreData)
+		end
 	end
-	-- Switches
-	for i, switchN in ipairs(data.switches) do
-		local id = data.prefixDeviceNames and (self.name .. "_" .. switchN) or switchN
-		_Obj:addSwitch(Switch(self, id))
-	end
-	-- Semaphores
-	for semaphoreN, semaphoreData in pairs(data.semaphores) do
-		local id = data.prefixDeviceNames and (self.name .. "_" .. semaphoreN) or semaphoreN
-		_Obj:addSemaphore(Semaphore(self, id, semaphoreData))
-	end
+
+	-- Schematic (optional)
+	self.schematic = nil
 end
 
+---Loads a schematic for this station.
+---@param data table The schematic data.
+function Station:loadSchematic(data)
+	self:tell("Reloading schematic...", Severity.INFO, 3)
+	self.schematic = Schematic(self, data)
+	self:tell("Schematic reloaded!", Severity.SUCCESS, 3)
+end
+
+---Sends an information about this station to the log.
+---@param text string The message to be written.
+---@param severity Severity The message severity.
+---@param weight integer The message weight.
 function Station:tell(text, severity, weight)
-	_LogWrite("station: " .. self.name .. ": " .. text, severity, weight)
+	_LogWrite(string.format("St:%s: %s", self.shortcut, text), severity, weight)
 end
 
 return Station

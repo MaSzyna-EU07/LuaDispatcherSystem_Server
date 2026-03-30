@@ -4,13 +4,11 @@ local class = require "lua.class"
 local Semaphore = class:derive("Semaphore")
 
 ---Tworzy semafor.
----@param station Station Stacja na której znajduje się ten semafor.
 ---@param id string Pełna nazwa semafora, np. `"sta1_C"`.
 ---@param data table Dane semafora, wczytywane z pliku.
-function Semaphore:new(station, id, data)
-	_Com.initSemaphore(station.name, id, data.type or SemaphoreType.SEM)
+function Semaphore:new(id, data)
+	_Com.initSemaphore(id, data.type or SemaphoreType.SEM)
 
-	self.station = station
 	self.id = id
 	self.type = data.type or SemaphoreType.SEM
 	self.shape = data.shape or false

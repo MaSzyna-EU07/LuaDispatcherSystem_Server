@@ -1,7 +1,3 @@
-local Track = require("lua.Track")
-local Switch = require("lua.Switch")
-local Semaphore = require("lua.Semaphore")
-
 local com = {}
 
 local COM_IMAGES = {
@@ -19,7 +15,7 @@ local COM_INPUT_FILE = "logs/command.txt"
 local com_path = ""
 local com_buffer = ""
 ---Example index: `com_ids.tracks.sta1_iz2.id`
----@type table<string, table<string, {id: integer, sid: integer}>>
+---@type table<string, table<string, {id: integer}>>
 local com_ids = {stations = {}, tracks = {}, switches = {}, semaphores = {}}
 local com_counters = {}
 
@@ -101,9 +97,9 @@ function com.doCommand(command)
 		-- Sends a command to the specified train on a track. `tc <track_id> <str> [num1] [num2]`
 		_Obj:getTrack(operands[2]):sendCommand(operands[3], tonumber(operands[4]) or 0, tonumber(operands[5]) or 0)
 	elseif operands[1] == "nt" then
-		-- Registers a new track. `nt <station_or_route_id> <track_id>`
+		-- Registers a new track. `nt <track_id>`
 		-- This DOES NOT WORK !!!
-		_Obj:addTrack(Track(_Obj:getStationOrRoute(operands[2]), operands[3]))
+		_Obj:addTrack(operands[2])
 	elseif operands[1] == "b" then
 		-- Switches the blockade direction. `b <route_id> <blockade_id> <n|p>`
 		_Obj:getRoute(operands[2]):getBlockade(tonumber(operands[3]) or 1):setDirection(operands[4] == "n")
@@ -113,6 +109,9 @@ end
 function com.saveBuffer()
 	if com_buffer == "" then return end
 	local file = io.open(com_path, "ab")
+	if not file then
+		_LogWrite("Potential problem! If this is the last line you see before crashing, make sure to make changes in `main_communication.lua`. Thanks!", Severity.ERROR, 3)
+	end
 	assert(file, "Could not open file at " .. com_path)
 	io.output(file)
 	io.write(com_buffer)
@@ -132,13 +131,10 @@ function com.getObjID(idTable, id)
 	return com.idToBytes(idTable[id].id)
 end
 
-function com.initObject(typeByte, idTable, counter, name, stationID)
+function com.initObject(typeByte, idTable, counter, name)
 	com_counters[counter] = (com_counters[counter] or 0) + 1
-	idTable[name] = {id = com_counters[counter], sid = stationID}
-
+	idTable[name] = {id = com_counters[counter]}
 	com.sendBytes({typeByte})
-	--pcall(function() for k, v in pairs(stationID) do print(k, v) end end)
-	if stationID then com.sendBytes(com.idToBytes(stationID)) end
 	com.sendText(name)
 end
 
@@ -150,16 +146,16 @@ function com.initRoute(name)
 	com.initObject(0xF1, com_ids.stations, "station", name)
 end
 
-function com.initTrack(stationName, name)
-	com.initObject(0xF2, com_ids.tracks, "track", name, com_ids.stations[stationName].id)
+function com.initTrack(name)
+	com.initObject(0xF2, com_ids.tracks, "track", name)
 end
 
-function com.initSwitch(stationName, name)
-	com.initObject(0xF3, com_ids.switches, "switch", name, com_ids.stations[stationName].id)
+function com.initSwitch(name)
+	com.initObject(0xF3, com_ids.switches, "switch", name)
 end
 
-function com.initSemaphore(stationName, name, type)
-	com.initObject(0xF4, com_ids.semaphores, "semaphore", name, com_ids.stations[stationName].id)
+function com.initSemaphore(name, type)
+	com.initObject(0xF4, com_ids.semaphores, "semaphore", name)
 	com.sendBytes({type})
 end
 

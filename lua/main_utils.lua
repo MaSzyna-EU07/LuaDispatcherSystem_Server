@@ -23,9 +23,12 @@ function _LoadFile(filename)
 	return contents
 end
 
+---Loads a file, and if it is there, returns its deserialized JSON contents.
+---@param filename string The file name.
+---@return table?
 function _GetDataFromFile(filename)
-	local contents = assert(_LoadFile(filename), "Could not open file at " .. tostring(filename))
-	return json.decode(contents)
+	local contents = _LoadFile(filename)
+	return contents and json.decode(contents)
 end
 
 ---Saves a file to the given path with the given contents. Errors out if the file cannot be created.
@@ -142,4 +145,22 @@ end
 
 function _SwitchChar(state)
 	return state and "-" or "+"
+end
+
+_DIRS = {
+	{x = 0, y = -1},
+	{x = 1, y = -1},
+	{x = 1, y = 0},
+	{x = 1, y = 1},
+	{x = 0, y = 1},
+	{x = -1, y = 1},
+	{x = -1, y = 0},
+	{x = -1, y = -1}
+}
+
+---Inverts the provided direction, 1 becomes 5, 2 becomes 6, 7 becomes 3, and so on.
+---@param dir integer The direction to invert.
+---@return integer
+function _InvertDir(dir)
+	return (dir + 3) % 8 + 1
 end

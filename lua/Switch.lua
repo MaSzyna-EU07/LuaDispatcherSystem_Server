@@ -3,10 +3,11 @@ local class = require "lua.class"
 ---@class Switch
 local Switch = class:derive("Switch")
 
-function Switch:new(station, id)
-	_Com.initSwitch(station.name, id)
+---Creates a switch.
+---@param id string Full switch name, e.g. `"sta1_3"`.
+function Switch:new(id)
+	_Com.initSwitch(id)
 
-	self.station = station
 	self.id = id
 	self.state = false
 	self.forced = false

@@ -17,6 +17,12 @@ SemaphoreType = {
 	TM = 1
 }
 
+---@enum PathMode
+PathMode = {
+	TRAIN = 0,
+	SHUNT = 1
+}
+
 ---@enum Severity
 Severity = {
     INFO = "INFO",
