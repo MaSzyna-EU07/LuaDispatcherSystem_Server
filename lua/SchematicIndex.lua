@@ -19,6 +19,17 @@ function SchematicIndex:new(schematic)
     self.semaphores = {}
 end
 
+---Registers a switch into this index and also attempts to add it to the device list.
+---@private
+---@param id string The switch ID.
+---@param tile Tile The tile associated with this switch.
+function SchematicIndex:registerSwitch(id, tile)
+    self.switches[id] = tile
+    if not _Obj:getSwitch(id) then
+        _Obj:addSwitch(id)
+    end
+end
+
 ---Indexes the schematic and registers any found objects, if the simulator still accepts that.
 function SchematicIndex:generateIndex()
     for x = 1, self.schematic.w do
@@ -35,9 +46,11 @@ function SchematicIndex:generateIndex()
                 self.tracks[tile.trackID] = trackData
             end
             if tile.switchID then
-                self.switches[tile.switchID] = tile
-                if not _Obj:getSwitch(tile.switchID) then
-                    _Obj:addSwitch(tile.switchID)
+                if tile:isDoubleSwitch() then
+                    self:registerSwitch(tile.switchID .. "ab", tile)
+                    self:registerSwitch(tile.switchID .. "cd", tile)
+                else
+                    self:registerSwitch(tile.switchID, tile)
                 end
             end
             if tile.semaphoreID and tile:isSemaphore() then

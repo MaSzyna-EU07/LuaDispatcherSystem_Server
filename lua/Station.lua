@@ -6,31 +6,10 @@ local Station = class:derive("Station")
 
 ---Creates a Station.
 ---@param shortcut string The station shortcut.
----@param data table? Data for the station. If `nil`, the station will be a dummy and a `:loadSchematic()` call is expected.
-function Station:new(shortcut, data)
+function Station:new(shortcut)
 	_Com.initStation(shortcut)
-
 	self.shortcut = shortcut
-
-	if data then
-		-- Tracks
-		for i, trackN in ipairs(data.tracks) do
-			local id = data.prefixDeviceNames and (self.shortcut .. "_" .. trackN) or trackN
-			_Obj:addTrack(id)
-		end
-		-- Switches
-		for i, switchN in ipairs(data.switches) do
-			local id = data.prefixDeviceNames and (self.shortcut .. "_" .. switchN) or switchN
-			_Obj:addSwitch(id)
-		end
-		-- Semaphores
-		for semaphoreN, semaphoreData in pairs(data.semaphores) do
-			local id = data.prefixDeviceNames and (self.shortcut .. "_" .. semaphoreN) or semaphoreN
-			_Obj:addSemaphore(id, semaphoreData)
-		end
-	end
-
-	-- Schematic (optional)
+	-- Schematic (required if the station has any devices)
 	self.schematic = nil
 end
 
@@ -47,7 +26,7 @@ end
 ---@param severity Severity The message severity.
 ---@param weight integer The message weight.
 function Station:tell(text, severity, weight)
-	_LogWrite(string.format("St:%s: %s", self.shortcut, text), severity, weight)
+	_LogWrite(string.format("%s: %s", self.shortcut, text), severity, weight)
 end
 
 return Station

@@ -33,24 +33,22 @@ function Semaphore:new(id, data)
 	self:init()
 end
 
--- Prepare the functions once for all semaphores.
--- Each `api.event_preparefunc` call creates a new FFI callback, and only so many can be defined.
-local stop = _API:eventPrepareFunction(function(event, activator) _Obj:getSemaphoreFromEvent(event):stop() end)
-local dim = _API:eventPrepareFunction(function(event, activator) _Obj:getSemaphoreFromEvent(event):dim() end)
-local unreserve = _API:eventPrepareFunction(function(event, activator) _Obj:getSemaphoreFromEvent(event):unreserveAllTracks() end)
-
 ---Initializes callbacks which listen for the changes in the simulator.
 function Semaphore:init()
 	_LogWrite("Creating semaphore: " .. self.id, Severity.INFO, 3)
 	_LogWrite("- Creating event callbacks...", Severity.INFO, 3)
 	if self.type == SemaphoreType.SEM then
-		_API:eventCreate(string.lower(self.id) .. (self.shape and "_sr1" or "_s1"), 0, 0, stop)
+		_API:eventCreate(string.lower(self.id) .. (self.shape and "_sr1" or "_s1"), 0, 0, function() self:stop() end)
+		_API:eventCreate(string.lower(self.id) .. (self.shape and "_sygsz_wyg90" or "_wyg_sz"), 0, 0, function() self:unreserveAllTracks() end)
+		if self.shape then
+			-- Shape signals don't explicitly set themselves to Sr1 when the Sz signal expires.
+			_API:eventCreate(string.lower(self.id) .. "_sygsz_wyg90", 0, 0, function() self:stop() end)
+		end
 	end
 	if self.type == SemaphoreType.TM then
-		_API:eventCreate(string.lower(self.id) .. "_ms1", 0, 0, stop)
+		_API:eventCreate(string.lower(self.id) .. "_ms1", 0, 0, function() self:stop() end)
 	end
-	_API:eventCreate(string.lower(self.id) .. "_uszk", 0, 0, dim)
-	_API:eventCreate(string.lower(self.id) .. (self.shape and "_sygsz_wyg90" or "_wyg_sz"), 0, 0, unreserve)
+	_API:eventCreate(string.lower(self.id) .. "_uszk", 0, 0, function() self:dim() end)
 
 	_LogWrite("Created semaphore: " .. self.id, Severity.SUCCESS, 2)
 end
@@ -110,8 +108,13 @@ end
 ---- `nil` jest dopuszczalne tylko przy sygnałach niezależnych od następnego semafora (S1,Ms1,Ms2,Sz).
 function Semaphore:setSpeed(speed, next)
 	-- Resolve the default next parameter.
-	---@type Semaphore|Speed?
-	next = next or (type(self.nextDefault) == "string" and _Obj:getSemaphore(self.nextDefault) or self.nextDefault)
+	if not next then
+		if type(self.nextDefault) == "string" then
+			next = _Obj:getSemaphore(self.nextDefault)
+		else
+			next = self.nextDefault
+		end
+	end
 	self:tell("Setting speed " .. tostring(speed) .. ", next: " .. tostring(next), Severity.INFO, 3)
 	-- Set the semaphore state and see if we can get away with that.
 	self.speed = speed

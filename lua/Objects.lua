@@ -25,9 +25,8 @@ end
 
 ---Adds a station to the station list. The index is the station name, e.g. "Eb".
 ---@param id string The station ID (shortcut).
----@param data table? The station data. If `nil`, the intiialized station will not have any data.
-function Objects:addStation(id, data)
-    self.stations[id] = Station(id, data)
+function Objects:addStation(id)
+    self.stations[id] = Station(id)
 end
 
 ---Adds a route to the route list. The index is the route name, e.g. "Eb-Tp".
@@ -156,43 +155,6 @@ end
 ---@return string[]
 function Objects:getSemaphoreList()
 	return _TableGetSortedKeys(self.semaphores)
-end
-
----Returns a Track based on its event, or `nil` if it is not found.
----@param event TEvent* The event from `api.event_preparefunc`.
----@return Track?
-function Objects:getTrackFromEvent(event)
-	local name = _API:eventGetName(event)
-	return self:getTrack(name:sub(1, name:find(":") - 1))
-end
-
----Returns a Switch based on its event, or `nil` if it is not found.
----@param event TEvent* The event from `api.event_preparefunc`.
----@return Switch?
-function Objects:getSwitchFromEvent(event)
-	local name = _API:eventGetName(event)
-	return self:getSwitch(name:sub(1, name:find(":") - 1))
-end
-
----Returns a Semaphore based on its event, or `nil` if it is not found.
----@param event TEvent* The event from `api.event_preparefunc`.
----@return Semaphore?
-function Objects:getSemaphoreFromEvent(event)
-	local name = _API:eventGetName(event)
-    -- I wish we could split at the second underscore, because the ID should always be <station_id>_<semaphore_id>, for exmaple `eb_a` and `eb_szn1`.
-	-- But this is not always the case, so we will do very dirty stuff here. Kinky, even.
-	-- Check for any suffixes. I wonder if this will crash in the future if I add something new to Semaphore.lua and forget to add it here too.
-    -- The event suffixes can have additional underscores, such as `bc_p_sr1` vs `bc_p_sygsz_wyg90`.
-	local doubleUnderscore = _StrEndsWith(name, "_sygsz_wyg90") or _StrEndsWith(name, "_wyg_sz")
-	local underscores = {}
-	while true do
-		local pos = name:find("_", (underscores[#underscores] or 0) + 1)
-		if not pos then
-			break
-		end
-		table.insert(underscores, pos)
-	end
-	return self:getSemaphore(name:sub(1, underscores[#underscores - (doubleUnderscore and 1 or 0)] - 1))
 end
 
 return Objects

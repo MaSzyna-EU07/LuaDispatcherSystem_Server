@@ -20,21 +20,14 @@ function Track:new(id)
 	self:init()
 end
 
--- Prepare the functions once for all tracks.
--- Each `api.event_preparefunc` call creates a new FFI callback, and only so many can be defined.
-local busy = _API:eventPrepareFunction(function(event, activator) _Obj:getTrackFromEvent(event):busy() end)
-local free = _API:eventPrepareFunction(function(event, activator) _Obj:getTrackFromEvent(event):free() end)
-local inc = _API:eventPrepareFunction(function(event, activator) _Obj:getTrackFromEvent(event):addVehicle(activator) end)
-local dec = _API:eventPrepareFunction(function(event, activator) _Obj:getTrackFromEvent(event):removeVehicle(activator) end)
-
 ---Initializes callbacks which listen for the changes in the simulator.
 function Track:init()
 	_LogWrite("Creating track: " .. self.id, Severity.INFO, 3)
 	_LogWrite("- Creating event callbacks...", Severity.INFO, 3)
-	_API:eventCreate(string.lower(self.id) .. ":busy", 0, 0, busy)
-	_API:eventCreate(string.lower(self.id) .. ":free", 0, 0, free)
-	_API:eventCreate(string.lower(self.id) .. ":inc", 0, 0, inc)
-	_API:eventCreate(string.lower(self.id) .. ":dec", 0, 0, dec)
+	_API:eventCreate(string.lower(self.id) .. ":busy", 0, 0, function() self:busy() end)
+	_API:eventCreate(string.lower(self.id) .. ":free", 0, 0, function() self:free() end)
+	_API:eventCreate(string.lower(self.id) .. ":inc", 0, 0, function(event, activator) self:addVehicle(activator) end)
+	_API:eventCreate(string.lower(self.id) .. ":dec", 0, 0, function(event, activator) self:removeVehicle(activator) end)
 	_LogWrite("Created track: " .. self.id, Severity.SUCCESS, 2)
 end
 

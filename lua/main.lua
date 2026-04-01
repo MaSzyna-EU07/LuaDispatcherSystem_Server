@@ -37,6 +37,13 @@ _Obj = Objects()
 ---@type TileDatabase
 _TileDB = TileDatabase()
 
+function _TryInit(filename)
+	local success, result = pcall(_Init, filename)
+	if not success then
+		_LogWrite("INIT FATAL ERROR: " .. tostring(result), Severity.ERROR, 3)
+	end
+end
+
 function _Init(filename)
 	_LogWrite("\n     __                   \n    / /  DISPATCHER SYSTEM\n   / /     __  __  ____   \n  / /     / / / / / __ \\  \n / /___  / / / / / /_/ /_ \n/_____/ |_____/  \\______/ \n               for MaSzyna\n\nBrought to you by jakubg1\n\nVERSION: " .. VERSION, Severity.INFO, 1)
 
@@ -44,9 +51,6 @@ function _Init(filename)
 
 	-- decode the contents and store in a table
 	local fileData = assert(_GetDataFromFile(filename), "Could not open file at " .. tostring(filename))
-	for stationN, stationData in pairs(fileData.stations) do
-		_Obj:addStation(stationN, stationData)
-	end
 	for routeN, routeData in pairs(fileData.routes) do
 		_Obj:addRoute(routeN, routeData)
 	end
@@ -66,7 +70,14 @@ function _Init(filename)
 		end
 	end
 
-	_CreateLoopEvent("loop", _Loop, 1)
+	_CreateLoopEvent("loop", _TryLoop, 1)
+end
+
+function _TryLoop()
+	local success, result = pcall(_Loop)
+	if not success then
+		_LogWrite("LOOP FATAL ERROR: " .. tostring(result), Severity.ERROR, 3)
+	end
 end
 
 function _Loop()
@@ -84,4 +95,4 @@ function _CreateLoopEvent(name, func, delay, randomDelay)
 	_API:eventDispatch(name)
 end
 
-_Init(FILENAME)
+_TryInit(FILENAME)

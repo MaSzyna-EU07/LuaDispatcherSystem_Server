@@ -13,10 +13,6 @@ function api.event_create(name, delay, randomdelay, func)
 	events[name] = {delay = delay, randomdelay = randomdelay, func = func}
 end
 
-function api.event_preparefunc(func)
-	return func
-end
-
 function api.event_find(name)
 	return ""
 end

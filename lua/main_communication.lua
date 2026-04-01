@@ -31,7 +31,11 @@ end
 
 function com.sendBytes(bytes)
 	for i, n in ipairs(bytes) do
-		com_buffer = com_buffer .. string.char(n % 256)
+		if type(n) == "number" then
+			com_buffer = com_buffer .. string.char(n % 256)
+		else
+			_LogWrite("Ignored illegal byte in `com.sendBytes()`: " .. tostring(n), Severity.ERROR, 3)
+		end
 	end
 end
 

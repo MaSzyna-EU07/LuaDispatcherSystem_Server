@@ -15,17 +15,12 @@ function Switch:new(id)
 	self:init()
 end
 
--- Prepare the functions once for all switches.
--- Each `api.event_preparefunc` call creates a new FFI callback, and only so many can be defined.
-local forced0 = _API:eventPrepareFunction(function(event, activator) _Obj:getSwitchFromEvent(event):forceState(true) end)
-local forced1 = _API:eventPrepareFunction(function(event, activator) _Obj:getSwitchFromEvent(event):forceState(false) end)
-
 ---Initializes callbacks which listen for the changes in the simulator.
 function Switch:init()
 	_LogWrite("Creating switch: " .. self.id, Severity.INFO, 3)
 	_LogWrite("- Creating event callbacks...", Severity.INFO, 3)
-	_API:eventCreate(string.lower(self.id) .. ":forced-", 0, 0, forced0)
-	_API:eventCreate(string.lower(self.id) .. ":forced+", 0, 0, forced1)
+	_API:eventCreate(string.lower(self.id) .. ":forced-", 0, 0, function() self:forceState(true) end)
+	_API:eventCreate(string.lower(self.id) .. ":forced+", 0, 0, function() self:forceState(false) end)
 	_LogWrite("Created switch: " .. self.id, Severity.SUCCESS, 2)
 end
 

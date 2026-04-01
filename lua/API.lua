@@ -43,19 +43,6 @@ function API:eventCreate(name, delay, randomDelay, handler)
     api.event_create(name, delay, randomDelay, handler)
 end
 
----Prepares a function to be used for the callback.
----Each `api.event_preparefunc` call creates a new FFI callback, and only so many can be defined.
----Use with caution.
----@param f function The function to be called back. Accepts the `event` and `activator` fields.
----@return function
-function API:eventPrepareFunction(f)
-    local wrapped = function(event, activator)
-        local success, result = pcall(f, event, activator)
-        if not success then api.writeerrorlog(string.format("Failed callback for %s: %s", api.event_getname(event), result)) end
-    end
-    return api.event_preparefunc(wrapped)
-end
-
 ---Returns the name of the specified event.
 ---@param event TEvent* The event to retrieve the name from.
 ---@return string
@@ -67,8 +54,7 @@ end
 ---@param event string The event to check the existence of.
 ---@return boolean
 function API:eventExists(event)
-	-- TODO: Reimplement in the EXE directly!
-    return tostring(api.event_find(event)) ~= "cdata<struct TEvent *>: NULL"
+    return api.event_exists(event)
 end
 
 ---Dispatches an event.
