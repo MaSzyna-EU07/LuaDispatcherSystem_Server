@@ -89,7 +89,7 @@ end
 function SchematicIndex:print()
     _LogWrite(string.format("Schematic index for station %s:", self.schematic.name), Severity.INFO, 2)
     _LogWrite("- Tracks:", Severity.INFO, 2)
-    for i, id in ipairs(_TableGetSortedKeys(self.tracks)) do
+    for i, id in ipairs(_Utils.tableGetSortedKeys(self.tracks)) do
         local data = self.tracks[id]
         local trainLocation = self:getTileLocation(data.trainTarget)
         local shuntLocation = self:getTileLocation(data.shuntTarget)
@@ -100,11 +100,11 @@ function SchematicIndex:print()
         _LogWrite(string.format("  - %s: P -> %s, M -> %s, semaphores: %s", id, trainLocation, shuntLocation, semaphoreList), Severity.INFO, 2)
     end
     _LogWrite("- Switches:", Severity.INFO, 2)
-    for i, id in ipairs(_TableGetSortedKeys(self.switches)) do
+    for i, id in ipairs(_Utils.tableGetSortedKeys(self.switches)) do
         _LogWrite(string.format("  - %s: %s", id, self:getTileLocation(self.switches[id])), Severity.INFO, 2)
     end
     _LogWrite("- Semaphores:", Severity.INFO, 2)
-    for i, id in ipairs(_TableGetSortedKeys(self.semaphores)) do
+    for i, id in ipairs(_Utils.tableGetSortedKeys(self.semaphores)) do
         _LogWrite(string.format("  - %s: %s", id, self:getTileLocation(self.semaphores[id])), Severity.INFO, 2)
     end
 end

@@ -1,5 +1,3 @@
-local json = require("lua.json")
-
 local verboseValue = 3
 
 ---Writes a message to the MaSzyna's log file.
@@ -12,25 +10,6 @@ function _LogWrite(text, severity, weight)
 	end
 end
 
-function _LoadFile(filename)
-	local file = io.open(filename, "r")
-	if not file then
-		return
-	end
-	io.input(file)
-	local contents = io.read("*a")
-	io.close(file)
-	return contents
-end
-
----Loads a file, and if it is there, returns its deserialized JSON contents.
----@param filename string The file name.
----@return table?
-function _GetDataFromFile(filename)
-	local contents = _LoadFile(filename)
-	return contents and json.decode(contents)
-end
-
 ---Saves a file to the given path with the given contents. Errors out if the file cannot be created.
 ---@param path string The path to the file.
 ---@param data string The contents of the file.
@@ -40,55 +19,6 @@ function _SaveFile(path, data)
 	io.output(file)
 	io.write(data)
 	io.close(file)
-end
-
----Splits a string `s` with the delimiter being `k` and returns a list of results.
----@param s string A string to be split.
----@param k string A delimiter which determines where to split `s`.
----@return string[]
-function _StrSplit(s, k)
-	local result = {}
-	local l = k:len()
-	while true do
-		local n = s:find("%" .. k)
-		if n then
-			table.insert(result, s:sub(1, n - 1))
-			s = s:sub(n + l)
-		else
-			table.insert(result, s)
-			return result
-		end
-	end
-end
-
----Returns `true` if the string `s` ends with the clause `c`.
----@param s string The string to be searched.
----@param c string The expected ending of the string `s`.
----@return boolean
-function _StrEndsWith(s, c)
-	return s:sub(s:len() - c:len() + 1) == c
-end
-
----Returns a list of all keys in table `t`, sorted alphabetically.
----@param t table The table from which the keys will be sourced.
----@return table
-function _TableGetSortedKeys(t)
-	local keys = {}
-	for k, v in pairs(t) do
-		table.insert(keys, k)
-	end
-	table.sort(keys)
-	return keys
-end
-
----Returns `true` if the table does not contain any keys.
----@param t table The potentially empty table.
----@return boolean
-function _TableIsEmpty(t)
-	for k, v in pairs(t) do
-		return false
-	end
-	return true
 end
 
 function _FindLast(text, toFind)

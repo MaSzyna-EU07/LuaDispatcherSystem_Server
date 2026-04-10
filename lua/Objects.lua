@@ -142,19 +142,47 @@ end
 ---Returns a list of track IDs, sorted alphabetically.
 ---@return string[]
 function Objects:getTrackList()
-	return _TableGetSortedKeys(self.tracks)
+	return _Utils.tableGetSortedKeys(self.tracks)
 end
 
 ---Returns a list of switch IDs, sorted alphabetically.
 ---@return string[]
 function Objects:getSwitchList()
-	return _TableGetSortedKeys(self.switches)
+	return _Utils.tableGetSortedKeys(self.switches)
 end
 
 ---Returns a list of semaphore IDs, sorted alphabetically.
 ---@return string[]
 function Objects:getSemaphoreList()
-	return _TableGetSortedKeys(self.semaphores)
+	return _Utils.tableGetSortedKeys(self.semaphores)
+end
+
+-- The following are simplified state objects which are used both in the client and in the server.
+
+---@alias TrackState {occupied: boolean, reserved: boolean}
+---@alias SwitchState {state: boolean, forced: boolean}
+---@alias SemaphoreState {speed: Speed, nextSpeed: Speed, image: string}
+
+---Returns the track state, or `nil` if the provided track doesn't exist.
+---@param name string The full track ID.
+---@return TrackState?
+function Objects:getTrackState(name)
+    return self:getTrack(name)
+end
+
+---Returns the switch state, or `nil` if the provided switch doesn't exist.
+---@param name string The full switch ID.
+---@return SwitchState?
+function Objects:getSwitchState(name)
+    return self:getSwitch(name)
+end
+
+---Returns the semaphore state, or `nil` if the provided semaphore doesn't exist.
+---@param name string The full semaphore ID.
+---@return SemaphoreState?
+function Objects:getSemaphoreState(name)
+    local semaphore = self:getSemaphore(name)
+    return semaphore and semaphore:getState()
 end
 
 return Objects

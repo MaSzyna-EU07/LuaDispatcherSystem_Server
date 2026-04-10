@@ -445,6 +445,12 @@ Opcode są następujące:
 
 - 01 - Debug printout.
 	- STRING: wiadomość
+- 02 - Debug notification.
+	- BYTE: typ notyfikacji:
+		- 00 - zielony
+		- 01 - czerwony
+		- 02 - szary
+	- STRING: wiadomość
 
 - 12 - Zmiana stanu toru (odcinka izolowanego).
 	- SHORT: ID toru

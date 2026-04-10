@@ -90,7 +90,7 @@ end
 ---Returns whether all blocks are free in this blockade.
 ---@return boolean
 function Blockade:isFree()
-    return _TableIsEmpty(self.occupiedBlocks)
+    return _Utils.tableIsEmpty(self.occupiedBlocks)
 end
 
 ---Sets the direction on this blockade.

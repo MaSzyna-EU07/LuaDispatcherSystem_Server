@@ -1,6 +1,7 @@
 VERSION = "5.0 Edition (2025 Reboot Alpha)"
 require("lua.main_enums")
 require("lua.main_utils")
+_Utils = require("lua.utils")
 _API = require("lua.API")
 _Com = require("lua.main_communication")
 
@@ -50,7 +51,8 @@ function _Init(filename)
 	_Com.init()
 
 	-- decode the contents and store in a table
-	local fileData = assert(_GetDataFromFile(filename), "Could not open file at " .. tostring(filename))
+	local fileData = assert(_Utils.loadJson(filename), "Could not open file at " .. tostring(filename))
+	-- Create stations and routes.
 	for routeN, routeData in pairs(fileData.routes) do
 		_Obj:addRoute(routeN, routeData)
 	end
@@ -58,7 +60,7 @@ function _Init(filename)
 	-- Additional pass for schematic data.
 	-- TODO: Make schematics the only way of defining stuff.
 	local projFilename = filename:sub(1, filename:len() - 5) .. "_proj.json"
-	local projData = _GetDataFromFile(projFilename)
+	local projData = _Utils.loadJson(projFilename)
 	if projData then
 		_LogWrite("Project file found: " .. projFilename, Severity.SUCCESS, 3)
 		for i, stationData in ipairs(projData.stations) do

@@ -26,6 +26,8 @@ function Semaphore:new(id, data)
 	self.image = self:getSupportedImage(self:getStopSpeed())
 	---@type boolean
 	self.w24 = false
+	---@type SemaphoreState
+	self.state = {speed = self.speed, nextSpeed = Speed.STOP, image = self.image}
 
 	---@type table<Track, true>
 	self.reservedTracks = {} -- A list of tracks this Semaphore has reserved for itself.
@@ -55,6 +57,14 @@ end
 
 function Semaphore:__tostring()
 	return string.format("S[%s : image=%s]", self.id, self.image)
+end
+
+---Returns the simplified state of this Semaphore, used for the tile pathfinding.
+---TODO: Do this better. Currently, neither the `self.speed` and `self.next` nor `self:getDisplayedSpeed()` and `self:getDisplayedNextSpeed()` are guaranteed to return stable values...
+---(Stable as in we can meddle with neighboring semaphores as we like without touching this one and the image stays until we call `:refreshSim()`)
+---@return SemaphoreState
+function Semaphore:getState()
+	return self.state
 end
 
 ---Sends an information about this semaphore to the log.
@@ -265,6 +275,9 @@ function Semaphore:refreshSim()
 		end
 	end
 	_Com.setSemaphore(self.id, speed, nextSpeed, self.image)
+	self.state.speed = speed
+	self.state.nextSpeed = nextSpeed or Speed.STOP
+	self.state.image = self.image
 end
 
 return Semaphore

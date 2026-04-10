@@ -49,11 +49,11 @@ function com.tick()
 end
 
 function com.readCommands()
-	local data = _LoadFile(COM_INPUT_FILE)
+	local data = _Utils.loadFile(COM_INPUT_FILE)
 	if not data or data == "" then
 		return
 	end
-	local lines = _StrSplit(data, "\n")
+	local lines = _Utils.strSplit(data, "\n")
 	for i, line in ipairs(lines) do
 		local success, result = pcall(function() com.doCommand(line) end)
 		if not success then
@@ -64,7 +64,7 @@ function com.readCommands()
 end
 
 function com.doCommand(command)
-	local operands = _StrSplit(command, " ")
+	local operands = _Utils.strSplit(command, " ")
 	if operands[1] == "s" then
 		-- Sets a semaphore. `s <semaphore_id> <speed> [next] ["w24"]`
 		_Obj:getSemaphore(operands[2]):setW24(operands[5] == "w24")
@@ -184,6 +184,12 @@ end
 
 function com.print(message)
 	com.sendBytes({0x01})
+	com.sendText(message)
+end
+
+function com.notify(message, color)
+	com.sendBytes({0x02})
+	com.sendBytes({NotificationColorID[color]})
 	com.sendText(message)
 end
 
