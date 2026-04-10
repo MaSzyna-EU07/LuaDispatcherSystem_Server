@@ -19,6 +19,7 @@ function Station:loadSchematic(data)
 	self:tell("Reloading schematic...", Severity.INFO, 3)
 	self.schematic = Schematic(self, data)
 	self:tell("Schematic reloaded!", Severity.SUCCESS, 3)
+	_Com.notify(self.shortcut .. ": Schematic reloaded!")
 	self.schematic.index:print()
 end
 

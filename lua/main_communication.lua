@@ -117,6 +117,9 @@ function com.doCommand(command)
 		if not result then
 			com.notify("Pathfinding failed... :(", NotificationColor.RED)
 		end
+	elseif operands[1] == "r" then
+		-- Reloads all schematics. `r [station_id]`
+		_LoadSchematics(operands[2])
 	end
 end
 

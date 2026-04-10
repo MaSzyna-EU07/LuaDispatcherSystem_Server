@@ -38,6 +38,8 @@ _Obj = Objects()
 ---@type TileDatabase
 _TileDB = TileDatabase()
 
+_Filename = nil
+
 function _TryInit(filename)
 	local success, result = pcall(_Init, filename)
 	if not success then
@@ -59,20 +61,37 @@ function _Init(filename)
 
 	-- Additional pass for schematic data.
 	-- TODO: Make schematics the only way of defining stuff.
-	local projFilename = filename:sub(1, filename:len() - 5) .. "_proj.json"
-	local projData = _Utils.loadJson(projFilename)
-	if projData then
-		_LogWrite("Project file found: " .. projFilename, Severity.SUCCESS, 3)
-		for i, stationData in ipairs(projData.stations) do
-			local station = _Obj:getStation(stationData.shortcut)
-			if not station then
-				_Obj:addStation(stationData.shortcut)
-			end
-			_Obj:assertGetStation(stationData.shortcut):loadSchematic(stationData)
-		end
-	end
+	_Filename = filename
+	_LoadSchematics()
 
 	_CreateLoopEvent("loop", _TryLoop, 1)
+end
+
+function _LoadSchematics(stationID)
+	-- Reload the file.
+	local projFilename = _Filename:sub(1, _Filename:len() - 5) .. "_proj.json"
+	local projData = _Utils.loadJson(projFilename)
+	if projData then
+		_LogWrite("Project file (re)loaded: " .. projFilename, Severity.SUCCESS, 3)
+		if stationID then
+			-- Load a single station.
+			local stationData = projData.stations[projData.stationIndex[stationID]]
+			_LoadSchematic(stationData)
+		else
+			-- Load all stations.
+			for i, stationData in ipairs(projData.stations) do
+				_LoadSchematic(stationData)
+			end
+		end
+	end
+end
+
+function _LoadSchematic(stationData)
+	local station = _Obj:getStation(stationData.shortcut)
+	if not station then
+		_Obj:addStation(stationData.shortcut)
+	end
+	_Obj:assertGetStation(stationData.shortcut):loadSchematic(stationData)
 end
 
 function _TryLoop()
