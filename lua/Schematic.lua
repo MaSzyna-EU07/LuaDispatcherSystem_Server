@@ -1,6 +1,7 @@
 local Class = require("lua.class")
 local Tile = require("lua.Tile")
 local SchematicIndex = require("lua.SchematicIndex")
+local Pathfinder = require("lua.pathfinder.Pathfinder")
 
 ---Represents a station schematic, comprised of tiles.
 ---@class Schematic : Class
@@ -38,6 +39,47 @@ end
 ---@return Tile
 function Schematic:assertGetTile(x, y)
 	return assert(self:getTile(x, y), string.format("There is no tile at (%s, %s)", x, y))
+end
+
+---Attempts to pathfind between two given tracks on this schematic with the given path mode.
+---Returns `true` on success, `false` on failure.
+---@param track1 string The ID of the first track to pathfind from. This would usually be a track a train is on.
+---@param track2 string The ID of the destination track to pathfind to.
+---@param mode PathMode The mode of the dispatching: whether to display a train or a shunting signal.
+---@return boolean
+function Schematic:pathfind(track1, track2, mode)
+	self.station:tell(string.format("Pathfinding from %s to %s...", track1, track2), Severity.INFO, 1)
+	local track1Info = self.index:getTrack(track1)
+	local track2Info = self.index:getTrack(track2)
+	if not track1Info or not track2Info then
+		self.station:tell("Failed: Not all tracks exist", Severity.FAIL, 1)
+		-- If any of the tracks doesn't exist, we're out.
+		return false
+	end
+	local target = mode == PathMode.TRAIN and track2Info.trainTarget or track2Info.shuntTarget
+	if not target then
+		self.station:tell("Failed: Target point not found", Severity.FAIL, 1)
+		-- We cannot pathfind there.
+		return false
+	end
+	-- Attempt to pathfind from any of the semaphores on the starting track.
+	for i, semaphore in ipairs(track1Info.semaphores) do
+		local tile = self.index:getSemaphore(semaphore.id)
+		self.station:tell(string.format("Attempting with %s...", semaphore.id), Severity.INFO, 1)
+		if tile then
+			local pathfinder = Pathfinder(tile, target)
+			pathfinder:setMode(mode)
+			local success = pathfinder:calculatePath()
+			if success then
+				-- We found a route! Dispatch it and we can start a party
+				pathfinder:dispatch()
+				return true
+			end
+		end
+	end
+	self.station:tell("Failed: Pathfinding failed for all semaphores", Severity.FAIL, 1)
+	-- Nothing worked... :(
+	return false
 end
 
 ---Deserializes the Station's data to be restored from a file.

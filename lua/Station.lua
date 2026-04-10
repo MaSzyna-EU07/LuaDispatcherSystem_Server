@@ -19,6 +19,7 @@ function Station:loadSchematic(data)
 	self:tell("Reloading schematic...", Severity.INFO, 3)
 	self.schematic = Schematic(self, data)
 	self:tell("Schematic reloaded!", Severity.SUCCESS, 3)
+	self.schematic.index:print()
 end
 
 ---Sends an information about this station to the log.

@@ -57,13 +57,17 @@ function com.readCommands()
 	for i, line in ipairs(lines) do
 		local success, result = pcall(function() com.doCommand(line) end)
 		if not success then
-			_LogWrite("[COMMUNICATION] Error executing command `" .. line .. "`: " .. result, Severity.ERROR, 1)
+			_LogWrite("[COMMUNICATION] Error executing command `" .. line .. "`: " .. result, Severity.ERROR, 3)
 		end
 	end
 	_SaveFile(COM_INPUT_FILE, "")
 end
 
 function com.doCommand(command)
+	if command == "" then
+		return
+	end
+	_LogWrite("[COMMUNICATION] Processing command: `" .. command .. "`", Severity.INFO, 1)
 	local operands = _Utils.strSplit(command, " ")
 	if operands[1] == "s" then
 		-- Sets a semaphore. `s <semaphore_id> <speed> [next] ["w24"]`
@@ -107,6 +111,12 @@ function com.doCommand(command)
 	elseif operands[1] == "b" then
 		-- Switches the blockade direction. `b <route_id> <blockade_id> <n|p>`
 		_Obj:getRoute(operands[2]):getBlockade(tonumber(operands[3]) or 1):setDirection(operands[4] == "n")
+	elseif operands[1] == "p" then
+		-- Pathfinds a route. `p <station_id> <track1_id> <track2_id> <t|s>`
+		local result = _Obj:getStation(operands[2]).schematic:pathfind(operands[3], operands[4], operands[5] == "t" and PathMode.TRAIN or PathMode.SHUNT)
+		if not result then
+			com.notify("Pathfinding failed... :(", NotificationColor.RED)
+		end
 	end
 end
 
@@ -189,7 +199,7 @@ end
 
 function com.notify(message, color)
 	com.sendBytes({0x02})
-	com.sendBytes({NotificationColorID[color]})
+	com.sendBytes({NotificationColorID[color or NotificationColor.GREEN]})
 	com.sendText(message)
 end
 

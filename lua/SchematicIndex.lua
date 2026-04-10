@@ -54,14 +54,8 @@ function SchematicIndex:generateIndex()
                 end
             end
             if tile.semaphoreID and tile:isSemaphore() then
+                -- Register the semaphore.
                 self.semaphores[tile.semaphoreID] = tile
-                local prevTile = tile:getNeighbor(_InvertDir(assert(tile:getSemaphoreDirection())))
-                if prevTile and prevTile.trackID then
-                    ---@type TrackIndexData
-                    local trackData = self.tracks[prevTile.trackID] or {semaphores = {}}
-                    table.insert(trackData.semaphores, _Obj:getSemaphore(tile.semaphoreID))
-                    self.tracks[prevTile.trackID] = trackData
-                end
                 if not _Obj:getSemaphore(tile.semaphoreID) then
                     local data = {
                         shape = tile.semaphoreShape,
@@ -72,9 +66,38 @@ function SchematicIndex:generateIndex()
                     }
                     _Obj:addSemaphore(tile.semaphoreID, data)
                 end
+                -- Check if the tile behind exists and assign the semaphore to its track.
+                local prevTrackID = tile:getSemaphorePrevTrackID()
+                if prevTrackID then
+                    ---@type TrackIndexData
+                    local trackData = self.tracks[prevTrackID] or {semaphores = {}}
+                    table.insert(trackData.semaphores, _Obj:getSemaphore(tile.semaphoreID))
+                    self.tracks[prevTrackID] = trackData
+                end
             end
         end
     end
+end
+
+---Returns data about the given track. If the track does not exist in the index, returns `nil`.
+---@param name string The track name.
+---@return TrackIndexData?
+function SchematicIndex:getTrack(name)
+    return self.tracks[name]
+end
+
+---Returns the tile on which the provided switch is on. If the switch doesn't exist in the index, returns `nil`.
+---@param name string The switch name.
+---@return Tile?
+function SchematicIndex:getSwitch(name)
+    return self.switches[name]
+end
+
+---Returns the tile on which the provided semaphore is on. If the semaphore doesn't exist in the index, returns `nil`.
+---@param name string The semaphore name.
+---@return Tile?
+function SchematicIndex:getSemaphore(name)
+    return self.semaphores[name]
 end
 
 ---Returns the tile location or `"none"` when the tile doesn't exist.

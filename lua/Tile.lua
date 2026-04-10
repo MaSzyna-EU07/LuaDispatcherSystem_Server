@@ -84,6 +84,7 @@ end
 
 ---Returns the neighbor tile in the provided direction, or `nil` if we're out of bounds.
 ---@param dir integer The direction for which the tile should be returned.
+---@return Tile?
 function Tile:getNeighbor(dir)
 	return self.schematic:getTile(self.x + _DIRS[dir].x, self.y + _DIRS[dir].y)
 end
@@ -241,6 +242,14 @@ end
 ---@return integer?
 function Tile:getSemaphoreDirection()
 	return self:getData().semaphore
+end
+
+---If this Tile is a semaphore, returns the track ID on the tile in front of it.
+---Returns `nil` if this Tile is not a semaphore or there's no track in front of it.
+---@return string?
+function Tile:getSemaphorePrevTrackID()
+	local prevTile = self:isSemaphore() and self:getNeighbor(_InvertDir(assert(self:getSemaphoreDirection()))) or nil
+	return prevTile and prevTile.trackID
 end
 
 ---Returns this tile's semaphore state, or `nil` if no semaphore is specified for this tile.

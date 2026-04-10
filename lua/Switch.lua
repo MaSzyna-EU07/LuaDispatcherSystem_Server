@@ -36,6 +36,8 @@ function Switch:tell(text, severity, weight)
 	_LogWrite(tostring(self.id) .. ": " .. text, severity, weight)
 end
 
+---Sets the Switch state.
+---@param state boolean `true` for `+`, `false` for `-`.
 function Switch:setState(state)
 	self.state = state
 	self:tell("state=>"..tostring(state), Severity.INFO, 3)

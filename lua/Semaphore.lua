@@ -118,13 +118,7 @@ end
 ---- `nil` jest dopuszczalne tylko przy sygnałach niezależnych od następnego semafora (S1,Ms1,Ms2,Sz).
 function Semaphore:setSpeed(speed, next)
 	-- Resolve the default next parameter.
-	if not next then
-		if type(self.nextDefault) == "string" then
-			next = _Obj:getSemaphore(self.nextDefault)
-		else
-			next = self.nextDefault
-		end
-	end
+	next = next or _ResolveSemaphore(self.nextDefault)
 	self:tell("Setting speed " .. tostring(speed) .. ", next: " .. tostring(next), Severity.INFO, 3)
 	-- Set the semaphore state and see if we can get away with that.
 	self.speed = speed
