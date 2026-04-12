@@ -9,6 +9,7 @@ local COM_IMAGES = {
 	ms1=0x80, ms2=0x81,
 	sz=0xFF, sz1=0xFF
 }
+local COM_BLOCKADES = {n = true, p = false, x = nil}
 local COM_SAVE_INTERVAL = 1
 local COM_INPUT_FILE = "logs/command.txt"
 
@@ -109,11 +110,19 @@ function com.doCommand(command)
 		-- This DOES NOT WORK !!!
 		_Obj:addTrack(operands[2])
 	elseif operands[1] == "b" then
-		-- Switches the blockade direction. `b <route_id> <blockade_id> <n|p>`
-		_Obj:getRoute(operands[2]):getBlockade(tonumber(operands[3]) or 1):setDirection(operands[4] == "n")
+		-- Switches the blockade direction. `b <route_id> <blockade_id> <n|p|x>`
+		_Obj:getRoute(operands[2]):getBlockade(tonumber(operands[3]) or 1):setDirection(COM_BLOCKADES[operands[4]])
 	elseif operands[1] == "p" then
-		-- Pathfinds a route. `p <station_id> <track1_id> <track2_id> <t|s>`
-		local result = _Obj:getStation(operands[2]).schematic:pathfind(operands[3], operands[4], operands[5] == "t" and PathMode.TRAIN or PathMode.SHUNT)
+		-- Pathfinds a route. `p <station_id> <track1_id> <track2_id> [t|s]`
+		local result = _Obj:getStation(operands[2]).schematic:pathfind(operands[3], operands[4], operands[5] == "s" and PathMode.SHUNT or PathMode.TRAIN)
+		if not result then
+			com.notify("Pathfinding failed... :(", NotificationColor.RED)
+		end
+	elseif operands[1] == "pm" then
+		-- Pathfinds a route by specifying coordinates. `p <station_id> <x1> <y1> <x2> <y2> [t|s]`
+		local schematic = assert(_Obj:getStation(operands[2]).schematic, "Station not found!")
+		local x1, y1, x2, y2 = tonumber(operands[3]), tonumber(operands[4]), tonumber(operands[5]), tonumber(operands[6])
+		local result = schematic:pathfindTiles(schematic:assertGetTile(x1, y1), schematic:assertGetTile(x2, y2), operands[7] == "s" and PathMode.SHUNT or PathMode.TRAIN)
 		if not result then
 			com.notify("Pathfinding failed... :(", NotificationColor.RED)
 		end

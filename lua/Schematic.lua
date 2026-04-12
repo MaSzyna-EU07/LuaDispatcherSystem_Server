@@ -67,6 +67,7 @@ function Schematic:pathfind(track1, track2, mode)
 		local tile = self.index:getSemaphore(semaphore.id)
 		self.station:tell(string.format("Attempting with %s...", semaphore.id), Severity.INFO, 1)
 		if tile then
+			-- Summon a pathfinder and let it find the path...
 			local pathfinder = Pathfinder(tile, target)
 			pathfinder:setMode(mode)
 			local success = pathfinder:calculatePath()
@@ -79,6 +80,30 @@ function Schematic:pathfind(track1, track2, mode)
 	end
 	self.station:tell("Failed: Pathfinding failed for all semaphores", Severity.FAIL, 1)
 	-- Nothing worked... :(
+	return false
+end
+
+---Attempts to pathfind between two given tiles on this schematic with the given path mode.
+---Returns `true` on success, `false` on failure.
+---@param tile1 Tile The first tile to pathfind from. Must be a semaphore tile.
+---@param tile2 Tile The destination tile to pathfind to.
+---@param mode PathMode The mode of the dispatching: whether to display a train or a shunting signal.
+---@return boolean
+function Schematic:pathfindTiles(tile1, tile2, mode)
+	if not tile1:isSemaphore() then
+		-- The first tile must be a semaphore.
+		return false
+	end
+	-- Summon a pathfinder and let it find the path...
+	local pathfinder = Pathfinder(tile1, tile2)
+	pathfinder:setMode(mode)
+	local success = pathfinder:calculatePath()
+	if success then
+		-- We found a route! Dispatch it and we can start a party
+		pathfinder:dispatch()
+		return true
+	end
+	-- We didn't find the path...
 	return false
 end
 

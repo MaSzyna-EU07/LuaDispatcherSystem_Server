@@ -13,6 +13,7 @@ function Blockade:new(route, data)
     self.route = route
     self.type = data.type
     self.bidirectional = data.bidirectional
+    self.direction = false
     ---@type table<integer, true>
     self.occupiedBlocks = {}
     ---@type {track: string, semaphore: string, semaphoreN: string?, next: string|integer?}[]
@@ -27,7 +28,6 @@ function Blockade:new(route, data)
         -- By default, all blocks are free. If a block is occupied at the start, it will trigger an appropriate callback when vehicles are placed.
         self:freeBlock(i)
     end
-    self.direction = false
 	_LogWrite("Created blockade for route: " .. route.shortcut, Severity.SUCCESS, 2)
 end
 
@@ -44,10 +44,12 @@ end
 function Blockade:occupyBlock(n)
     self:tell("Block " .. n .. " : occupied", Severity.INFO, 3)
     self.occupiedBlocks[n] = true
-    if not self.direction then
+    if self.direction == false then
         self:setSemaphoreForBlock(n, Speed.STOP, n == 1 and Speed.STOP or Speed.DIM)
-    else
+    elseif self.direction == true then
         self:setSemaphoreForBlock(n, n == #self.blocks and Speed.STOP or Speed.DIM, Speed.STOP)
+    elseif self.direction == nil then
+        self:setSemaphoreForBlock(n, n == #self.blocks and Speed.STOP or Speed.DIM, n == 1 and Speed.STOP or Speed.DIM)
     end
 end
 
@@ -56,10 +58,12 @@ end
 function Blockade:freeBlock(n)
     self:tell("Block " .. n .. " : freed", Severity.INFO, 3)
     self.occupiedBlocks[n] = nil
-    if not self.direction then
+    if self.direction == false then
         self:setSemaphoreForBlock(n, Speed.VMAX, n == 1 and Speed.VMAX or Speed.DIM)
-    else
+    elseif self.direction == true then
         self:setSemaphoreForBlock(n, n == #self.blocks and Speed.VMAX or Speed.DIM, Speed.VMAX)
+    elseif self.direction == nil then
+        self:setSemaphoreForBlock(n, n == #self.blocks and Speed.VMAX or Speed.DIM, n == 1 and Speed.VMAX or Speed.DIM)
     end
 end
 
@@ -94,13 +98,13 @@ function Blockade:isFree()
 end
 
 ---Sets the direction on this blockade.
----@param direction boolean `true` for the blockade to go the other way, `false` to set it to its primary direction.
+---@param direction boolean? `true` for the blockade to go the other way, `false` to set it to its primary direction, `nil` to unset the direction.
 function Blockade:setDirection(direction)
     -- Can only switch direction if the blockade has this possibility and is free.
     if not self.bidirectional or not self:isFree() or self.direction == direction then
         return
     end
-    self:tell("Switching direction to " .. (direction and "N" or "P"), Severity.INFO, 3)
+    self:tell("Switching direction to " .. (direction and "N" or (direction == false and "P" or "-")), Severity.INFO, 3)
     self.direction = direction
     -- Reset all semaphores to the other direction.
     -- The direction in which we update the semaphores is crucial, because when dimming semaphores back to front,
