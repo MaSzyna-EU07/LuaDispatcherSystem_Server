@@ -262,7 +262,7 @@ end
 ---@return boolean?
 function Tile:isSemaphoreStop()
 	local state = self:getSemaphoreState()
-	return state and (state.speed == Speed.STOP or state.speed == Speed.MS1)
+	return state and (state.image == "s1" or state.image == "ms1")
 end
 
 ---Returns the current maximum speed on this Tile, or `nil` if there is no speed limit.

@@ -15,68 +15,65 @@ function _FindLast(text, toFind)
 	return #text - b + 1, #text - a + 1
 end
 
----@type table<Speed, string|table<Speed, string|string[]>>
+---Returns the value matching the highest number key of table `t` not above the specified value `v`.
+---@param t table The table to be searched.
+---@param n number The key value threshold.
+---@return any?
+function _GetPastValue(t, n)
+	local key = -math.huge
+	for k, v in pairs(t) do
+		if type(k) == "number" and k <= n and k > key then
+			key = k
+		end
+	end
+	return t[key]
+end
+
+---@type table<integer, string|table<integer, string|string[]>>
 local signalImages = {
-	[-1]={[0]={"uszk","ciemny"}},
-	[0]="s1",
-	[1]={[-1]={"s2","os2"},[0]={"s5","os1"},[1]={"s2","os2"},[2]={"s4","os4"},[3]={"s4","os4"},[4]={"s3","os3"}},
-	[2]={[-1]="s10",[0]="s13",[1]="s10",[2]="s12",[3]="s12",[4]="s11"},
-	[3]={[-1]="s10a",[0]="s13a",[1]="s10a",[2]="s12a",[3]="s12a",[4]="s11a"},
-	[4]={[-1]="s6",[0]="s9",[1]="s6",[2]="s8",[3]="s8",[4]="s7"},
-	[5]="ms1",
-	[6]="ms2",
-	[7]={[0]={"sz1","sz"}},
-	[8]="s1a"
+	[-1] = {[0]={"uszk","ciemny"}},
+	[0] = "s1",
+	[40] = {[-1]="s10",[0]="s13",[40]="s12",[100]="s11",[math.huge]="s10"},
+	[60] = {[-1]="s10a",[0]="s13a",[40]="s12a",[100]="s11a",[math.huge]="s10a"},
+	[100] = {[-1]="s6",[0]="s9",[40]="s8",[100]="s7",[math.huge]="s6"},
+	[math.huge] = {[-1]={"s2","os2"},[0]={"s5","os1"},[40]={"s4","os4"},[100]={"s3","os3"},[math.huge]={"s2","os2"}},
+	[5] = "ms1",
+	[6] = "ms2",
+	[7] = {[0]={"sz1","sz"}},
+	[8] = "s1a"
 }
 
+---@type table<integer, string|table<integer, string|string[]>>
 local shapeSignalImages = {
-	[-1]="sr1",
-	[0]="sr1",
-	[1]="sr2",
-	[2]="sr3",
-	[3]="sr3",
-	[4]="sr3",
-	[5]="ms1",
-	[6]="ms2",
-	[7]="sz1",
-	[8]="s1a"
+	[-1] = "sr1",
+	[0] = "sr1",
+	[40] = "sr3",
+	[math.huge] = "sr2",
+	[5] = "ms1",
+	[6] = "ms2",
+	[7] = "sz1",
+	[8] = "s1a"
 }
 
 ---Returns the image or a list of possibile images on the semaphore for the specified conditions.
----@param speed Speed The speed on this semaphore.
----@param nextSpeed Speed? The speed on the next semaphore. Can only be omitted in specific cases.
+---@param speed integer The speed on this semaphore.
+---@param nextSpeed integer? The speed on the next semaphore. Can only be omitted in specific cases.
 ---@param shape boolean? If `true`, the image will be evaluated for a shape signal.
 ---@return string|string[]
 function _SignalImage(speed, nextSpeed, shape)
-	local first = shape and shapeSignalImages[speed] or signalImages[speed]
+	local first = _GetPastValue(shape and shapeSignalImages or signalImages, speed)
 	if type(first) == "string" then return first end
-	return first[nextSpeed] or first[0]
+	return (nextSpeed and nextSpeed > 9) and _GetPastValue(first, nextSpeed) or (first[nextSpeed] or first[0])
 end
 
-local signalImagesRepeater = {[0]="sp1",[1]="sp2",[2]="sp4",[3]="sp4",[4]="sp3"}
+local signalImagesRepeater = {[0]="sp1",[math.huge]="sp2",[40]="sp4",[100]="sp3"}
 
 function _SignalImageRepeater(speed)
-	return signalImagesRepeater[speed] or signalImagesRepeater[0]
+	return (speed and speed > 9) and _GetPastValue(signalImagesRepeater, speed) or signalImagesRepeater[0]
 end
 
 function _IsSpeedStopIsh(speed)
-	return speed ~= Speed.VMAX and speed ~= Speed["40"] and speed ~= Speed["60"] and speed ~= Speed["100"]
-end
-
----Turns speed in km/h into speed to be displayed on the semaphore.
----@param speed number? Desired speed.
----@return Speed
-function _SpeedToID(speed)
-	if not speed or speed == math.huge then
-		return Speed.VMAX
-	end
-	if speed >= 100 then
-		return Speed["100"]
-	elseif speed >= 60 then
-		return Speed["60"]
-	end
-	-- TODO: What about less than 40 km/h?
-	return Speed["40"]
+	return speed < 10
 end
 
 ---Resolves a potential string semaphore ID to an actual semaphore.

@@ -80,6 +80,9 @@ function com.doCommand(command)
 		if type(next) == "string" then
 			-- Remove the leading `:` character. This allows using fully numeric semaphore IDs, like 442 (enter `:442` as the argument).
 			next = _Obj:getSemaphore(_Utils.strStartsWith(next, ":") and next:sub(2) or next)
+		elseif next == 1 then
+			-- 1 is an alias for `math.huge` (Vmax)
+			next = math.huge
 		end
 		_Obj:getSemaphore(operands[2]):setSpeed(assert(tonumber(operands[3]), "Missing speed parameter"), next)
 	elseif operands[1] == "su" then
@@ -205,7 +208,7 @@ end
 function com.setSemaphore(id, speed, nextSpeed, image)
 	com.sendBytes({0x14})
 	com.sendBytes(com.getObjID(com_ids.semaphores, id))
-	com.sendBytes({speed, nextSpeed or 0xFF})
+	com.sendBytes({speed == math.huge and 0x01 or speed, nextSpeed or 0xFF})
 	com.sendBytes({COM_IMAGES[image]})
 end
 

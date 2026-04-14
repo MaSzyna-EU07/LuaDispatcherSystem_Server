@@ -41,7 +41,7 @@ function Itinerary:setSemaphore(name)
 end
 
 ---Sets the speed of this itinerary.
----@param speed Speed The speed for the semaphore to display.
+---@param speed integer The speed for the semaphore to display.
 function Itinerary:setSpeed(speed)
     self.speed = speed
 end
@@ -53,7 +53,7 @@ function Itinerary:setW24(w24)
 end
 
 ---Sets the next semaphore or speed on this itinerary.
----@param next string|Speed The next semaphore ID or speed.
+---@param next string|integer The next semaphore ID or speed.
 function Itinerary:setNext(next)
     self.next = next
 end

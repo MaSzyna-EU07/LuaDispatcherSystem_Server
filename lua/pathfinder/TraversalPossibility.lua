@@ -52,6 +52,9 @@ function TraversalPossibility:evaluate()
     local found = {}
     -- This is the tile we are stepping on.
     local tile = self.tile:getNeighbor(self.direction)
+    if not tile then
+        return {}
+    end
     -- See which directions we can go next.
     local directions = tile:getPossibleTrackDirections(_InvertDir(self.direction))
     -- Each direction is a single possibility.
@@ -95,7 +98,7 @@ function TraversalPossibility:calculateCost()
     local speedPenaltyMult = self.speed and math.max(self.pathfinder.speed / self.speed, 1) or 1
     cost = cost * speedPenaltyMult
     -- Calculate the heuristic (estimate cost to go).
-    local tile = self.tile:getNeighbor(self.direction)
+    local tile = assert(self.tile:getNeighbor(self.direction))
     local dx, dy = math.abs(self.pathfinder.target.x - tile.x), math.abs(self.pathfinder.target.y - tile.y)
     local heuristic = (dx + dy) * 2
     -- Return the total value.
@@ -124,8 +127,8 @@ function TraversalPossibility:isDead()
         --_Notifications:post(string.format("After %s tiles at (%s, %s): Not electrified!", #self.path, self.tile.x, self.tile.y), NotificationColor.GRAY)
         return true
     end
-    local segmentSpeed = _SpeedToID(self.segments[#self.segments].speed)
-    if #self.segments >= 2 and segmentSpeed ~= Speed.VMAX and segmentSpeed ~= Speed["100"] and self.path[self.segments[#self.segments - 1].start].tile.semaphoreNoDanger then
+    local segmentSpeed = self.segments[#self.segments].speed
+    if #self.segments >= 2 and segmentSpeed < 100 and self.path[self.segments[#self.segments - 1].start].tile.semaphoreNoDanger then
         -- If the segment we're on mandates speeds less than 100 km/h, and the previous semaphore does not allow that, this entire possibility will not pass.
         return true
     end
@@ -143,6 +146,10 @@ function TraversalPossibility:finalize()
     local n = 0
     while not (self.tile:isSemaphore() and self.tile:getSemaphoreDirection() == self.direction) do
         local tile = self.tile:getNeighbor(self.direction)
+        if not tile then
+            -- Dead end.
+            break
+        end
         local directions = tile:getPossibleTrackDirections(_InvertDir(self.direction))
         local direction = directions[1]
         table.insert(self.path, {tile = tile, dir1 = _InvertDir(self.direction), dir2 = direction})
@@ -195,14 +202,14 @@ function TraversalPossibility:generateItineraries()
             if j == startIndex then
                 itinerary:setSemaphore(assert(node.tile.semaphoreID, "Missing semaphore on starting tile!"))
                 if self.pathfinder.mode == PathMode.TRAIN then
-                    itinerary:setSpeed(node.tile.semaphoreAllowTrain and _SpeedToID(segment.speed) or Speed.SZ)
+                    itinerary:setSpeed(node.tile.semaphoreAllowTrain and segment.speed or Speed.SZ)
                 elseif self.pathfinder.mode == PathMode.SHUNT then
                     itinerary:setSpeed(Speed.MS2)
                 end
             end
             -- Last tile determines the next semaphore, if it exists, and also determines whether W24 will be displayed.
             if j == endIndex then
-                itinerary:setNext(node.tile.semaphoreID or 1)
+                itinerary:setNext(node.tile.semaphoreID or math.huge)
                 itinerary:setW24(node.tile.targetW24)
             end
         end

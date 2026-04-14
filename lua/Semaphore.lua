@@ -15,8 +15,8 @@ function Semaphore:new(id, data)
 	self.fourPhase = data.fourPhase or false
 	---@type Speed?
 	self.shortSpeed = data.shortSpeed
-	---@type string|Speed?
-	self.nextDefault = data.next
+	---@type string|Speed
+	self.nextDefault = data.next or math.huge
 	self.repeaters = data.repeaters
 	---@type Semaphore?
 	self.prev = nil
@@ -85,8 +85,8 @@ end
 
 ---Returns the first supported image which can be set on this semaphore for the specified speeds, or `nil` if no matching image can be set.
 ---@private
----@param speed Speed Speed on this semaphore.
----@param nextSpeed Speed? Speed on the next semaphore.
+---@param speed integer Speed on this semaphore.
+---@param nextSpeed integer? Speed on the next semaphore.
 ---@return string?
 function Semaphore:getSupportedImage(speed, nextSpeed)
 	local images = _SignalImage(speed, nextSpeed, self.shape)
@@ -103,11 +103,11 @@ end
 
 ---Ustawia prędkość na semaforze oraz odświeża niezbędne do odświeżenia semafory.
 ---Jeżeli sygnał nie może być wyświetlony (brakuje eventu), wyświetlony zostanie sygnał zastępczy.
----@param speed Speed Speed on this semaphore.
----@param next Semaphore|Speed? Speed on the next semaphore, or the semaphore to be specified as the next semaphore. Defaults to `1` unless `nextDefault` field is specified.
+---@param speed integer Speed on this semaphore.
+---@param next Semaphore|integer? Speed on the next semaphore, or the semaphore to be specified as the next semaphore. Defaults to `1` unless `nextDefault` field is specified.
 function Semaphore:setSpeed(speed, next)
 	-- Resolve the default next parameter.
-	next = next or _ResolveSemaphore(self.nextDefault) or 1
+	next = next or _ResolveSemaphore(self.nextDefault) or Speed.STOP -- The last one can occur when loading the scenario. If the semaphore doesn't exist (yet), assume it is displaying S1, since that's what the semaphores are initialized to anyway.
 	self:tell("Setting speed " .. tostring(speed) .. ", next: " .. tostring(next), Severity.INFO, 3)
 	-- Set the semaphore state and see if we can get away with that.
 	self.speed = speed
@@ -122,7 +122,17 @@ function Semaphore:refreshImage()
 	local speed = self:getDisplayedSpeed()
 	local nextSpeed = self:getDisplayedNextSpeed()
 	-- TODO: Separate flag for Sz. If the image cannot be displayed, set an Sz flag and that's it.
-	local image = self:getSupportedImage(speed, nextSpeed) or self:getSupportedImage(Speed.SZ) or self:getSupportedImage(self:getStopSpeed())
+	local image = self:getSupportedImage(speed, nextSpeed)
+	if not image then
+		-- Fall back to Sz.
+		self.speed = Speed.SZ
+		image = self:getSupportedImage(self.speed)
+		if not image then
+			-- No Sz: fall back to S1/Ms1.
+			self.speed = self:getStopSpeed()
+			image = self:getSupportedImage(self.speed)
+		end
+	end
 	-- Avoid changing an image to the same image. Especially important for shape signals, which would play a sound while the signal doesn't change.
 	if self.image == image then
 		return
@@ -185,16 +195,16 @@ end
 
 ---Returns the displayed speed on the next semaphore instead of the actual one.
 ---An example on how this could happen is when the short speed is set.
----@return Speed
+---@return integer
 function Semaphore:getDisplayedSpeed()
-	if self.shortSpeed and self.speed == Speed.VMAX and _IsSpeedStopIsh(self:getNextSpeed()) then
+	if self.shortSpeed and self.speed == math.huge and _IsSpeedStopIsh(self:getNextSpeed()) then
 		return self.shortSpeed
 	end
 	return self.speed
 end
 
 ---Zwraca prędkość na następnym semaforze bądź na sztywno ustawioną.
----@return Speed?
+---@return integer?
 function Semaphore:getNextSpeed()
 	if type(self.next) == "table" then
 		return self.next:getDisplayedSpeed()
@@ -204,11 +214,11 @@ end
 
 ---Returns the displayed speed on the next semaphore instead of the actual one.
 ---An example on how this could happen is an S3 signal on a 4-phase SBL.
----@return Speed?
+---@return integer?
 function Semaphore:getDisplayedNextSpeed()
 	local nextSpeed = self:getNextSpeed()
-	if self.fourPhase and nextSpeed == Speed.VMAX and self:isNextNextStop() then
-		return Speed["100"]
+	if self.fourPhase and nextSpeed == math.huge and self:isNextNextStop() then
+		return 100
 	end
 	return nextSpeed
 end

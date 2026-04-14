@@ -139,6 +139,18 @@ function Objects:assertGetSemaphore(name)
 	return assert(self:getSemaphore(name), "Tried to access an invalid semaphore: " .. tostring(name):lower())
 end
 
+---Returns a list of station IDs, sorted alphabetically.
+---@return string[]
+function Objects:getStationList()
+	return _Utils.tableGetSortedKeys(self.stations)
+end
+
+---Returns a list of route IDs, sorted alphabetically.
+---@return string[]
+function Objects:getRouteList()
+	return _Utils.tableGetSortedKeys(self.routes)
+end
+
 ---Returns a list of track IDs, sorted alphabetically.
 ---@return string[]
 function Objects:getTrackList()

@@ -37,6 +37,13 @@ function Route:new(shortcut, data)
 	_LogWrite("Created route: " .. shortcut, Severity.SUCCESS, 2)
 end
 
+---Initializes the blockades for this route.
+function Route:init()
+	for i, blockade in ipairs(self.blockades) do
+		blockade:init()
+	end
+end
+
 function Route:tell(text, severity, weight)
 	_LogWrite("route: " .. self.shortcut .. ": " .. text, severity, weight)
 end

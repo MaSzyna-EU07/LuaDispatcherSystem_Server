@@ -20,15 +20,21 @@ function Blockade:new(route, data)
     self.blocks = data.blocks
     for i, block in ipairs(data.blocks) do
         -- Initialize each block by setting up callbacks.
-        local track = _Obj:getTrack(block.track)
-        if track then
-            track:monitor("busy", self.occupyBlock, self, i)
-            track:monitor("free", self.freeBlock, self, i)
-        end -- Otherwise, data error (pointing to nonexistent track).
+        local track = _Obj:assertGetTrack(block.track)
+        track:monitor("busy", self.occupyBlock, self, i)
+        track:monitor("free", self.freeBlock, self, i)
+    end
+	_LogWrite("Created blockade for route: " .. route.shortcut, Severity.SUCCESS, 2)
+end
+
+---Initializes the blockade state.
+function Blockade:init()
+	_LogWrite("Initializing blockade for route: " .. self.route.shortcut, Severity.INFO, 3)
+    for i = 1, #self.blocks do
         -- By default, all blocks are free. If a block is occupied at the start, it will trigger an appropriate callback when vehicles are placed.
         self:freeBlock(i)
     end
-	_LogWrite("Created blockade for route: " .. route.shortcut, Severity.SUCCESS, 2)
+	_LogWrite("Initialized blockade for route: " .. self.route.shortcut, Severity.SUCCESS, 2)
 end
 
 ---Sends an information about this blockade to the log.
@@ -59,11 +65,11 @@ function Blockade:freeBlock(n)
     self:tell("Block " .. n .. " : freed", Severity.INFO, 3)
     self.occupiedBlocks[n] = nil
     if self.direction == false then
-        self:setSemaphoreForBlock(n, Speed.VMAX, n == 1 and Speed.VMAX or Speed.DIM)
+        self:setSemaphoreForBlock(n, math.huge, n == 1 and math.huge or Speed.DIM)
     elseif self.direction == true then
-        self:setSemaphoreForBlock(n, n == #self.blocks and Speed.VMAX or Speed.DIM, Speed.VMAX)
+        self:setSemaphoreForBlock(n, n == #self.blocks and math.huge or Speed.DIM, math.huge)
     elseif self.direction == nil then
-        self:setSemaphoreForBlock(n, n == #self.blocks and Speed.VMAX or Speed.DIM, n == 1 and Speed.VMAX or Speed.DIM)
+        self:setSemaphoreForBlock(n, n == #self.blocks and math.huge or Speed.DIM, n == 1 and math.huge or Speed.DIM)
     end
 end
 

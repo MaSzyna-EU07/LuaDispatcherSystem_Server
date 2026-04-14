@@ -64,6 +64,11 @@ function _Init(filename)
 	_Filename = filename
 	_LoadSchematics()
 
+	-- Initialize route blockades, since only now the last block semaphores can be attached to the entry semaphores on stations.
+	for i, name in ipairs(_Obj:getRouteList()) do
+		_Obj:getRoute(name):init()
+	end
+
 	_CreateLoopEvent("loop", _TryLoop, 1)
 end
 
