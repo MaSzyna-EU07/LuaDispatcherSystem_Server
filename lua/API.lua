@@ -69,6 +69,16 @@ function API:eventDispatch(event, activator, delay)
     api.event_dispatch_n(event, activator, delay or 0)
 end
 
+---Dispatches an event if it exists.
+---@param event string The event name.
+---@param activator TDynamicObject*? The vehicle to dispatch this event as, if any.
+---@param delay number? The delay between calling this function and dispatching the event.
+function API:eventDispatchIfExists(event, activator, delay)
+    if self:eventExists(event) then
+        api.event_dispatch_n(event, activator, delay or 0)
+    end
+end
+
 ---Sends a command to the specified vehicle.
 ---@param vehicle TDynamicObject* The vehicle to send the command to.
 ---@param values MemcellValues The command details to be sent to the vehicle.

@@ -57,7 +57,7 @@ end
 
 function Switch:refreshSim()
 	if not self.forced then
-		_API:eventDispatch(string.lower(self.id) .. _SwitchChar(self.state))
+		_API:eventDispatch(string.lower(self.id) .. (self.state and "-" or "+"))
 	end
 	_Com.setSwitch(self.id, self.state, self.forced)
 end

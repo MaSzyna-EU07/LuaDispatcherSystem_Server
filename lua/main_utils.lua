@@ -10,22 +10,12 @@ function _LogWrite(text, severity, weight)
 	end
 end
 
----Saves a file to the given path with the given contents. Errors out if the file cannot be created.
----@param path string The path to the file.
----@param data string The contents of the file.
-function _SaveFile(path, data)
-	local file = io.open(path, "w")
-	assert(file, string.format("SAVE FILE FAIL: %s", path))
-	io.output(file)
-	io.write(data)
-	io.close(file)
-end
-
 function _FindLast(text, toFind)
 	local a, b = string.find(text:reverse(), toFind:reverse())
 	return #text - b + 1, #text - a + 1
 end
 
+---@type table<Speed, string|table<Speed, string|string[]>>
 local signalImages = {
 	[-1]={[0]={"uszk","ciemny"}},
 	[0]="s1",
@@ -97,10 +87,6 @@ function _ResolveSemaphore(semaphore)
 		return _Obj:getSemaphore(semaphore)
 	end
 	return semaphore
-end
-
-function _SwitchChar(state)
-	return state and "-" or "+"
 end
 
 _DIRS = {

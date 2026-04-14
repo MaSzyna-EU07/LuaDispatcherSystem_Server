@@ -22,7 +22,7 @@ function Semaphore:new(id, data)
 	self.prev = nil
 	---@type Semaphore|Speed?
 	self.next = nil
-	self.speed = self:getStopSpeed()
+	self.speed = self:getStopSpeed() -- Target speed on this semaphore. May not represent what is actually displayed.
 	self.image = self:getSupportedImage(self:getStopSpeed())
 	---@type boolean
 	self.w24 = false
@@ -101,44 +101,39 @@ function Semaphore:getSupportedImage(speed, nextSpeed)
 	end
 end
 
----Returns whether this semaphore can physically display the signal it would display now in its current state.
----@private
----@return boolean
-function Semaphore:canSetNow()
-	return self:getSupportedImage(self:getDisplayedSpeed(), self:getDisplayedNextSpeed()) ~= nil
-end
-
 ---Ustawia prędkość na semaforze oraz odświeża niezbędne do odświeżenia semafory.
 ---Jeżeli sygnał nie może być wyświetlony (brakuje eventu), wyświetlony zostanie sygnał zastępczy.
----@param speed Speed Nowa prędkość od teraz obowiązująca na semaforze.
----@param next Semaphore|Speed? Patrz niżej:
----- Jeżeli Semaphore, jest to następny semafor.
----- Jeżeli liczba, jest to stała prędkość nieprzypisana do żadnego semafora.
----Na przykład `1` oznacza, że przy prędkości maksymalnej zostanie podany sygnał S2, a `2` oznacza, że zostanie podany S4.
----- `nil` jest dopuszczalne tylko przy sygnałach niezależnych od następnego semafora (S1,Ms1,Ms2,Sz).
+---@param speed Speed Speed on this semaphore.
+---@param next Semaphore|Speed? Speed on the next semaphore, or the semaphore to be specified as the next semaphore. Defaults to `1` unless `nextDefault` field is specified.
 function Semaphore:setSpeed(speed, next)
 	-- Resolve the default next parameter.
-	next = next or _ResolveSemaphore(self.nextDefault)
+	next = next or _ResolveSemaphore(self.nextDefault) or 1
 	self:tell("Setting speed " .. tostring(speed) .. ", next: " .. tostring(next), Severity.INFO, 3)
 	-- Set the semaphore state and see if we can get away with that.
 	self.speed = speed
 	self:setNext(next)
-	-- Check whether we can actually display the image on the semaphore. If not, fall back to Sz.
-	if not self:canSetNow() then
-		self.speed = Speed.SZ
-		self:setNext()
-		self:tell("The semaphore cannot display this signal, falling back to Sz!", Severity.FAIL, 3)
+	self:refreshImage()
+end
+
+---Refreshes this Semaphore's image.
+---If the image has changed, forwards it to the simulator and refreshes the previous semaphore to make sure everything is in sync.
+---@private
+function Semaphore:refreshImage()
+	local speed = self:getDisplayedSpeed()
+	local nextSpeed = self:getDisplayedNextSpeed()
+	-- TODO: Separate flag for Sz. If the image cannot be displayed, set an Sz flag and that's it.
+	local image = self:getSupportedImage(speed, nextSpeed) or self:getSupportedImage(Speed.SZ) or self:getSupportedImage(self:getStopSpeed())
+	-- Avoid changing an image to the same image. Especially important for shape signals, which would play a sound while the signal doesn't change.
+	if self.image == image then
+		return
 	end
-	-- If this Semaphore has a previous one, refresh it.
-	if self.prev and self.prev.next == self then
-		self.prev:refreshSim()
-		-- HACK: For 4-phase SBL, we need to update two semaphores back.
-		-- Fix this so an update happens only when actually needed!
-		if self.prev.prev then
-			self.prev.prev:refreshSim()
-		end
-	end
+	self.image = image
+	self:tell(string.format("Refreshing image. Speeds: this=%s, next=%s, result: %s", speed, nextSpeed, image), Severity.INFO, 3)
 	self:refreshSim()
+	-- Check the previous semaphore if it needs a signal change.
+	if self.prev and self.prev.next == self then
+		self.prev:refreshImage()
+	end
 end
 
 ---Sets the next semaphore, if any. Affects that semaphore's `prev` field.
@@ -248,20 +243,9 @@ end
 function Semaphore:refreshSim()
 	local speed = self:getDisplayedSpeed()
 	local nextSpeed = self:getDisplayedNextSpeed()
-	local image = self:getSupportedImage(speed, nextSpeed) or self:getSupportedImage(self:getStopSpeed())
-	-- Avoid changing an image to the same image. Especially important for shape signals, which would play a sound while the signal doesn't change.
-	if self.image == image then
-		return
-	end
-	self.image = image
-	self:tell(string.format("Refreshing image. Speeds: this=%s, next=%s, result: %s", speed, nextSpeed, image), Severity.INFO, 3)
-	_API:eventDispatch(string.lower(self.id) .. "_" .. image)
+	_API:eventDispatch(string.lower(self.id) .. "_" .. self.image)
 	-- W24
-	if self.w24 then
-		_API:eventDispatch(string.lower(self.id) .. "_w24")
-	else
-		_API:eventDispatch(string.lower(self.id) .. "_w24off")
-	end
+	_API:eventDispatchIfExists(string.lower(self.id) .. (self.w24 and "_w24" or "_w24off"))
 	-- refresh repeaters too
 	if self.repeaters then
 		for i, repeaterN in ipairs(self.repeaters) do

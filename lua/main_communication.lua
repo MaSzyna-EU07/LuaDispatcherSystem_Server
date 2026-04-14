@@ -26,14 +26,14 @@ function com.init()
 	com.sendBytes({0x70, 0xA0, 0xE0, 0x07})
 	com.sendBytes({0x05, 0x00, 0x00, 0xFF}) -- version ID
 	-- Clear any residue commands so that they aren't executed right at the start of the next session.
-	_SaveFile(COM_INPUT_FILE, "")
+	_Utils.saveFile(COM_INPUT_FILE, "")
 	_CreateLoopEvent("tick_com", com.tick, COM_SAVE_INTERVAL)
 end
 
 function com.sendBytes(bytes)
 	for i, n in ipairs(bytes) do
 		if type(n) == "number" then
-			com_buffer = com_buffer .. string.char(n % 256)
+			com_buffer = com_buffer .. string.char(n == math.huge and 255 or n % 256)
 		else
 			_LogWrite("Ignored illegal byte in `com.sendBytes()`: " .. tostring(n), Severity.ERROR, 3)
 		end
@@ -61,7 +61,7 @@ function com.readCommands()
 			_LogWrite("[COMMUNICATION] Error executing command `" .. line .. "`: " .. result, Severity.ERROR, 3)
 		end
 	end
-	_SaveFile(COM_INPUT_FILE, "")
+	_Utils.saveFile(COM_INPUT_FILE, "")
 end
 
 function com.doCommand(command)
@@ -72,12 +72,14 @@ function com.doCommand(command)
 	local operands = _Utils.strSplit(command, " ")
 	if operands[1] == "s" then
 		-- Sets a semaphore. `s <semaphore_id> <speed> [next] ["w24"]`
+		-- If `next` is a semaphore ID, it should be prefixed with a `:` character, like `s MMz_A 1 :MMz_X`.
 		_Obj:getSemaphore(operands[2]):setW24(operands[5] == "w24")
-		local next = tonumber(operands[4]) or (operands[4] and _Obj:getSemaphore(operands[4]))
-		-- Semaphore names like 442 should still be treated as semaphore references and not as numbers, as these speeds don't exist.
-		-- TODO: What about very low SBL semaphore IDs?
-		if type(next) == "number" and next > 9 then
-			next = _Obj:getSemaphore(tostring(next))
+		-- Convert the next speed/semaphore to a number.
+		---@type Speed|Semaphore|string?
+		local next = tonumber(operands[4]) or operands[4]
+		if type(next) == "string" then
+			-- Remove the leading `:` character. This allows using fully numeric semaphore IDs, like 442 (enter `:442` as the argument).
+			next = _Obj:getSemaphore(_Utils.strStartsWith(next, ":") and next:sub(2) or next)
 		end
 		_Obj:getSemaphore(operands[2]):setSpeed(assert(tonumber(operands[3]), "Missing speed parameter"), next)
 	elseif operands[1] == "su" then
@@ -129,6 +131,9 @@ function com.doCommand(command)
 	elseif operands[1] == "r" then
 		-- Reloads all schematics. `r [station_id]`
 		_LoadSchematics(operands[2])
+	elseif operands[1] == "e" then
+		-- Dispatches an event. `e <event>`
+		_API:eventDispatch(operands[2])
 	end
 end
 
