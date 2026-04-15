@@ -256,6 +256,12 @@ function Semaphore:refreshSim()
 	_API:eventDispatch(string.lower(self.id) .. "_" .. self.image)
 	-- W24
 	_API:eventDispatchIfExists(string.lower(self.id) .. (self.w24 and "_w24" or "_w24off"))
+	-- W21
+	if not _IsSpeedStopIsh(speed) and speed ~= 40 and speed ~= 60 and speed ~= 100 then
+		_API:eventDispatchIfExists(string.lower(self.id) .. "_w21_" .. math.floor(speed / 10))
+	else
+		_API:eventDispatchIfExists(string.lower(self.id) .. "_w21_off")
+	end
 	-- refresh repeaters too
 	if self.repeaters then
 		for i, repeaterN in ipairs(self.repeaters) do

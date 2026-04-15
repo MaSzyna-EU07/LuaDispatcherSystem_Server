@@ -84,7 +84,8 @@ function com.doCommand(command)
 			-- 1 is an alias for `math.huge` (Vmax)
 			next = math.huge
 		end
-		_Obj:getSemaphore(operands[2]):setSpeed(assert(tonumber(operands[3]), "Missing speed parameter"), next)
+		local speed = assert(tonumber(operands[3]), "Missing speed parameter")
+		_Obj:getSemaphore(operands[2]):setSpeed(speed == 1 and math.huge or speed, next)
 	elseif operands[1] == "su" then
 		-- Stops a semaphore and unreserves all claimed tracks. `s <semaphore_id>`
 		_Obj:getSemaphore(operands[2]):stop()
