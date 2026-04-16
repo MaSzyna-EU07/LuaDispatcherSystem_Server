@@ -86,4 +86,10 @@ function API:dynobjCommand(vehicle, values)
     api.dynobj_putvalues(vehicle, values)
 end
 
+---Spawns a new trainset.
+---@param trainset string The trainset entry to be parsed and spawned.
+function API:spawnTrainset(trainset)
+    api.spawn_trainset(trainset)
+end
+
 return API

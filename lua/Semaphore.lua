@@ -13,14 +13,14 @@ function Semaphore:new(id, data)
 	self.type = data.type or SemaphoreType.SEM
 	self.shape = data.shape or false
 	self.fourPhase = data.fourPhase or false
-	---@type Speed?
+	---@type integer?
 	self.shortSpeed = data.shortSpeed
-	---@type string|Speed
+	---@type string|integer
 	self.nextDefault = data.next or math.huge
 	self.repeaters = data.repeaters
 	---@type Semaphore?
 	self.prev = nil
-	---@type Semaphore|Speed?
+	---@type Semaphore|integer?
 	self.next = nil
 	self.speed = self:getStopSpeed() -- Target speed on this semaphore. May not represent what is actually displayed.
 	self.image = self:getSupportedImage(self:getStopSpeed())
@@ -217,7 +217,7 @@ end
 ---@return integer?
 function Semaphore:getDisplayedNextSpeed()
 	local nextSpeed = self:getNextSpeed()
-	if self.fourPhase and nextSpeed == math.huge and self:isNextNextStop() then
+	if self.fourPhase and nextSpeed == math.huge and self:getNextNextSpeed() < 100 then
 		return 100
 	end
 	return nextSpeed
@@ -227,7 +227,14 @@ end
 ---@private
 ---@return boolean
 function Semaphore:isNextNextStop()
-	return type(self.next) == "table" and self.next:getDisplayedNextSpeed() == Speed.STOP
+	return type(self.next) == "table" and self.next:getNextSpeed() == Speed.STOP
+end
+
+---Returns the speed 2 semaphores ahead. If it is unknown, returns `nil`.
+---@private
+---@return integer?
+function Semaphore:getNextNextSpeed()
+	return type(self.next) == "table" and self.next:getNextSpeed() or self.next
 end
 
 ---Reserves a track for this Semaphore. This list is used to easily cancel a dynamic itinerary.
