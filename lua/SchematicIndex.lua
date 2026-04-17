@@ -56,22 +56,26 @@ function SchematicIndex:generateIndex()
             if tile.semaphoreID and tile:isSemaphore() then
                 -- Register the semaphore.
                 self.semaphores[tile.semaphoreID] = tile
-                if not _Obj:getSemaphore(tile.semaphoreID) then
-                    local data = {
-                        shape = tile.semaphoreShape,
-                        type = tile.semaphoreType,
-                        next = tile.semaphoreNext,
-                        fourPhase = tile.semaphoreFourPhase,
-                        shortSpeed = tile.semaphoreShortSpeed,
-                    }
+                local data = {
+                    shape = tile.semaphoreShape,
+                    type = tile.semaphoreType,
+                    next = tile.semaphoreNext,
+                    fourPhase = tile.semaphoreFourPhase,
+                    shortSpeed = tile.semaphoreShortSpeed,
+                }
+                local semaphore = _Obj:getSemaphore(tile.semaphoreID)
+                if semaphore then
+                    semaphore:setData(data)
+                else
                     _Obj:addSemaphore(tile.semaphoreID, data)
+                    semaphore = _Obj:getSemaphore(tile.semaphoreID)
                 end
                 -- Check if the tile behind exists and assign the semaphore to its track.
                 local prevTrackID = tile:getSemaphorePrevTrackID()
                 if prevTrackID then
                     ---@type TrackIndexData
                     local trackData = self.tracks[prevTrackID] or {semaphores = {}}
-                    table.insert(trackData.semaphores, _Obj:getSemaphore(tile.semaphoreID))
+                    table.insert(trackData.semaphores, semaphore)
                     self.tracks[prevTrackID] = trackData
                 end
             end

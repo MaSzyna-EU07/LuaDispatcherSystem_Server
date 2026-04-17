@@ -144,7 +144,7 @@ end
 ---Finalizes this possibility by extending its path until a semaphore or a dead end is found.
 function TraversalPossibility:finalize()
     local n = 0
-    while not (self.tile:isSemaphore() and self.tile:getSemaphoreDirection() == self.direction) do
+    while not (self.tile:isSemaphore() and self.tile:getSemaphoreDirection() == self.direction and self.tile ~= self.pathfinder.start) do
         local tile = self.tile:getNeighbor(self.direction)
         if not tile then
             -- Dead end.

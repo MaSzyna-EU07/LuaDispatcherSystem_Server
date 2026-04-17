@@ -33,8 +33,8 @@ function Tile:new(schematic, x, y)
 	self.semaphoreShape = false -- Whether this tile's semaphore is a shape semaphore.
 	self.semaphoreNoW24 = false -- Whether this tile's semaphore is UNABLE to display the W24 sign.
 	self.semaphoreNoDanger = false -- Whether this tile's semaphore has no danger light (next semaphore must be displaying a >=100 speed).
-	---@type Speed?
-	self.semaphoreShortSpeed = nil -- The tile's short speed (when the next semaphore is S1, this one will display a reduced speed).
+	---@type table<integer, integer>
+	self.semaphoreShortSpeed = {} -- The tile's short speeds. Maps speeds on the next semaphore to maximum speeds on this semaphore.
 	self.semaphoreFourPhase = false -- Whether this tile's semaphore is four phase (when two semaphores ahead are S1, this one will display a fake reduced speed next).
 	---@type string?
 	self.semaphoreNext = nil -- The default next semaphore when the pathfinder doesn't specify one. Cannot be a speed identifier, only a semaphore identifier.
@@ -426,7 +426,7 @@ function Tile:serialize()
 		semaphoreShape = self.semaphoreShape or nil,
 		semaphoreNoW24 = self.semaphoreNoW24 or nil,
 		semaphoreNoDanger = self.semaphoreNoDanger or nil,
-		semaphoreShortSpeed = self.semaphoreShortSpeed or nil,
+		semaphoreShortSpeed = not _Utils.tableIsEmpty(self.semaphoreShortSpeed) and _Utils.stringifyKeys(self.semaphoreShortSpeed) or nil,
 		semaphoreFourPhase = self.semaphoreFourPhase or nil,
 		semaphoreNext = self.semaphoreNext,
 		itineraryEndID = self.itineraryEndID,
@@ -468,7 +468,7 @@ function Tile:deserialize(t)
 	self.semaphoreShape = t.semaphoreShape == true
 	self.semaphoreNoW24 = t.semaphoreNoW24 == true
 	self.semaphoreNoDanger = t.semaphoreNoDanger == true
-	self.semaphoreShortSpeed = t.semaphoreShortSpeed
+	self.semaphoreShortSpeed = t.semaphoreShortSpeed and (type(t.semaphoreShortSpeed) == "table" and _Utils.numifyKeys(t.semaphoreShortSpeed) or {[0] = t.semaphoreShortSpeed}) or {}
 	self.semaphoreFourPhase = t.semaphoreFourPhase == true
 	self.semaphoreNext = t.semaphoreNext
 	self.itineraryEndID = t.itineraryEndID

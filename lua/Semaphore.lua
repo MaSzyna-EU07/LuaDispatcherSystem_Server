@@ -10,18 +10,12 @@ function Semaphore:new(id, data)
 	_Com.initSemaphore(id, data.type or SemaphoreType.SEM)
 
 	self.id = id
-	self.type = data.type or SemaphoreType.SEM
-	self.shape = data.shape or false
-	self.fourPhase = data.fourPhase or false
-	---@type integer?
-	self.shortSpeed = data.shortSpeed
-	---@type string|integer
-	self.nextDefault = data.next or math.huge
-	self.repeaters = data.repeaters
+	self:setData(data)
+
 	---@type Semaphore?
 	self.prev = nil
-	---@type Semaphore|integer?
-	self.next = nil
+	---@type Semaphore|integer
+	self.next = Speed.STOP
 	self.speed = self:getStopSpeed() -- Target speed on this semaphore. May not represent what is actually displayed.
 	self.image = self:getSupportedImage(self:getStopSpeed())
 	---@type boolean
@@ -31,6 +25,19 @@ function Semaphore:new(id, data)
 
 	---@type table<Track, true>
 	self.reservedTracks = {} -- A list of tracks this Semaphore has reserved for itself.
+end
+
+---Sets different data for this Semaphore. Use when reloading the schematic.
+---@param data table Data for this Semaphore.
+function Semaphore:setData(data)
+	self.type = data.type or SemaphoreType.SEM
+	self.shape = data.shape or false
+	self.fourPhase = data.fourPhase or false
+	---@type table<integer, integer>?
+	self.shortSpeed = data.shortSpeed
+	---@type string|integer
+	self.nextDefault = data.next or math.huge
+	self.repeaters = data.repeaters
 
 	self:init()
 end
@@ -148,7 +155,7 @@ end
 
 ---Sets the next semaphore, if any. Affects that semaphore's `prev` field.
 ---@private
----@param next Semaphore|Speed? The next semaphore or speed to be linked with.
+---@param next Semaphore|Speed The next semaphore or speed to be linked with.
 function Semaphore:setNext(next)
 	if self.next == next then
 		return
@@ -197,14 +204,11 @@ end
 ---An example on how this could happen is when the short speed is set.
 ---@return integer
 function Semaphore:getDisplayedSpeed()
-	if self.shortSpeed and self.speed == math.huge and _IsSpeedStopIsh(self:getNextSpeed()) then
-		return self.shortSpeed
-	end
-	return self.speed
+	return math.min(self.speed, self.shortSpeed and _GetFutureValue(self.shortSpeed, self:getNextSpeed()) or math.huge)
 end
 
 ---Zwraca prędkość na następnym semaforze bądź na sztywno ustawioną.
----@return integer?
+---@return integer
 function Semaphore:getNextSpeed()
 	if type(self.next) == "table" then
 		return self.next:getDisplayedSpeed()
@@ -214,7 +218,7 @@ end
 
 ---Returns the displayed speed on the next semaphore instead of the actual one.
 ---An example on how this could happen is an S3 signal on a 4-phase SBL.
----@return integer?
+---@return integer
 function Semaphore:getDisplayedNextSpeed()
 	local nextSpeed = self:getNextSpeed()
 	if self.fourPhase and nextSpeed == math.huge and self:getNextNextSpeed() < 100 then

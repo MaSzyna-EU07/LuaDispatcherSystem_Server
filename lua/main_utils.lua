@@ -15,7 +15,7 @@ function _FindLast(text, toFind)
 	return #text - b + 1, #text - a + 1
 end
 
----Returns the value matching the highest number key of table `t` not above the specified value `v`.
+---Returns the value matching the highest number key of table `t` below or equal to the specified value `n`.
 ---@param t table The table to be searched.
 ---@param n number The key value threshold.
 ---@return any?
@@ -23,6 +23,20 @@ function _GetPastValue(t, n)
 	local key = -math.huge
 	for k, v in pairs(t) do
 		if type(k) == "number" and k <= n and k > key then
+			key = k
+		end
+	end
+	return t[key]
+end
+
+---Returns the value matching the lowest number key of table `t` above or equal to the specified value `n`.
+---@param t table The table to be searched.
+---@param n number The key value threshold.
+---@return any?
+function _GetFutureValue(t, n)
+	local key = math.huge
+	for k, v in pairs(t) do
+		if type(k) == "number" and k >= n and k < key then
 			key = k
 		end
 	end
