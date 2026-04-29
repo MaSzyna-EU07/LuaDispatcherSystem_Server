@@ -20,8 +20,8 @@ local com_buffer = ""
 local com_ids = {stations = {}, tracks = {}, switches = {}, semaphores = {}}
 local com_counters = {}
 
-function com.init()
-	com_path = "logs/" .. SCENARIO .. "@" .. os.date("%Y-%m-%d_%H-%M-%S") .. ".dsl"
+function com.init(scenario)
+	com_path = "logs/" .. scenario .. "@" .. os.date("%Y-%m-%d_%H-%M-%S") .. ".dsl"
 	_LogWrite("[COMMUNICATION] File Name: " .. com_path, Severity.INFO, 1)
 	com.sendBytes({0x70, 0xA0, 0xE0, 0x07})
 	com.sendBytes({0x05, 0x00, 0x00, 0xFF}) -- version ID

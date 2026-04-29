@@ -9,8 +9,12 @@ local Station = class:derive("Station")
 function Station:new(shortcut)
 	_Com.initStation(shortcut)
 	self.shortcut = shortcut
+
 	-- Schematic (required if the station has any devices)
 	self.schematic = nil
+
+	-- Initialize a station dispatch callback, which will be called once every 0-90 seconds.
+	_CreateLoopEvent("s_" .. shortcut, function() _DoCallback("station_" .. shortcut, self) end, 0, 90)
 end
 
 ---Loads a schematic for this station.

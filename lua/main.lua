@@ -5,33 +5,13 @@ _Utils = require("lua.utils")
 _API = require("lua.API")
 _Com = require("lua.main_communication")
 
--- LOVE2D-specific code:
-if _API:isGui() then
-	SCENARIO = "td"
-	FILENAME = "td.json"
-	function love.draw()
-		love.graphics.print("This is the server.\nWhile it does provide a way to not need to wait a few minutes until the simulator loads,\nit does not provide any visual features.\nPlease use the client alongside the server to view the traffic.\n\nVersion " .. VERSION .. " by jakubg1", 50, 50)
-		love.graphics.print("Tracks:", 50, 150)
-		for i, name in ipairs(_Obj:getTrackList()) do
-			love.graphics.print(name, 50, 160 + i * 15)
-		end
-		love.graphics.print("Switches:", 250, 150)
-		for i, name in ipairs(_Obj:getSwitchList()) do
-			love.graphics.print(name, 250, 160 + i * 15)
-		end
-		love.graphics.print("Semaphores:", 450, 150)
-		for i, name in ipairs(_Obj:getSemaphoreList()) do
-			love.graphics.print(name, 450, 160 + i * 15)
-		end
-	end
-	function love.update(dt) _API:update(dt) end
-end
-
 local Time = require("lua.Time")
 local Objects = require("lua.Objects")
 local TileDatabase = require("lua.TileDatabase")
 
 _CurrentTime = Time({hour=11,minute=30})
+---@type table<string, function[]>
+_Callbacks = {}
 
 ---@type Objects
 _Obj = Objects()
@@ -40,28 +20,28 @@ _TileDB = TileDatabase()
 
 _Filename = nil
 
-function _TryInit(filename)
-	local success, result = pcall(_Init, filename)
+function _TryInit(scenario, filename)
+	local success, result = pcall(_Init, scenario, filename)
 	if not success then
 		_LogWrite("INIT FATAL ERROR: " .. tostring(result), Severity.ERROR, 3)
 	end
 end
 
-function _Init(filename)
+function _Init(scenario, filename)
 	_LogWrite("\n     __                   \n    / /  DISPATCHER SYSTEM\n   / /     __  __  ____   \n  / /     / / / / / __ \\  \n / /___  / / / / / /_/ /_ \n/_____/ |_____/  \\______/ \n               for MaSzyna\n\nBrought to you by jakubg1\n\nVERSION: " .. VERSION, Severity.INFO, 1)
 
-	_Com.init()
+	_Com.init(scenario)
+	_Filename = filename
 
 	-- decode the contents and store in a table
 	local fileData = assert(_Utils.loadJson(filename), "Could not open file at " .. tostring(filename))
-	-- Create stations and routes.
+	-- Create routes.
+	-- TODO: Routes should be defined by schematic data.
 	for routeN, routeData in pairs(fileData.routes) do
 		_Obj:addRoute(routeN, routeData)
 	end
 
-	-- Additional pass for schematic data.
-	-- TODO: Make schematics the only way of defining stuff.
-	_Filename = filename
+	-- Create stations and load schematic data.
 	_LoadSchematics()
 
 	-- Initialize route blockades, since only now the last block semaphores can be attached to the entry semaphores on stations.
@@ -121,4 +101,23 @@ function _CreateLoopEvent(name, func, delay, randomDelay)
 	_API:eventDispatch(name)
 end
 
-_TryInit(FILENAME)
+function _CreateCallback(name, func)
+	local list = _Callbacks[name] or {}
+	table.insert(list, func)
+	_Callbacks[name] = list
+end
+
+function _DoCallback(name, ...)
+	if _Callbacks[name] then
+		for i, func in ipairs(_Callbacks[name]) do
+			func(...)
+		end
+	end
+end
+
+-- TODO: Extract API to a separate file
+return {
+	init = function(config) _TryInit(config.scenario, config.filename) end,
+	getTrack = function(name) return _Obj:getTrack(name) end,
+	setCallback = function(name, func) _CreateCallback(name, func) end
+}
