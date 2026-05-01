@@ -23,9 +23,10 @@ function TileDatabase:new()
     --        Use "-" and "+" for states in single switches and "ab-", "ab+", "cd-" and "cd+" for states in double switches.
     -- buffer - Sprite (n, 3) rendered alongside tracks.
     -- derailer - Sprite (n, 7) rendered on top of the tracks.
+    -- derailerL - Sprite (n, 8) rendered on top of the tracks.
     -- semaphore - Sprites (n, 4), (n, 5) and (n, 6) used as semaphore body, first and second lamps respectively.
     -- doubleSwitch - Whether the tile is a double switch.
-    ---@alias TileData {tracks: integer?, background: integer?, backgroundXY: [integer, integer]?, foreground: integer?, dirs: table<integer, "-"|"+"|"ab-"|"ab+"|"cd-"|"cd+">?, buffer: integer?, derailer: integer?, semaphore: integer?, doubleSwitch: boolean?}
+    ---@alias TileData {tracks: integer?, background: integer?, backgroundXY: [integer, integer]?, foreground: integer?, dirs: table<integer, "-"|"+"|"ab-"|"ab+"|"cd-"|"cd+">?, buffer: integer?, derailer: integer?, derailerL: integer?, semaphore: integer?, doubleSwitch: boolean?, exit: boolean?}
     ---@type table<string, TileData>
     self.tiles = {
         [""] = {},
@@ -81,6 +82,22 @@ function TileDatabase:new()
         ["switchT6"] = {tracks = 39},
         ["switchT7"] = {tracks = 78},
         ["switchT8"] = {tracks = 156},
+        ["switchDerL1"] = {tracks = 25, dirs = {[5] = "-", [4] = "+"}, derailerL = 8},
+        ["switchDerL2"] = {tracks = 50, dirs = {[6] = "-", [5] = "+"}, derailerL = 1},
+        ["switchDerL3"] = {tracks = 100, dirs = {[7] = "-", [6] = "+"}, derailerL = 2},
+        ["switchDerL4"] = {tracks = 200, dirs = {[8] = "-", [7] = "+"}, derailerL = 3},
+        ["switchDerL5"] = {tracks = 145, dirs = {[1] = "-", [8] = "+"}, derailerL = 4},
+        ["switchDerL6"] = {tracks = 35, dirs = {[2] = "-", [1] = "+"}, derailerL = 5},
+        ["switchDerL7"] = {tracks = 70, dirs = {[3] = "-", [2] = "+"}, derailerL = 6},
+        ["switchDerL8"] = {tracks = 140, dirs = {[4] = "-", [3] = "+"}, derailerL = 7},
+        ["switchDerR1"] = {tracks = 49, dirs = {[5] = "-", [6] = "+"}, derailer = 2},
+        ["switchDerR2"] = {tracks = 98, dirs = {[6] = "-", [7] = "+"}, derailer = 3},
+        ["switchDerR3"] = {tracks = 196, dirs = {[7] = "-", [8] = "+"}, derailer = 4},
+        ["switchDerR4"] = {tracks = 137, dirs = {[8] = "-", [1] = "+"}, derailer = 5},
+        ["switchDerR5"] = {tracks = 19, dirs = {[1] = "-", [2] = "+"}, derailer = 6},
+        ["switchDerR6"] = {tracks = 38, dirs = {[2] = "-", [3] = "+"}, derailer = 7},
+        ["switchDerR7"] = {tracks = 76, dirs = {[3] = "-", [4] = "+"}, derailer = 8},
+        ["switchDerR8"] = {tracks = 152, dirs = {[4] = "-", [5] = "+"}, derailer = 1},
         ["buffer1"] = {tracks = 1, buffer = 1},
         ["buffer2"] = {tracks = 2, buffer = 2},
         ["buffer3"] = {tracks = 4, buffer = 3},
@@ -97,6 +114,14 @@ function TileDatabase:new()
         ["derailer6"] = {tracks = 34, derailer = 6},
         ["derailer7"] = {tracks = 68, derailer = 7},
         ["derailer8"] = {tracks = 136, derailer = 8},
+        ["derailerL1"] = {tracks = 17, derailerL = 1},
+        ["derailerL2"] = {tracks = 34, derailerL = 2},
+        ["derailerL3"] = {tracks = 68, derailerL = 3},
+        ["derailerL4"] = {tracks = 136, derailerL = 4},
+        ["derailerL5"] = {tracks = 17, derailerL = 5},
+        ["derailerL6"] = {tracks = 34, derailerL = 6},
+        ["derailerL7"] = {tracks = 68, derailerL = 7},
+        ["derailerL8"] = {tracks = 136, derailerL = 8},
         ["semaphore1"] = {tracks = 17, semaphore = 1},
         ["semaphore2"] = {tracks = 34, semaphore = 2},
         ["semaphore3"] = {tracks = 68, semaphore = 3},
@@ -105,9 +130,9 @@ function TileDatabase:new()
         ["semaphore6"] = {tracks = 34, semaphore = 6},
         ["semaphore7"] = {tracks = 68, semaphore = 7},
         ["semaphore8"] = {tracks = 136, semaphore = 8},
-        ["arrow3"] = {background = 12, foreground = 12},
-        ["arrow7"] = {background = 11, foreground = 11},
-        ["arrow-"] = {background = 13, foreground = 13},
+        ["arrow3"] = {background = 12, foreground = 12, exit = true},
+        ["arrow7"] = {background = 11, foreground = 11, exit = true},
+        ["arrow-"] = {background = 13, foreground = 13, exit = true},
         ["loco"] = {background = 14, foreground = 14},
         ["square"] = {background = 15, foreground = 15},
         ["letter1"] = {backgroundXY = {9, 3}},

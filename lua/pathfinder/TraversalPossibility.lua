@@ -209,7 +209,7 @@ function TraversalPossibility:generateItineraries()
             end
             -- Last tile determines the next semaphore, if it exists, and also determines whether W24 will be displayed.
             if j == endIndex then
-                itinerary:setNext(node.tile.semaphoreID or math.huge)
+                itinerary:setNext(node.tile.semaphoreID or (node.tile:isBuffer() and 0 or math.huge))
                 itinerary:setW24(node.tile.targetW24)
             end
         end

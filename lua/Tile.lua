@@ -54,6 +54,12 @@ function Tile:new(schematic, x, y)
 	self.command = nil -- A command to be sent to the server when this tile is right clicked.
 end
 
+---Returns whether this Tile is a track, regardless of its type or what else is with it.
+---@return boolean
+function Tile:isTrack()
+	return self:getData().tracks ~= nil
+end
+
 ---Returns whether this Tile is a switch, regardless of its type.
 ---@return boolean
 function Tile:isSwitch()
@@ -70,6 +76,18 @@ end
 ---@return boolean
 function Tile:isSemaphore()
 	return self:getData().semaphore ~= nil
+end
+
+---Returns whether this Tile is an exit point.
+---@return boolean
+function Tile:isExitPoint()
+	return self:getData().exit ~= nil
+end
+
+---Returns whether this Tile is a buffer.
+---@return boolean
+function Tile:isBuffer()
+	return self:getData().buffer ~= nil
 end
 
 --######################################--
