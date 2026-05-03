@@ -79,6 +79,13 @@ function API:eventDispatchIfExists(event, activator, delay)
     end
 end
 
+---Returns the timetable name of the specified vehicle.
+---@param vehicle TDynamicObject* The vehicle to get the timetable from.
+---@return string
+function API:trainGetName(vehicle)
+    return api.train_getname(vehicle)
+end
+
 ---Sends a command to the specified vehicle.
 ---@param vehicle TDynamicObject* The vehicle to send the command to.
 ---@param values MemcellValues The command details to be sent to the vehicle.
@@ -90,6 +97,20 @@ end
 ---@param trainset string The trainset entry to be parsed and spawned.
 function API:spawnTrainset(trainset)
     api.spawn_trainset(trainset)
+end
+
+---Retrieves values from the specified memcell.
+---@param name string The memcell name.
+---@return MemcellValues
+function API:memcellRead(name)
+    return api.memcell_read_n(name)
+end
+
+---Puts values into the specified memcell.
+---@param name string The memcell name.
+---@param values MemcellValues The values to be put into the memcell.
+function API:memcellUpdate(name, values)
+    api.memcell_update_n(name, values)
 end
 
 return API

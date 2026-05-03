@@ -14,6 +14,7 @@ function Track:new(id)
 	self.reserved = false
 	---@type Semaphore?
 	self.semaphore = nil
+	---@type table<TDynamicObject*, integer>
 	self.vehicles = {}
 	self.monitoring = Monitoring()
 
@@ -111,13 +112,13 @@ end
 ---Adds the specified vehicle to this track. Duplicates are ignored.
 ---@param vehicle TDynamicObject* The vehicle to be added to this track.
 function Track:addVehicle(vehicle)
-	self.vehicles[vehicle] = true
+	self.vehicles[vehicle] = (self.vehicles[vehicle] or 0) + 1
 end
 
 ---Removes the specified vehicle from this track.
 ---@param vehicle TDynamicObject* The vehicle to be removed from this track.
 function Track:removeVehicle(vehicle)
-	self.vehicles[vehicle] = nil
+	self.vehicles[vehicle] = self.vehicles[vehicle] > 1 and self.vehicles[vehicle] - 1 or nil
 end
 
 ---Sends a command to the train which is on the track.
@@ -132,6 +133,15 @@ function Track:sendCommand(str, num1, num2)
 		sent = sent + 1
 	end
 	self:tell("Sent to " .. sent .. " vehicles!", Severity.SUCCESS, 3)
+end
+
+---Returns the timetable name of the train on this track, or `nil` if nothing is there.
+---If the train does not have any timetable, returns `"none"`.
+---@return string?
+function Track:getTimetable()
+	for vehicle, _ in pairs(self.vehicles) do
+		return _API:trainGetName(vehicle)
+	end
 end
 
 -- Wow, the following two functions would not be here if only Lua was like Java and included interfaces!
