@@ -1,16 +1,16 @@
 local Class = require("lua.class")
 
--- Represents a blockade (C, Eap or Eac (SBL)) which is on a route.
+-- Represents a blockade (C, Eap or Eac (SBL)) between two stations.
 ---@class Blockade : Class
----@overload fun(route, data): Blockade
+---@overload fun(id: string, data: table): Blockade
 local Blockade = Class:derive("Blockade")
 
 ---Creates a new Blockade.
----@param route Route The route this blockade is assigned to.
+---@param id string The blockade ID.
 ---@param data table The blockade data.
-function Blockade:new(route, data)
-	_LogWrite("Creating blockade for route: " .. route.shortcut, Severity.INFO, 3)
-    self.route = route
+function Blockade:new(id, data)
+	_LogWrite("Creating blockade: " .. id, Severity.INFO, 3)
+    self.id = id
     self.type = data.type
     self.bidirectional = data.bidirectional
     self.direction = false
@@ -23,18 +23,22 @@ function Blockade:new(route, data)
         local track = _Obj:assertGetTrack(block.track)
         track:monitor("busy", self.occupyBlock, self, i)
         track:monitor("free", self.freeBlock, self, i)
+        -- If the track is occupied at start, mark it as occupied already.
+        if track.occupied then
+            self:occupyBlock(i)
+        end
     end
-	_LogWrite("Created blockade for route: " .. route.shortcut, Severity.SUCCESS, 2)
+	_LogWrite("Created blockade: " .. id, Severity.SUCCESS, 2)
 end
 
 ---Initializes the blockade state.
 function Blockade:init()
-	_LogWrite("Initializing blockade for route: " .. self.route.shortcut, Severity.INFO, 3)
+	_LogWrite("Initializing blockade: " .. self.id, Severity.INFO, 3)
     for i = 1, #self.blocks do
         -- By default, all blocks are free. If a block is occupied at the start, it will trigger an appropriate callback when vehicles are placed.
         self:freeBlock(i)
     end
-	_LogWrite("Initialized blockade for route: " .. self.route.shortcut, Severity.SUCCESS, 2)
+	_LogWrite("Initialized blockade: " .. self.id, Severity.SUCCESS, 2)
 end
 
 ---Sends an information about this blockade to the log.
@@ -42,7 +46,7 @@ end
 ---@param severity Severity Severity.
 ---@param weight integer Weight.
 function Blockade:tell(text, severity, weight)
-	_LogWrite("Blockade(" .. tostring(self.route.shortcut) .. "): " .. text, severity, weight)
+	_LogWrite("Blockade(" .. tostring(self.id) .. "): " .. text, severity, weight)
 end
 
 ---Marks the n-th block in this blockade as occupied.

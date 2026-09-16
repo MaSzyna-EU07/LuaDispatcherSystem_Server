@@ -4,6 +4,20 @@ local Class = require("lua.class")
 ---@overload fun(): TileDatabase
 local TileDatabase = Class:derive("TileDatabase")
 
+---@class TileData
+---@field tracks integer? Bitmask of tracks rendered on this tile (1 up and then clockwise per 45deg)
+---@field background integer? Sprite (n, 1) rendered as the tile background.
+---@field backgroundXY [integer, integer]? Sprite (x, y) rendered as the tile background.
+---@field foreground integer? Sprite (n, 2) rendered on top of the background. Colored based on track color.
+---@field dirs table<integer, "-"|"+"|"ab-"|"ab+"|"cd-"|"cd+">? Table of direction -> state associations. Use "-" and "+" for states in single switches and "ab-", "ab+", "cd-" and "cd+" for states in double switches.
+---@field buffer integer? Sprite (n, 3) rendered alongside tracks.
+---@field derailer integer? Sprite (n, 7) rendered on top of the tracks.
+---@field derailerL integer? Sprite (n, 8) rendered on top of the tracks.
+---@field semaphore integer? Sprites (n, 4), (n, 5) and (n, 6) used as semaphore body, first and second lamps respectively.
+---@field blockade integer? Sprite (n, 9) rendered as the background, (n, 10) rendered as the foreground. Indicates blockade generator direction.
+---@field doubleSwitch boolean? Whether the tile is a double switch.
+---@field exit boolean? Whether the tile is an exit tile.
+
 function TileDatabase:new()
     -- Tracks:
     --[[
@@ -14,19 +28,6 @@ function TileDatabase:new()
     32  16   8        6  5  4
     ]]
 
-    -- Properties for each tile:
-    -- tracks - Bitmask of tracks rendered on this tile (see above for values per direction)
-    -- background - Sprite (n, 1) rendered as the tile background.
-    -- backgroundXY - Sprite (x, y) rendered as the tile background.
-    -- foreground - Sprite (n, 2) rendered on top of the background. Colored based on track color.
-    -- dirs - Table of direction -> state associations.
-    --        Use "-" and "+" for states in single switches and "ab-", "ab+", "cd-" and "cd+" for states in double switches.
-    -- buffer - Sprite (n, 3) rendered alongside tracks.
-    -- derailer - Sprite (n, 7) rendered on top of the tracks.
-    -- derailerL - Sprite (n, 8) rendered on top of the tracks.
-    -- semaphore - Sprites (n, 4), (n, 5) and (n, 6) used as semaphore body, first and second lamps respectively.
-    -- doubleSwitch - Whether the tile is a double switch.
-    ---@alias TileData {tracks: integer?, background: integer?, backgroundXY: [integer, integer]?, foreground: integer?, dirs: table<integer, "-"|"+"|"ab-"|"ab+"|"cd-"|"cd+">?, buffer: integer?, derailer: integer?, derailerL: integer?, semaphore: integer?, doubleSwitch: boolean?, exit: boolean?}
     ---@type table<string, TileData>
     self.tiles = {
         [""] = {},
@@ -122,6 +123,22 @@ function TileDatabase:new()
         ["derailerL6"] = {tracks = 34, derailerL = 6},
         ["derailerL7"] = {tracks = 68, derailerL = 7},
         ["derailerL8"] = {tracks = 136, derailerL = 8},
+        ["curveDerL1"] = {tracks = 33, derailerL = 5},
+        ["curveDerL2"] = {tracks = 66, derailerL = 6},
+        ["curveDerL3"] = {tracks = 132, derailerL = 7},
+        ["curveDerL4"] = {tracks = 9, derailerL = 8},
+        ["curveDerL5"] = {tracks = 18, derailerL = 1},
+        ["curveDerL6"] = {tracks = 36, derailerL = 2},
+        ["curveDerL7"] = {tracks = 72, derailerL = 3},
+        ["curveDerL8"] = {tracks = 144, derailerL = 4},
+        ["curveDerR1"] = {tracks = 33, derailer = 2},
+        ["curveDerR2"] = {tracks = 66, derailer = 3},
+        ["curveDerR3"] = {tracks = 132, derailer = 4},
+        ["curveDerR4"] = {tracks = 9, derailer = 5},
+        ["curveDerR5"] = {tracks = 18, derailer = 6},
+        ["curveDerR6"] = {tracks = 36, derailer = 7},
+        ["curveDerR7"] = {tracks = 72, derailer = 8},
+        ["curveDerR8"] = {tracks = 144, derailer = 1},
         ["semaphore1"] = {tracks = 17, semaphore = 1},
         ["semaphore2"] = {tracks = 34, semaphore = 2},
         ["semaphore3"] = {tracks = 68, semaphore = 3},
@@ -130,6 +147,14 @@ function TileDatabase:new()
         ["semaphore6"] = {tracks = 34, semaphore = 6},
         ["semaphore7"] = {tracks = 68, semaphore = 7},
         ["semaphore8"] = {tracks = 136, semaphore = 8},
+        ["blockade1"] = {blockade = 1},
+        ["blockade2"] = {blockade = 2},
+        ["blockade3"] = {blockade = 3},
+        ["blockade4"] = {blockade = 4},
+        ["blockade5"] = {blockade = 5},
+        ["blockade6"] = {blockade = 6},
+        ["blockade7"] = {blockade = 7},
+        ["blockade8"] = {blockade = 8},
         ["arrow3"] = {background = 12, foreground = 12, exit = true},
         ["arrow7"] = {background = 11, foreground = 11, exit = true},
         ["arrow-"] = {background = 13, foreground = 13, exit = true},

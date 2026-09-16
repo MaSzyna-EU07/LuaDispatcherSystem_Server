@@ -1,6 +1,6 @@
 local Class = require("lua.class")
 local Station = require("lua.Station")
-local Route = require("lua.Route")
+local Blockade = require("lua.Blockade")
 local Track = require("lua.Track")
 local Switch = require("lua.Switch")
 local Semaphore = require("lua.Semaphore")
@@ -12,8 +12,8 @@ local Objects = Class:derive("Objects")
 function Objects:new()
     ---@type table<string, Station>
     self.stations = {}
-    ---@type table<string, Route>
-    self.routes = {}
+    ---@type table<string, Blockade>
+    self.blockades = {}
     -- Keys for `tracks`, `switches` and `semaphores` are guaranteed to be lowercase.
     ---@type table<string, Track>
     self.tracks = {}
@@ -29,11 +29,11 @@ function Objects:addStation(id)
     self.stations[id] = Station(id)
 end
 
----Adds a route to the route list. The index is the route name, e.g. "Eb-Tp".
----@param id string The route ID (shortcut).
----@param data table The route data.
-function Objects:addRoute(id, data)
-    self.routes[id] = Route(id, data)
+---Adds a blockade to the blockade list. The index is the blockade name, e.g. "Eb-Tp".
+---@param id string The blockade ID (shortcut).
+---@param data table The blockade data.
+function Objects:addBlockade(id, data)
+    self.blockades[id] = Blockade(id, data)
 end
 
 ---Adds a track to the track list. The index is the track ID, converted to lowercase, e.g. "Eb_It2" -> "eb_it2".
@@ -69,32 +69,18 @@ function Objects:assertGetStation(name)
 	return assert(self:getStation(name), "Tried to access a nonexistent station: " .. tostring(name))
 end
 
----Returns a Route based on its simulation name (shortcut), or `nil` if it's not found.
----@param name string Route shortcut.
----@return Route?
-function Objects:getRoute(name)
-	return self.routes[name]
+---Returns a Blockade based on its simulation name, or `nil` if it's not found.
+---@param name string Blockade ID.
+---@return Blockade?
+function Objects:getBlockade(name)
+	return self.blockades[name]
 end
 
----Returns a Route based on its simulation name (shortcut), or throws an error if it's not found.
----@param name string Route shortcut.
----@return Route
-function Objects:assertGetRoute(name)
-	return assert(self:getRoute(name), "Tried to access a nonexistent route: " .. tostring(name))
-end
-
----Returns a Station or Route based on its simulation name (shortcut), or `nil` if it's not found.
----@param name string Station or route shortcut.
----@return Station|Route?
-function Objects:getStationOrRoute(name)
-	return self.stations[name] or self.routes[name]
-end
-
----Returns a Station or Route based on its simulation name (shortcut), or throws an error if it's not found.
----@param name string Station or route shortcut.
----@return Station|Route
-function Objects:assertGetStationOrRoute(name)
-	return assert(self:getStationOrRoute(name), "Tried to access a nonexistent station/route: " .. tostring(name))
+---Returns a Blockade based on its simulation name, or throws an error if it's not found.
+---@param name string Blockade ID.
+---@return Blockade
+function Objects:assertGetBlockade(name)
+	return assert(self:getBlockade(name), "Tried to access a nonexistent blockade: " .. tostring(name))
 end
 
 ---Returns a Track based on its simulation name, or `nil` if it is not found.
@@ -145,10 +131,10 @@ function Objects:getStationList()
 	return _Utils.tableGetSortedKeys(self.stations)
 end
 
----Returns a list of route IDs, sorted alphabetically.
+---Returns a list of blockade IDs, sorted alphabetically.
 ---@return string[]
-function Objects:getRouteList()
-	return _Utils.tableGetSortedKeys(self.routes)
+function Objects:getBlockadeList()
+	return _Utils.tableGetSortedKeys(self.blockades)
 end
 
 ---Returns a list of track IDs, sorted alphabetically.

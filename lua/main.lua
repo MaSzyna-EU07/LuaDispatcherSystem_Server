@@ -35,23 +35,25 @@ function _Init(scenario, filename)
 
 	-- decode the contents and store in a table
 	local fileData = assert(_Utils.loadJson(filename), "Could not open file at " .. tostring(filename))
-	-- Create routes.
-	-- TODO: Routes should be defined by schematic data.
-	for routeN, routeData in pairs(fileData.routes) do
-		_Obj:addRoute(routeN, routeData)
-	end
 
 	-- Create stations and load schematic data.
 	_LoadSchematics()
+	-- Create blockades.
+	-- TODO: Blockades should be defined by schematic data.
+	for blockadeN, blockadeData in pairs(fileData.blockades) do
+		_Obj:addBlockade(blockadeN, blockadeData)
+	end
 
-	-- Initialize route blockades, since only now the last block semaphores can be attached to the entry semaphores on stations.
-	for i, name in ipairs(_Obj:getRouteList()) do
-		_Obj:getRoute(name):init()
+	-- Initialize blockades, since only now the last block semaphores can be attached to the entry semaphores on stations.
+	for i, name in ipairs(_Obj:getBlockadeList()) do
+		_Obj:getBlockade(name):init()
 	end
 
 	_CreateLoopEvent("loop", _TryLoop, 1)
 end
 
+---(Re)loads schematics for the specified station or for all stations in the project.
+---@param stationID string? If specified, (re)loads the schematic only for the specified station.
 function _LoadSchematics(stationID)
 	-- Reload the file.
 	local projFilename = _Filename:sub(1, _Filename:len() - 5) .. "_proj.json"

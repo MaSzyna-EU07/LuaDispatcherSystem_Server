@@ -36,8 +36,8 @@ function Tile:new(schematic, x, y)
 	---@type table<integer, integer>
 	self.semaphoreShortSpeed = {} -- The tile's short speeds. Maps speeds on the next semaphore to maximum speeds on this semaphore.
 	self.semaphoreFourPhase = false -- Whether this tile's semaphore is four phase (when two semaphores ahead are S1, this one will display a fake reduced speed next).
-	---@type string?
-	self.semaphoreNext = nil -- The default next semaphore when the pathfinder doesn't specify one. Cannot be a speed identifier, only a semaphore identifier.
+	---@type string|Speed?
+	self.semaphoreNext = nil -- The default next speed or semaphore when the pathfinder doesn't specify one.
 	---@type string?
 	self.itineraryEndID = nil -- Itinerary end ID for this Tile. TODO: Later on, check whether we need this. The only reason we would need this is for dispatcher algorithms.
 	self.maxSpeed = math.huge -- The maximum speed for this Tile. Is `math.huge` if no limit is specified.
@@ -48,6 +48,8 @@ function Tile:new(schematic, x, y)
 	self.targetW24 = false -- Whether this Tile's target will make its pathfinding semaphore display a W24 signal.
 	self.forbidTrain = false -- Whether this Tile is excluded from pathfinding train signals.
 	self.forbidShunt = false -- Whether this Tile is excluded from pathfinding shunting signals.
+	---@type string?
+	self.blockadeID = nil -- The ID of this blockade.
 	---@type string?
 	self.warp = nil -- An index (shortcut) of the station to jump to when this tile is clicked.
 	---@type string?
@@ -76,6 +78,12 @@ end
 ---@return boolean
 function Tile:isSemaphore()
 	return self:getData().semaphore ~= nil
+end
+
+---Returns whether this Tile is a blockade generator.
+---@return boolean
+function Tile:isBlockadeGenerator()
+	return self:getData().blockade ~= nil
 end
 
 ---Returns whether this Tile is an exit point.
@@ -149,6 +157,18 @@ function Tile:getTrackDirections()
 	return results
 end
 
+---Returns a list of directions this tile is currently traversible in. Takes switch state into account.
+---@return integer[]
+function Tile:getTraversibleTrackDirections()
+	local results = {}
+	for i = 1, 8 do
+		if self:hasTraversibleTrackInDirection(i) then
+			table.insert(results, i)
+		end
+	end
+	return results
+end
+
 ---Returns a list of 0 to 3 directions for pathfinders to be able to go towards, when going from the specified direction.
 ---@param sourceDir integer The direction from which we are going from.
 ---@return integer[]
@@ -179,6 +199,28 @@ function Tile:getNextTrackDirection(sourceDir)
 			return i
 		end
 	end
+end
+
+---Returns `true` if this Tile is behind a switch which is switched the other way and shares the track ID with this Tile. 
+---@param sourceDir integer? If specified, only the directions coming from the specified direction will be considered.
+---@return boolean
+function Tile:isDimmedBySwitch(sourceDir)
+	if not self.trackID then
+		return false
+	end
+	local dirs = sourceDir and {self:getNextTrackDirection(sourceDir)} or self:getTraversibleTrackDirections()
+	for i, dir in ipairs(dirs) do
+		local tile = self:getNeighbor(dir)
+		if tile and tile.trackID == self.trackID then
+			local invDir = _InvertDir(dir)
+			if tile:isSwitch() and not tile:hasTraversibleTrackInDirection(invDir) then
+				return true -- Direct check
+			elseif tile:isDimmedBySwitch(invDir) then
+				return true -- Indirect check
+			end
+		end
+	end
+	return false
 end
 
 ---Returns whether this Tile is a target for the specified path mode.
@@ -391,8 +433,14 @@ end
 ---@param extras "w24"? An additional token to be sent, for example to show W24.
 function Tile:sendSemaphoreState(this, next, extras)
 	if self.semaphoreID then
-		_Com.sendCommand("s " .. self.semaphoreID .. " " .. this .. (next and (" " .. next) or "") .. (extras and (" " .. extras) or ""))
+		next = type(next) == "string" and " :" .. next or (next and (" " .. next) or "")
+		_Com.sendCommand("s " .. self.semaphoreID .. " " .. (this == math.huge and "1" or this) .. next .. (extras and (" " .. extras) or ""))
 	end
+end
+
+---Sends a command to the server to display the stop speed on this tile's semaphore.
+function Tile:sendSemaphoreStop()
+	self:sendSemaphoreState(0)
 end
 
 ---Sends a command to the server to cancel this tile's semaphore's itinerary.
@@ -437,7 +485,7 @@ function Tile:serialize()
 		switchFlip = self.switchFlip or nil,
 		switchFlipABCD = self.switchFlipABCD or nil,
 		semaphoreID = self.semaphoreID,
-		semaphoreType = self.semaphoreID and (self.semaphoreType ~= SemaphoreType.SEM and self.semaphoreType or nil) or nil,
+		semaphoreType = self:isSemaphore() and (self.semaphoreType ~= SemaphoreType.SEM and self.semaphoreType or nil) or nil,
 		semaphoreAllowTrain = self.semaphoreAllowTrain or nil,
 		semaphoreAllowShunt = self.semaphoreAllowShunt or nil,
 		semaphoreAllowSz = self.semaphoreAllowSz or nil,
@@ -456,6 +504,7 @@ function Tile:serialize()
 		targetW24 = self.targetW24 or nil,
 		forbidTrain = self.forbidTrain or nil,
 		forbidShunt = self.forbidShunt or nil,
+		blockadeID = self.blockadeID,
 		warp = self.warp,
 		command = self.command
 	}
@@ -498,6 +547,7 @@ function Tile:deserialize(t)
 	self.targetW24 = t.targetW24 == true
 	self.forbidTrain = t.forbidTrain == true
 	self.forbidShunt = t.forbidShunt == true
+	self.blockadeID = t.blockadeID
 	self.warp = t.warp
 	self.command = t.command
 end

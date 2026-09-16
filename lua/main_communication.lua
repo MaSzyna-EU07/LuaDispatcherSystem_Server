@@ -116,8 +116,8 @@ function com.doCommand(command)
 		-- This DOES NOT WORK !!!
 		_Obj:addTrack(operands[2])
 	elseif operands[1] == "b" then
-		-- Switches the blockade direction. `b <route_id> <blockade_id> <n|p|x>`
-		_Obj:getRoute(operands[2]):getBlockade(tonumber(operands[3]) or 1):setDirection(COM_BLOCKADES[operands[4]])
+		-- Switches the blockade direction. `b <blockade_id> <n|p|x>`
+		_Obj:getBlockade(operands[2]):setDirection(COM_BLOCKADES[operands[3]])
 	elseif operands[1] == "p" then
 		-- Pathfinds a route. `p <station_id> <track1_id> <track2_id> [t|s]`
 		local result = _Obj:getStation(operands[2]).schematic:pathfind(operands[3], operands[4], operands[5] == "s" and PathMode.SHUNT or PathMode.TRAIN)
@@ -127,7 +127,7 @@ function com.doCommand(command)
 	elseif operands[1] == "pm" then
 		-- Pathfinds a route by specifying coordinates. `p <station_id> <x1> <y1> <x2> <y2> [t|s]`
 		local schematic = assert(_Obj:getStation(operands[2]).schematic, "Station not found!")
-		local x1, y1, x2, y2 = tonumber(operands[3]), tonumber(operands[4]), tonumber(operands[5]), tonumber(operands[6])
+		local x1, y1, x2, y2 = math.floor(assert(tonumber(operands[3]))), math.floor(assert(tonumber(operands[4]))), math.floor(assert(tonumber(operands[5]))), math.floor(assert(tonumber(operands[6])))
 		local result = schematic:pathfindTiles(schematic:assertGetTile(x1, y1), schematic:assertGetTile(x2, y2), operands[7] == "s" and PathMode.SHUNT or PathMode.TRAIN)
 		if not result then
 			com.notify("Pathfinding failed... :(", NotificationColor.RED)
@@ -179,10 +179,6 @@ end
 
 function com.initStation(name)
 	com.initObject(0xF0, com_ids.stations, "station", name)
-end
-
-function com.initRoute(name)
-	com.initObject(0xF1, com_ids.stations, "station", name)
 end
 
 function com.initTrack(name)
