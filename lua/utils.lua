@@ -325,6 +325,21 @@ function utils.tableRemoveDuplicates(t)
 	return r
 end
 
+---Removes duplicate values from table `t`.
+---@param t table The table to have duplicate values removed.
+function utils.tableRemoveDuplicatesInplace(t)
+	local values = {}
+	local i = 1
+	while t[i] do
+		if not values[t[i]] then
+			values[t[i]] = true
+			i = i + 1
+		else
+			table.remove(t, i)
+		end
+	end
+end
+
 ---Returns a table with combined entries of both tables. Duplicates are not removed.
 ---@param t1 table The first table.
 ---@param t2 table The second table.

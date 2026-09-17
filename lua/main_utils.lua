@@ -117,3 +117,27 @@ _DIRS = {
 function _InvertDir(dir)
 	return (dir + 3) % 8 + 1
 end
+
+---Returns a string list of track IDs from the given track list.
+---If no tracks are in the list, returns `"none"`.
+---@param tracks Track[] The list of tracks to fetch IDs from.
+---@return string
+function _StrTrackList(tracks)
+	local str = "none"
+	for i, track in ipairs(tracks) do
+		str = (i == 1 and "" or (str .. ", ")) .. track.id
+	end
+	return str
+end
+
+---Returns a string list of semaphore IDs from the given semaphore list.
+---If no semaphores are in the list, returns `"none"`.
+---@param semaphores Semaphore[] The list of semaphores to fetch IDs from.
+---@return string
+function _StrSemaphoreList(semaphores)
+	local str = "none"
+	for i, semaphore in ipairs(semaphores) do
+		str = (i == 1 and "" or (str .. ", ")) .. semaphore.id
+	end
+	return str
+end

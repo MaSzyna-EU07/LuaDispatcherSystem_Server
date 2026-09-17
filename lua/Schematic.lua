@@ -23,6 +23,7 @@ function Schematic:new(station, data)
 
     self.index = SchematicIndex(self)
 	self.index:generateIndex()
+	self.index:generateBlockades()
 end
 
 ---Returns a tile from this station based on coordinates, or `nil` if no tile lies at that location.

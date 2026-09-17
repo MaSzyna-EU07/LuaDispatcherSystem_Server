@@ -2,12 +2,15 @@ local Class = require("lua.class")
 
 -- Represents a blockade (C, Eap or Eac (SBL)) between two stations.
 ---@class Blockade : Class
----@overload fun(id: string, data: table): Blockade
+---@overload fun(id: string, data: BlockadeData): Blockade
 local Blockade = Class:derive("Blockade")
+
+---@alias BlockadeBlockData {track: Track, semaphore: Semaphore?, semaphoreN: Semaphore?}
+---@alias BlockadeData {type: "sbl", bidirectional: boolean, blocks: BlockadeBlockData[]}
 
 ---Creates a new Blockade.
 ---@param id string The blockade ID.
----@param data table The blockade data.
+---@param data BlockadeData The blockade data.
 function Blockade:new(id, data)
 	_LogWrite("Creating blockade: " .. id, Severity.INFO, 3)
     self.id = id
@@ -16,19 +19,22 @@ function Blockade:new(id, data)
     self.direction = false
     ---@type table<integer, true>
     self.occupiedBlocks = {}
-    ---@type {track: string, semaphore: string, semaphoreN: string?, next: string|integer?}[]
+    ---@type BlockadeBlockData[]
     self.blocks = data.blocks
     for i, block in ipairs(data.blocks) do
         -- Initialize each block by setting up callbacks.
-        local track = _Obj:assertGetTrack(block.track)
-        track:monitor("busy", self.occupyBlock, self, i)
-        track:monitor("free", self.freeBlock, self, i)
+        block.track:monitor("busy", self.occupyBlock, self, i)
+        block.track:monitor("free", self.freeBlock, self, i)
         -- If the track is occupied at start, mark it as occupied already.
-        if track.occupied then
+        if block.track.occupied then
             self:occupyBlock(i)
         end
     end
 	_LogWrite("Created blockade: " .. id, Severity.SUCCESS, 2)
+    _LogWrite("Blocks:", Severity.INFO, 1)
+    for i, block in ipairs(self.blocks) do
+        _LogWrite(string.format("- %s: track %s, sem %s, semN %s", i, block.track, block.semaphore, block.semaphoreN), Severity.INFO, 1)
+    end
 end
 
 ---Initializes the blockade state.
@@ -88,16 +94,10 @@ function Blockade:setSemaphoreForBlock(n, speed, speedN)
         return
     end
     if speed and self.blocks[n].semaphore then
-        local semaphore = _Obj:getSemaphore(self.blocks[n].semaphore)
-        if semaphore then
-            semaphore:setSpeed(speed)
-        end -- Otherwise, data error (semaphore not found).
+        self.blocks[n].semaphore:setSpeed(speed)
     end
     if speedN and self.blocks[n].semaphoreN then
-        local semaphore = _Obj:getSemaphore(self.blocks[n].semaphoreN)
-        if semaphore then
-            semaphore:setSpeed(speedN)
-        end -- Otherwise, data error (semaphore not found).
+        self.blocks[n].semaphoreN:setSpeed(speedN)
     end
 end
 

@@ -66,7 +66,8 @@ end
 ---@param name string Station shortcut.
 ---@return Station
 function Objects:assertGetStation(name)
-	return assert(self:getStation(name), "Tried to access a nonexistent station: " .. tostring(name))
+    local station = assert(self:getStation(name), "Tried to access a nonexistent station: " .. tostring(name))
+    return station
 end
 
 ---Returns a Blockade based on its simulation name, or `nil` if it's not found.
@@ -80,7 +81,8 @@ end
 ---@param name string Blockade ID.
 ---@return Blockade
 function Objects:assertGetBlockade(name)
-	return assert(self:getBlockade(name), "Tried to access a nonexistent blockade: " .. tostring(name))
+	local blockade = assert(self:getBlockade(name), "Tried to access a nonexistent blockade: " .. tostring(name))
+    return blockade
 end
 
 ---Returns a Track based on its simulation name, or `nil` if it is not found.
@@ -94,7 +96,8 @@ end
 ---@param name string For example: `"Eb_It2"`. Case-insensitive.
 ---@return Track
 function Objects:assertGetTrack(name)
-	return assert(self:getTrack(name), "Tried to access an invalid track: " .. tostring(name):lower())
+	local track = assert(self:getTrack(name), "Tried to access an invalid track: " .. tostring(name):lower())
+    return track
 end
 
 ---Returns a Switch based on its simulation name, or `nil` if it is not found.
@@ -108,7 +111,8 @@ end
 ---@param name string For example: `"Eb_39"`. Case-insensitive.
 ---@return Switch
 function Objects:assertGetSwitch(name)
-	return assert(self:getSwitch(name), "Tried to access an invalid switch: " .. tostring(name):lower())
+	local switch = assert(self:getSwitch(name), "Tried to access an invalid switch: " .. tostring(name):lower())
+    return switch
 end
 
 ---Returns a Semaphore based on its simulation name, or `nil` if it is not found.
@@ -122,7 +126,8 @@ end
 ---@param name string For example: `"Eb_A"`. Case-insensitive.
 ---@return Semaphore
 function Objects:assertGetSemaphore(name)
-	return assert(self:getSemaphore(name), "Tried to access an invalid semaphore: " .. tostring(name):lower())
+	local semaphore = assert(self:getSemaphore(name), "Tried to access an invalid semaphore: " .. tostring(name):lower())
+    return semaphore
 end
 
 ---Returns a list of station IDs, sorted alphabetically.

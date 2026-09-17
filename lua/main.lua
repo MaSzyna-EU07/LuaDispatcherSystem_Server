@@ -38,11 +38,6 @@ function _Init(scenario, filename)
 
 	-- Create stations and load schematic data.
 	_LoadSchematics()
-	-- Create blockades.
-	-- TODO: Blockades should be defined by schematic data.
-	for blockadeN, blockadeData in pairs(fileData.blockades) do
-		_Obj:addBlockade(blockadeN, blockadeData)
-	end
 
 	-- Initialize blockades, since only now the last block semaphores can be attached to the entry semaphores on stations.
 	for i, name in ipairs(_Obj:getBlockadeList()) do

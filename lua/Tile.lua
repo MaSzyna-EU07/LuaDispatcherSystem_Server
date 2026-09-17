@@ -325,6 +325,12 @@ function Tile:isSemaphoreStop()
 	return state and (state.image == "s1" or state.image == "ms1")
 end
 
+---Returns the direction towards which this tile's blockade is pointing, or `nil` if there's no blockade.
+---@return integer?
+function Tile:getBlockadeDirection()
+	return self:getData().blockade
+end
+
 ---Returns the current maximum speed on this Tile, or `nil` if there is no speed limit.
 ---@return number
 function Tile:getSpeed()
