@@ -42,6 +42,13 @@ function Semaphore:setData(data)
 	self:init()
 end
 
+---Sets the next default semaphore if `:setSpeed()` is called without the `next` parameter.
+---This value gets overridden by `:setData()`.
+---@param nextDefault string|integer Next semaphore ID or speed.
+function Semaphore:setNextDefault(nextDefault)
+	self.nextDefault = nextDefault
+end
+
 ---Initializes callbacks which listen for the changes in the simulator.
 function Semaphore:init()
 	_LogWrite("Creating semaphore: " .. self.id, Severity.INFO, 3)

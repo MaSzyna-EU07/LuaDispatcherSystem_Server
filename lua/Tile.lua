@@ -53,6 +53,10 @@ function Tile:new(schematic, x, y)
 	---@type string?
 	self.warp = nil -- An index (shortcut) of the station to jump to when this tile is clicked.
 	---@type string?
+	self.warpID = nil -- A unique ID of this exit point.
+	---@type string?
+	self.warpTargetID = nil -- The ID of the exit point on the target station this exit point leads to.
+	---@type string?
 	self.command = nil -- A command to be sent to the server when this tile is right clicked.
 end
 
@@ -325,6 +329,12 @@ function Tile:isSemaphoreStop()
 	return state and (state.image == "s1" or state.image == "ms1")
 end
 
+---Returns whether any route can ever be reserved by this semaphore.
+---@return boolean
+function Tile:isSemaphoreControllable()
+	return self.semaphoreAllowTrain or self.semaphoreAllowShunt or self.semaphoreAllowSz
+end
+
 ---Returns the direction towards which this tile's blockade is pointing, or `nil` if there's no blockade.
 ---@return integer?
 function Tile:getBlockadeDirection()
@@ -401,6 +411,29 @@ function Tile:flipSwitchSuffix(suffix)
 		return suffix
 	end
 	return suffix == "ab" and "cd" or "ab"
+end
+
+---Returns the destination tile, if this Tile is a warp tile and the destinations are properly set.
+---@return Tile?
+function Tile:getWarpDestination()
+	if not self.warp or not self.warpTargetID then
+        -- No warp specified
+        _LogWrite("Warp destination search failed: no warp specified", Severity.INFO, 2)
+        return
+    end
+    local station = _Obj:getStation(self.warp)
+    if not station then
+        -- Warp is to an invalid station
+        _LogWrite(string.format("Warp destination search failed: target station `%s` not found", self.warp), Severity.INFO, 2)
+        return
+    end
+    local destination = station.schematic.index:getExit(self.warpTargetID)
+    if not destination then
+        -- Exit not found on the target station
+        _LogWrite(string.format("Warp destination search failed: target exit point `%s` not found on station `%s`", self.warpTargetID, station.shortcut), Severity.INFO, 2)
+        return
+    end
+    return destination
 end
 
 --################################################--
@@ -512,6 +545,8 @@ function Tile:serialize()
 		forbidShunt = self.forbidShunt or nil,
 		blockadeID = self.blockadeID,
 		warp = self.warp,
+		warpID = self.warpID,
+		warpTargetID = self.warpTargetID,
 		command = self.command
 	}
 	if not self.electrified then
@@ -555,6 +590,8 @@ function Tile:deserialize(t)
 	self.forbidShunt = t.forbidShunt == true
 	self.blockadeID = t.blockadeID
 	self.warp = t.warp
+	self.warpID = t.warpID
+	self.warpTargetID = t.warpTargetID
 	self.command = t.command
 end
 

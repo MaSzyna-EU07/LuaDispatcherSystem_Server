@@ -1,4 +1,5 @@
 local Class = require("lua.class")
+local TrackFollower = require("lua.pathfinder.TrackFollower")
 
 ---Represents an index of a station schematic. Indexes a schematic, registers objects
 ---and stores a map of object names to tiles for pathfinding convenience.
@@ -17,6 +18,8 @@ function SchematicIndex:new(schematic)
     self.switches = {}
     ---@type table<string, Tile>
     self.semaphores = {}
+    ---@type table<string, Tile>
+    self.exits = {}
     ---@alias BlockadeIndexData {tracks: Track[], semaphores: Semaphore[], semaphoresN: Semaphore[]}
     ---@type table<string, BlockadeIndexData>
     self.blockades = {}
@@ -82,6 +85,33 @@ function SchematicIndex:generateIndex()
                     self.tracks[prevTrackID] = trackData
                 end
             end
+            if tile.warpID and tile:isExitPoint() then
+                -- Register the exit point.
+                self.exits[tile.warpID] = tile
+            end
+        end
+    end
+end
+
+---Goes through all indexed uncontrollable semaphores, and if they have no next default semaphore/speed in their data,
+---attempts to fill this in with the semaphore physically behind.
+---
+---This works only if the given semaphore is guaranteed to have the same next semaphore, no matter the route.
+---If there's a diverging route between the two semaphores, the next semaphore is ambiguous and the next default semaphore field will stay empty.
+---
+---Typically, this only affects blockade semaphores.
+---The reason why we're not doing this in the blockade itself is that the station entrance semaphores are not considered part of the blockade.
+function SchematicIndex:generateSemaphoreNextDefaults()
+    for semaphoreID, tile in pairs(self.semaphores) do
+        local semaphore = _Obj:assertGetSemaphore(semaphoreID)
+        if not tile:isSemaphoreControllable() and semaphore.nextDefault == math.huge then
+            _LogWrite(string.format("Looking for an automatically assigned next semaphore for semaphore `%s`", semaphoreID), Severity.INFO, 2)
+            -- Scan for the next semaphore.
+            local follower = TrackFollower(tile, assert(tile:getSemaphoreDirection()))
+            follower:setSwitchPolicy(TrackFollowerSwitchPolicy.STOP_DIVERGING)
+            follower:stepUntil(function(stepTile) return stepTile:isSemaphore() and stepTile:getSemaphoreDirection() == follower.direction end)
+            _LogWrite(string.format("Found next semaphore for `%s` -> `%s`", semaphoreID, follower:getTile().semaphoreID), Severity.INFO, 2)
+            semaphore:setNextDefault(follower:getTile().semaphoreID)
         end
     end
 end
@@ -96,36 +126,26 @@ function SchematicIndex:generateBlockades()
                 ---@type BlockadeIndexData
                 local blockadeData = {tracks = {}, semaphores = {}, semaphoresN = {}}
                 -- Start going through tiles until we find a controlled semaphore.
-                local scanTile = tile
-                local scanDir = assert(tile:getBlockadeDirection())
+                local follower = TrackFollower(tile, assert(tile:getBlockadeDirection()))
                 local n = 0
-                while scanDir and scanTile and not (scanTile:isSemaphore() and (scanTile.semaphoreAllowTrain or scanTile.semaphoreAllowSz)) do
+                while not (follower.tile:isSemaphore() and follower.tile:isSemaphoreControllable()) do
+                    local scanTile = follower.tile
                     _LogWrite(string.format("Traversing: %s:%s,%s", scanTile.schematic.shortcut, scanTile.x, scanTile.y), Severity.INFO, 1)
                     -- Scan the traversed tile.
                     if scanTile.trackID then
                         table.insert(blockadeData.tracks, _Obj:assertGetTrack(scanTile.trackID))
                     end
                     if scanTile.semaphoreID then
-                        if scanTile:getSemaphoreDirection() == scanDir then
+                        if scanTile:getSemaphoreDirection() == follower.direction then
                             table.insert(blockadeData.semaphores, _Obj:assertGetSemaphore(scanTile.semaphoreID))
                         else
                             table.insert(blockadeData.semaphoresN, _Obj:assertGetSemaphore(scanTile.semaphoreID))
                         end
                     end
-                    -- Move forward.
-                    local dir = scanTile:getNextTrackDirection(_InvertDir(scanDir))
-                    -- Check if this is a dead end...
-                    if not dir then
+                    local continue = follower:step()
+                    if not continue then
                         break
                     end
-                    scanDir = dir
-                    local nextTile = scanTile:getNeighbor(scanDir)
-                    -- Check if we've went out of bounds...
-                    if not nextTile then
-                        _LogWrite("No nextTile (dir=" .. scanDir .. ")", Severity.INFO, 2)
-                        break
-                    end
-                    scanTile = nextTile
                     n = n + 1
                     assert(n < 10000, "Infinite loop")
                 end
@@ -181,6 +201,13 @@ function SchematicIndex:getSemaphore(name)
     return self.semaphores[name]
 end
 
+---Returns the tile on which the provided exit is on. If the exit doesn't exist in the index, returns `nil`.
+---@param name string The exit name.
+---@return Tile?
+function SchematicIndex:getExit(name)
+    return self.exits[name]
+end
+
 ---Returns the tile location or `"none"` when the tile doesn't exist.
 ---@private
 ---@param tile Tile? The tile to return the location of.
@@ -207,6 +234,10 @@ function SchematicIndex:print()
     _LogWrite("- Semaphores:", Severity.INFO, 2)
     for i, id in ipairs(_Utils.tableGetSortedKeys(self.semaphores)) do
         _LogWrite(string.format("  - %s: %s", id, self:getTileLocation(self.semaphores[id])), Severity.INFO, 2)
+    end
+    _LogWrite("- Exits:", Severity.INFO, 2)
+    for i, id in ipairs(_Utils.tableGetSortedKeys(self.exits)) do
+        _LogWrite(string.format("  - %s: %s", id, self:getTileLocation(self.exits[id])), Severity.INFO, 2)
     end
     _LogWrite("- Blockades:", Severity.INFO, 2)
     for i, id in ipairs(_Utils.tableGetSortedKeys(self.blockades)) do

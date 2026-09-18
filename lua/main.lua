@@ -59,10 +59,19 @@ function _LoadSchematics(stationID)
 			-- Load a single station.
 			local stationData = projData.stations[projData.stationIndex[stationID]]
 			_LoadSchematic(stationData)
+			-- Regenerate its blockades.
+			-- TODO: Any blockades which include this station should be regenerated.
+			_Obj:getStation(stationID).schematic:generateSemaphoreNextDefaults()
+			_Obj:getStation(stationID).schematic:generateBlockades()
 		else
 			-- Load all stations.
 			for i, stationData in ipairs(projData.stations) do
 				_LoadSchematic(stationData)
+			end
+			-- (Re)create blockades.
+			for i, name in ipairs(_Obj:getStationList()) do
+				_Obj:getStation(name).schematic:generateSemaphoreNextDefaults()
+				_Obj:getStation(name).schematic:generateBlockades()
 			end
 		end
 	end

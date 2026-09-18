@@ -23,7 +23,6 @@ function Schematic:new(station, data)
 
     self.index = SchematicIndex(self)
 	self.index:generateIndex()
-	self.index:generateBlockades()
 end
 
 ---Returns a tile from this station based on coordinates, or `nil` if no tile lies at that location.
@@ -40,6 +39,17 @@ end
 ---@return Tile
 function Schematic:assertGetTile(x, y)
 	return assert(self:getTile(x, y), string.format("There is no tile at (%s, %s)", x, y))
+end
+
+---Fills in default next semaphore pointers based on the schematic layout.
+---@see SchematicIndex.generateSemaphoreNextDefaults
+function Schematic:generateSemaphoreNextDefaults()
+	self.index:generateSemaphoreNextDefaults()
+end
+
+---Generates blockades originating on this schematic.
+function Schematic:generateBlockades()
+	self.index:generateBlockades()
 end
 
 ---Attempts to pathfind between two given tracks on this schematic with the given path mode.

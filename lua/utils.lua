@@ -441,6 +441,15 @@ function utils.tableIsEmpty(t)
 	return true
 end
 
+---Returns a random value from list `t` with equal probabilities.
+---Returns `nil` if the list is empty.
+---@generic T
+---@param t T[] The table to be fetched a random element from.
+---@return T?
+function utils.iTableGetRandomValue(t)
+	return t[math.random(#t)]
+end
+
 ---Shuffles the elements in the table `t`.
 ---@param t table The table to be shuffled.
 function utils.tableShuffle(t)

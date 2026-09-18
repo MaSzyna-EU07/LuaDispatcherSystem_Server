@@ -73,60 +73,60 @@ function com.doCommand(command)
 	if operands[1] == "s" then
 		-- Sets a semaphore. `s <semaphore_id> <speed> [next] ["w24"]`
 		-- If `next` is a semaphore ID, it should be prefixed with a `:` character, like `s MMz_A 1 :MMz_X`.
-		_Obj:getSemaphore(operands[2]):setW24(operands[5] == "w24")
+		_Obj:assertGetSemaphore(operands[2]):setW24(operands[5] == "w24")
 		-- Convert the next speed/semaphore to a number.
 		---@type Speed|Semaphore|string?
 		local next = tonumber(operands[4]) or operands[4]
 		if type(next) == "string" then
 			-- Remove the leading `:` character. This allows using fully numeric semaphore IDs, like 442 (enter `:442` as the argument).
-			next = _Obj:getSemaphore(_Utils.strStartsWith(next, ":") and next:sub(2) or next)
+			next = _Obj:assertGetSemaphore(_Utils.strStartsWith(next, ":") and next:sub(2) or next)
 		elseif next == 1 then
 			-- 1 is an alias for `math.huge` (Vmax)
 			next = math.huge
 		end
 		local speed = assert(tonumber(operands[3]), "Missing speed parameter")
-		_Obj:getSemaphore(operands[2]):setSpeed(speed == 1 and math.huge or speed, next)
+		_Obj:assertGetSemaphore(operands[2]):setSpeed(speed == 1 and math.huge or speed, next)
 	elseif operands[1] == "su" then
 		-- Stops a semaphore and unreserves all claimed tracks. `s <semaphore_id>`
-		_Obj:getSemaphore(operands[2]):stop()
-		_Obj:getSemaphore(operands[2]):unreserveAllTracks()
+		_Obj:assertGetSemaphore(operands[2]):stop()
+		_Obj:assertGetSemaphore(operands[2]):unreserveAllTracks()
 	elseif operands[1] == "j" then
 		-- Sets a switch. `j <switch_id> <"+"|"-">`
-		_Obj:getSwitch(operands[2]):setState(operands[3] == "+")
+		_Obj:assertGetSwitch(operands[2]):setState(operands[3] == "+")
 	elseif operands[1] == "ju" then
 		-- Unforces a switch. `ju <switch_id>`
-		_Obj:getSwitch(operands[2]):setForced(false)
+		_Obj:assertGetSwitch(operands[2]):setForced(false)
 	elseif operands[1] == "t" then
 		-- Sets a track. `t <track_id> <"free"|"busy"|"res">`
 		if operands[3] == "free" then
-			_Obj:getTrack(operands[2]):free()
+			_Obj:assertGetTrack(operands[2]):free()
 		elseif operands[3] == "busy" then
-			_Obj:getTrack(operands[2]):busy()
+			_Obj:assertGetTrack(operands[2]):busy()
 		elseif operands[3] == "res" then
-			_Obj:getTrack(operands[2]):reserve()
+			_Obj:assertGetTrack(operands[2]):reserve()
 		end
 	elseif operands[1] == "tr" then
 		-- Reserves a track with a semaphore. `tr <track_id> [semaphore_id]`
-		_Obj:getTrack(operands[2]):reserve(operands[3] and _Obj:getSemaphore(operands[3]))
+		_Obj:assertGetTrack(operands[2]):reserve(operands[3] and _Obj:assertGetSemaphore(operands[3]))
 	elseif operands[1] == "tc" then
 		-- Sends a command to the specified train on a track. `tc <track_id> <str> [num1] [num2]`
-		_Obj:getTrack(operands[2]):sendCommand(operands[3], tonumber(operands[4]) or 0, tonumber(operands[5]) or 0)
+		_Obj:assertGetTrack(operands[2]):sendCommand(operands[3], tonumber(operands[4]) or 0, tonumber(operands[5]) or 0)
 	elseif operands[1] == "nt" then
 		-- Registers a new track. `nt <track_id>`
 		-- This DOES NOT WORK !!!
 		_Obj:addTrack(operands[2])
 	elseif operands[1] == "b" then
 		-- Switches the blockade direction. `b <blockade_id> <n|p|x>`
-		_Obj:getBlockade(operands[2]):setDirection(COM_BLOCKADES[operands[3]])
+		_Obj:assertGetBlockade(operands[2]):setDirection(COM_BLOCKADES[operands[3]])
 	elseif operands[1] == "p" then
 		-- Pathfinds a route. `p <station_id> <track1_id> <track2_id> [t|s]`
-		local result = _Obj:getStation(operands[2]).schematic:pathfind(operands[3], operands[4], operands[5] == "s" and PathMode.SHUNT or PathMode.TRAIN)
+		local result = _Obj:assertGetStation(operands[2]).schematic:pathfind(operands[3], operands[4], operands[5] == "s" and PathMode.SHUNT or PathMode.TRAIN)
 		if not result then
 			com.notify("Pathfinding failed... :(", NotificationColor.RED)
 		end
 	elseif operands[1] == "pm" then
 		-- Pathfinds a route by specifying coordinates. `p <station_id> <x1> <y1> <x2> <y2> [t|s]`
-		local schematic = assert(_Obj:getStation(operands[2]).schematic, "Station not found!")
+		local schematic = _Obj:assertGetStation(operands[2]).schematic
 		local x1, y1, x2, y2 = math.floor(assert(tonumber(operands[3]))), math.floor(assert(tonumber(operands[4]))), math.floor(assert(tonumber(operands[5]))), math.floor(assert(tonumber(operands[6])))
 		local result = schematic:pathfindTiles(schematic:assertGetTile(x1, y1), schematic:assertGetTile(x2, y2), operands[7] == "s" and PathMode.SHUNT or PathMode.TRAIN)
 		if not result then
@@ -140,7 +140,7 @@ function com.doCommand(command)
 		_API:eventDispatch(operands[2])
 	elseif operands[1] == "tt" then
 		-- Creates a notification specifying what timetable has the train on the given track. `tt <track_id>`
-		local result = _Obj:getTrack(operands[2]):getTimetable()
+		local result = _Obj:assertGetTrack(operands[2]):getTimetable()
 		com.notify(result and "Timetable: " .. result or "No timetable found! :(", result and NotificationColor.GREEN or NotificationColor.RED)
 	end
 end

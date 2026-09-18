@@ -2,11 +2,11 @@ local verboseValue = 3
 
 ---Writes a message to the MaSzyna's log file.
 ---@param text string The message to be printed.
----@param severity Severity The severity.
----@param weight integer The verbosity. The higher the value, the less important output.
+---@param severity Severity? The severity.
+---@param weight integer? The verbosity. The higher the value, the less important output.
 function _LogWrite(text, severity, weight)
-	if verboseValue >= weight then
-		_API:log("LuaDispatcher -> [" .. severity .. "] " .. text)
+	if verboseValue >= (weight or 1) then
+		_API:log("LuaDispatcher -> [" .. (severity or Severity.DEBUG) .. "] " .. text)
 	end
 end
 
