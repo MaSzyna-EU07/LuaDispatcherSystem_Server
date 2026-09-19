@@ -39,11 +39,6 @@ function _Init(scenario, filename)
 	-- Create stations and load schematic data.
 	_LoadSchematics()
 
-	-- Initialize blockades, since only now the last block semaphores can be attached to the entry semaphores on stations.
-	for i, name in ipairs(_Obj:getBlockadeList()) do
-		_Obj:getBlockade(name):init()
-	end
-
 	_CreateLoopEvent("loop", _TryLoop, 1)
 end
 
@@ -68,9 +63,13 @@ function _LoadSchematics(stationID)
 			for i, stationData in ipairs(projData.stations) do
 				_LoadSchematic(stationData)
 			end
-			-- (Re)create blockades.
+			-- (Re)assign automatically generated next semaphores.
 			for i, name in ipairs(_Obj:getStationList()) do
 				_Obj:getStation(name).schematic:generateSemaphoreNextDefaults()
+			end
+			-- (Re)create blockades.
+			-- This is done in a separate pass because we could initialize a blockade without all default semaphores set yet (see multi-schematic blockades).
+			for i, name in ipairs(_Obj:getStationList()) do
 				_Obj:getStation(name).schematic:generateBlockades()
 			end
 		end

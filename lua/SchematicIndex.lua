@@ -174,6 +174,7 @@ function SchematicIndex:generateBlockades()
                         table.insert(finalBlockadeData.blocks, {track = track, semaphore = blockadeData.semaphores[i - 1], semaphoreN = blockadeData.semaphoresN[i]})
                     end
                     _Obj:addBlockade(tile.blockadeID, finalBlockadeData)
+                    _Obj:getBlockade(tile.blockadeID):init()
                 end
             end
         end
