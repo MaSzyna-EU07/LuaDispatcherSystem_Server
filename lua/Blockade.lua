@@ -25,10 +25,6 @@ function Blockade:new(id, data)
         -- Initialize each block by setting up callbacks.
         block.track:monitor("busy", self.occupyBlock, self, i)
         block.track:monitor("free", self.freeBlock, self, i)
-        -- If the track is occupied at start, mark it as occupied already.
-        if block.track.occupied then
-            self:occupyBlock(i)
-        end
     end
 	_LogWrite("Created blockade: " .. id, Severity.SUCCESS, 2)
     _LogWrite("Blocks:", Severity.INFO, 1)
@@ -40,9 +36,14 @@ end
 ---Initializes the blockade state.
 function Blockade:init()
 	_LogWrite("Initializing blockade: " .. self.id, Severity.INFO, 3)
-    for i = 1, #self.blocks do
-        -- By default, all blocks are free. If a block is occupied at the start, it will trigger an appropriate callback when vehicles are placed.
-        self:freeBlock(i)
+    for i, block in ipairs(self.blocks) do
+        if block.track.occupied then
+            -- If the track is occupied at start, mark it as pre-occupied.
+            self:occupyBlock(i)
+        else
+            -- Else, mark it as free to display a clear signal on the semaphores.
+            self:freeBlock(i)
+        end
     end
 	_LogWrite("Initialized blockade: " .. self.id, Severity.SUCCESS, 2)
 end
