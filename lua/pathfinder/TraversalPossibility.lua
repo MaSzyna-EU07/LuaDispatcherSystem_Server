@@ -207,11 +207,13 @@ function TraversalPossibility:generateItineraries()
                     itinerary:setSpeed(Speed.MS2)
                 end
             end
-            -- Last tile determines the next semaphore, if it exists, and also determines whether W24 will be displayed.
+            -- Last tile determines the next semaphore, if it exists.
             if j == endIndex then
                 itinerary:setNext(node.tile.semaphoreID or (node.tile:isBuffer() and 0 or math.huge))
-                itinerary:setW24(node.tile.targetW24)
             end
+            -- The target will always specify whether W24 is going to be active.
+            -- Currently the pathfinder's route ends one tile PAST the arrow tile.
+            itinerary:setW24(self.pathfinder.target.targetW24)
         end
         -- Add the itinerary to the list.
         table.insert(itineraries, 1, itinerary)
