@@ -138,10 +138,15 @@ function com.doCommand(command)
 	elseif operands[1] == "e" then
 		-- Dispatches an event. `e <event>`
 		_API:eventDispatch(operands[2])
+	elseif operands[1] == "st" then
+		-- Spawns a trainset. `st <trainset>`
+		_API:spawnTrainset(string.sub(command, 4))
 	elseif operands[1] == "tt" then
 		-- Creates a notification specifying what timetable has the train on the given track. `tt <track_id>`
 		local result = _Obj:assertGetTrack(operands[2]):getTimetable()
 		com.notify(result and "Timetable: " .. result or "No timetable found! :(", result and NotificationColor.GREEN or NotificationColor.RED)
+	else
+		error("Unrecognized command: " .. tostring(operands[1]))
 	end
 end
 
