@@ -45,6 +45,7 @@ function Pathfinder:calculatePath()
     while #self.possibilities > 0 do
         -- Get the possibility which has the lowest cost.
         table.sort(self.possibilities, self.possibilitySortFn)
+        ---@type TraversalPossibility
         local possibility = table.remove(self.possibilities, 1)
         if possibility:isWinning() then
             possibility:finalize()

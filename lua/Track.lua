@@ -73,11 +73,12 @@ function Track:busy()
 	self:tell("occupied", Severity.INFO, 3)
 	self:refreshSim()
 	-- Display a stop signal on the semaphore that depends on this track.
-	-- Sz ("Sygnał zastępczy") is exempt.
-	if self.semaphore and self.semaphore.speed ~= Speed.SZ then
+	-- Sz ("Sygnał zastępczy") is exempt, because it times out naturally.
+	-- Ms2 is exempt, since it uses a different mechanism of going back to the stop signal.
+	if self.semaphore and self.semaphore.speed ~= Speed.SZ and self.semaphore.speed ~= Speed.MS2 then
 		self.semaphore:stop()
+		self:setSemaphore()
 	end
-	self:setSemaphore()
 	self:call("busy")
 end
 
@@ -87,6 +88,11 @@ function Track:free()
 	self.occupied = false
 	self:tell("freed", Severity.INFO, 3)
 	self:refreshSim()
+	-- Display a stop signal, if Ms2 is displayed.
+	if self.semaphore and self.semaphore.speed == Speed.MS2 then
+		self.semaphore:stop()
+		self:setSemaphore()
+	end
 	self:setSemaphore()
 	self:call("free")
 end

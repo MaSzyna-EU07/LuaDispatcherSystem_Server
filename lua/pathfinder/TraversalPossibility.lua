@@ -71,9 +71,12 @@ function TraversalPossibility:evaluate()
             table.insert(newPossibility.segments, {start = #newPossibility.path, speed = math.huge})
         end
         -- Check if we need to lower the speed, globally and for this segment.
-        local prevTileSpeed = self.tile:getSpeedForDirections(newPossibility.path[#newPossibility.path - 1].dir1, self.direction)
-        newPossibility.speed = math.min(self.speed, prevTileSpeed)
-        newPossibility.segments[#newPossibility.segments].speed = math.min(newPossibility.segments[#newPossibility.segments].speed, prevTileSpeed)
+        local speed = tile:getSpeedForDirections(_InvertDir(self.direction), direction)
+        if speed < self.speed then
+            _LogWrite(string.format("Tile (%s,%s) reduces speed from %s to %s", tile.x, tile.y, self.speed, speed))
+        end
+        newPossibility.speed = math.min(self.speed, speed)
+        newPossibility.segments[#newPossibility.segments].speed = math.min(newPossibility.segments[#newPossibility.segments].speed, speed)
         -- Assemble the possiblity and add it to the list.
         newPossibility.cost = newPossibility:calculateCost()
         table.insert(found, newPossibility)
@@ -109,6 +112,10 @@ end
 ---@return boolean
 function TraversalPossibility:isDead()
     local prevTile = self:getPreviousTile()
+    if self.tile:isEmpty() then
+        -- We've reached a desert.
+        return true
+    end
     if self.pathfinder.mode == PathMode.TRAIN and self.tile:isTrackClear() == false then
         -- The track is for sure occupied when in train mode.
         --_Notifications:post(string.format("After %s tiles at (%s, %s): Track occupied!", #self.path, self.tile.x, self.tile.y), NotificationColor.GRAY)
@@ -152,11 +159,11 @@ function TraversalPossibility:finalize()
         end
         local directions = tile:getPossibleTrackDirections(_InvertDir(self.direction))
         local direction = directions[1]
-        table.insert(self.path, {tile = tile, dir1 = _InvertDir(self.direction), dir2 = direction})
         if not direction then
             -- Dead end.
             break
         end
+        table.insert(self.path, {tile = tile, dir1 = _InvertDir(self.direction), dir2 = direction})
         self.tile = tile
         self.direction = direction
         n = n + 1
@@ -207,13 +214,13 @@ function TraversalPossibility:generateItineraries()
                     itinerary:setSpeed(Speed.MS2)
                 end
             end
-            -- Last tile determines the next semaphore, if it exists.
+            -- Last tile determines the next semaphore if it exists and whether W24 is displayed.
+            -- TODO: Use the track follower for pathfinding means.
             if j == endIndex then
                 itinerary:setNext(node.tile.semaphoreID or (node.tile:isBuffer() and 0 or math.huge))
+                itinerary:setW24(node.tile.targetW24)
+                _Com.highlightTile(node.tile.schematic.shortcut, node.tile.x, node.tile.y, 1)
             end
-            -- The target will always specify whether W24 is going to be active.
-            -- Currently the pathfinder's route ends one tile PAST the arrow tile.
-            itinerary:setW24(self.pathfinder.target.targetW24)
         end
         -- Add the itinerary to the list.
         table.insert(itineraries, 1, itinerary)

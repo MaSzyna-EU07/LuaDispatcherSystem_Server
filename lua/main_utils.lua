@@ -90,6 +90,20 @@ function _IsSpeedStopIsh(speed)
 	return speed < 10
 end
 
+---Returns the next highest speed threshold lower than the specified one.
+---If there is no lower speed threshold than the stop(ish) speed, returns `0`.
+---@param speed integer The speed to be lowered.
+---@return integer
+function _StepDownSpeed(speed)
+	local speeds = _Utils.tableGetSortedKeys(signalImages)
+	for i = #speeds, 1, -1 do
+		if speeds[i] < speed then
+			return _IsSpeedStopIsh(speeds[i]) and 0 or speeds[i]
+		end
+	end
+	return 0
+end
+
 ---Resolves a potential string semaphore ID to an actual semaphore.
 ---@param semaphore string|Speed? The semaphore ID or a speed or `nil`.
 ---@return Semaphore|Speed?

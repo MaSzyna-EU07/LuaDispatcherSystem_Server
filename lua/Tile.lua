@@ -60,6 +60,12 @@ function Tile:new(schematic, x, y)
 	self.command = nil -- A command to be sent to the server when this tile is right clicked.
 end
 
+---Returns whether this Tile is empty.
+---@return boolean
+function Tile:isEmpty()
+	return self.id == ""
+end
+
 ---Returns whether this Tile is a track, regardless of its type or what else is with it.
 ---@return boolean
 function Tile:isTrack()

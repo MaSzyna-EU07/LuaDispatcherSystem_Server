@@ -30,6 +30,9 @@ function com.init(scenario)
 	_CreateLoopEvent("tick_com", com.tick, COM_SAVE_INTERVAL)
 end
 
+---Sends some bytes. A list of bytes is expected, not the raw byte value.
+---Values out of the 0..255 range will be modulo-ed, `math.huge` equals 255, anything else will log a warning and will be ignored.
+---@param bytes integer[] List of bytes to be sent.
 function com.sendBytes(bytes)
 	for i, n in ipairs(bytes) do
 		if type(n) == "number" then
@@ -40,6 +43,8 @@ function com.sendBytes(bytes)
 	end
 end
 
+---Sends a text message in bytes, alongside a null terminator byte.
+---@param text string Text to be sent to the log file.
 function com.sendText(text)
 	com_buffer = com_buffer .. text .. string.char(0x00)
 end
@@ -227,6 +232,12 @@ function com.notify(message, color)
 	com.sendBytes({0x02})
 	com.sendBytes({NotificationColorID[color or NotificationColor.GREEN]})
 	com.sendText(message)
+end
+
+function com.highlightTile(stationID, x, y, type)
+	com.sendBytes({0x03})
+	com.sendBytes(com.getObjID(com_ids.stations, stationID))
+	com.sendBytes({x, y, type})
 end
 
 return com

@@ -137,14 +137,21 @@ function Semaphore:refreshImage()
 	local nextSpeed = self:getDisplayedNextSpeed()
 	-- TODO: Separate flag for Sz. If the image cannot be displayed, set an Sz flag and that's it.
 	local image = self:getSupportedImage(speed, nextSpeed)
-	if not image then
-		-- Fall back to Sz.
-		self.speed = Speed.SZ
-		image = self:getSupportedImage(self.speed)
-		if not image then
-			-- No Sz: fall back to S1/Ms1.
-			self.speed = self:getStopSpeed()
+	while not image do
+		-- Each iteration start is basically "we did not find the requested image, what now" case.
+		speed = _StepDownSpeed(speed)
+		if speed > 0 then
+			-- Try again with a lower speed.
+			image = self:getSupportedImage(speed, nextSpeed)
+		else
+			-- Fall back to Sz.
+			self.speed = Speed.SZ
 			image = self:getSupportedImage(self.speed)
+			if not image then
+				-- No Sz: fall back to S1/Ms1.
+				self.speed = self:getStopSpeed()
+				image = self:getSupportedImage(self.speed) or "uszk"
+			end
 		end
 	end
 	-- Avoid changing an image to the same image. Especially important for shape signals, which would play a sound while the signal doesn't change.
@@ -228,7 +235,8 @@ end
 ---@return integer
 function Semaphore:getDisplayedNextSpeed()
 	local nextSpeed = self:getNextSpeed()
-	if self.fourPhase and nextSpeed == math.huge and self:getNextNextSpeed() < 100 then
+	local nextNextSpeed = self:getNextNextSpeed()
+	if self.fourPhase and nextSpeed == math.huge and nextNextSpeed < 100 and nextNextSpeed ~= Speed.DIM then
 		return 100
 	end
 	return nextSpeed

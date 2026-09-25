@@ -120,6 +120,16 @@ function _DoCallback(name, ...)
 	end
 end
 
+function _PrintDiagnostics()
+	_LogWrite("Semaphore assingments:")
+	for i, trackID in ipairs(_Obj:getTrackList()) do
+		local track = _Obj:assertGetTrack(trackID)
+		if track.semaphore then
+			_LogWrite(string.format("%s -> %s", trackID, track.semaphore.id))
+		end
+	end
+end
+
 -- TODO: Extract API to a separate file
 return {
 	init = function(config) _TryInit(config.scenario, config.filename) end,
