@@ -153,17 +153,17 @@ function TraversalPossibility:finalize()
     local n = 0
     while not (self.tile:isSemaphore() and self.tile:getSemaphoreDirection() == self.direction and self.tile ~= self.pathfinder.start) do
         local tile = self.tile:getNeighbor(self.direction)
-        if not tile then
+        if not tile or tile:isEmpty() then
             -- Dead end.
             break
         end
         local directions = tile:getPossibleTrackDirections(_InvertDir(self.direction))
         local direction = directions[1]
+        table.insert(self.path, {tile = tile, dir1 = _InvertDir(self.direction), dir2 = direction})
         if not direction then
             -- Dead end.
             break
         end
-        table.insert(self.path, {tile = tile, dir1 = _InvertDir(self.direction), dir2 = direction})
         self.tile = tile
         self.direction = direction
         n = n + 1
