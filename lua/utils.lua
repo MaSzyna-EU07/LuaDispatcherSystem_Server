@@ -572,6 +572,15 @@ function utils.strJoin(t, k)
 	return table.concat(t, k)
 end
 
+---Replaces `a` with `b` in string `s`.
+---@param s string The string to be modified.
+---@param a string Phrase to be replaced.
+---@param b string Phrase to be inserted.
+---@return string
+function utils.strReplace(s, a, b)
+	return utils.strJoin(utils.strSplit(s, a), b)
+end
+
 ---Indents a string `s` by adding `n` spaces at the front of each line.
 ---@param s string A string to be indented.
 ---@param n integer The amount of spaces to be added at the front of each line.

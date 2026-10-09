@@ -214,6 +214,12 @@ function Semaphore:getStopSpeed()
 	return self.type == SemaphoreType.TM and Speed.MS1 or Speed.STOP
 end
 
+---Returns whether this semaphore is currently displaying a stop signal.
+---@return boolean
+function Semaphore:isStop()
+	return self.speed == self:getStopSpeed()
+end
+
 ---Returns the displayed speed on the next semaphore instead of the actual one.
 ---An example on how this could happen is when the short speed is set.
 ---@return integer

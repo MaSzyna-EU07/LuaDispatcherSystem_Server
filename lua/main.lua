@@ -7,6 +7,7 @@ _Com = require("lua.main_communication")
 
 local Time = require("lua.Time")
 local Objects = require("lua.Objects")
+local Timetables = require("lua.Timetables")
 local TileDatabase = require("lua.TileDatabase")
 
 _CurrentTime = Time({hour=11,minute=30})
@@ -15,6 +16,8 @@ _Callbacks = {}
 
 ---@type Objects
 _Obj = Objects()
+---@type Timetables
+_Timetables = Timetables()
 ---@type TileDatabase
 _TileDB = TileDatabase()
 
@@ -33,13 +36,11 @@ function _Init(scenario, filename)
 	_Com.init(scenario)
 	_Filename = filename
 
-	-- decode the contents and store in a table
-	local fileData = assert(_Utils.loadJson(filename), "Could not open file at " .. tostring(filename))
-
 	-- Create stations and load schematic data.
 	_LoadSchematics()
 
 	_CreateLoopEvent("loop", _TryLoop, 1)
+	_API:eventCreate("onstart_lua", 0.1, 0, function() _DoCallback("start") end)
 end
 
 ---(Re)loads schematics for the specified station or for all stations in the project.
@@ -73,6 +74,8 @@ function _LoadSchematics(stationID)
 				_Obj:getStation(name).schematic:generateBlockades()
 			end
 		end
+	else
+		_LogWrite("Failed to (re)load project file: " .. projFilename, Severity.ERROR, 3)
 	end
 end
 
@@ -106,6 +109,10 @@ function _CreateLoopEvent(name, func, delay, randomDelay)
 	_API:eventDispatch(name)
 end
 
+---Creates a callback. If the specified action is called, the specified function will be called.
+---Multiple functions can be bound to the same callback, and they are called in their order of registration.
+---@param name string The callback name, `station_X` is the station tick, where `X` is the station shortcut. `start` is launched at the start (after all vehicles are placed).
+---@param func function The function to be ran whe the specified callback is called.
 function _CreateCallback(name, func)
 	local list = _Callbacks[name] or {}
 	table.insert(list, func)
@@ -136,3 +143,10 @@ return {
 	getTrack = function(name) return _Obj:getTrack(name) end,
 	setCallback = function(name, func) _CreateCallback(name, func) end
 }
+
+-- TODO: Create unit tests
+
+--    local s = "Pchnąć w tę łódź ośm skrzyń fig"
+--    local a = s:len()
+--    local b = utf8.len(s)
+--    _LogWrite("Length: " .. tostring(a) .. ", " .. tostring(b), Severity.INFO, 1)

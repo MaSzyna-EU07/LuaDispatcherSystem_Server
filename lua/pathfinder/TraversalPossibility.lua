@@ -203,7 +203,7 @@ function TraversalPossibility:generateItineraries()
             -- Check if we have to consider a switch state on this tile.
             local switchStates = node.tile:getSwitchStatesForDirections(node.dir1, node.dir2)
             for suffix, state in pairs(switchStates) do
-                itinerary:addSwitch(node.tile.switchID .. suffix, state)
+                itinerary:addSwitch(node.tile.switchID .. suffix, state, node.tile.trackID)
             end
             -- First tile determines the semaphore.
             if j == startIndex then

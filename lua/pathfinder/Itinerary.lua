@@ -11,6 +11,8 @@ function Itinerary:new()
     self.tracks = {}
     ---@type table<string, boolean>
     self.switches = {}
+    ---@type table<string, string>
+    self.switchesToTracks = {}
     ---@type string
     self.semaphore = nil
     ---@type Speed
@@ -30,8 +32,10 @@ end
 ---Adds a switch to this itinerary.
 ---@param name string The switch ID.
 ---@param state boolean `false` = "-", `true` = "+".
-function Itinerary:addSwitch(name, state)
+---@param track string The track ID associated with this switch.
+function Itinerary:addSwitch(name, state, track)
     self.switches[name] = state
+    self.switchesToTracks[name] = track
 end
 
 ---Sets the starting semaphore on this itinerary.
@@ -62,17 +66,29 @@ end
 ---@return boolean
 function Itinerary:canBeDispatched()
     -- All tracks must be clear.
-    if self.speed == Speed.MS2 then
-        return true
-    end
     for track, _ in pairs(self.tracks) do
         local state = _Obj:getTrackState(track)
-        if state and (state.occupied or state.reserved) then
+        -- Ms2 allows tracks to be occupied, but any reserved track will fail the check no matter what.
+        if state and ((state.occupied and self.speed ~= Speed.MS2) or state.reserved) then
             return false
         end
         if not state then
             print("WARNING: Track `" .. track .. "` not controlled!")
         end
+    end
+    -- We cannot switch a switch when a train is under it.
+    -- This only really matters for shunting, but absolutely shouldn't be neglected.
+    for switchID, trackID in pairs(self.switchesToTracks) do
+        local switch = _Obj:assertGetSwitch(switchID)
+        local track = _Obj:assertGetTrack(trackID)
+        if not track:isClear() and switch.state ~= self.switches[switch] then
+            return false
+        end
+    end
+    -- The semaphore must be displaying a stop signal.
+    local semaphore = _Obj:assertGetSemaphore(self.semaphore)
+    if not semaphore:isStop() then
+        return false
     end
     return true
 end
@@ -82,15 +98,15 @@ function Itinerary:dispatch()
     if not self:canBeDispatched() then
         return
     end
-    local semaphore = assert(_Obj:getSemaphore(self.semaphore), "Semaphore missing")
+    local semaphore = _Obj:assertGetSemaphore(self.semaphore)
     assert(self.speed, "Speed missing")
     -- Reserve all tracks.
     for track, _ in pairs(self.tracks) do
-        _Obj:getTrack(track):reserve(semaphore)
+        _Obj:assertGetTrack(track):reserve(semaphore)
     end
     -- Switch all switches.
     for switch, state in pairs(self.switches) do
-        _Obj:getSwitch(switch):setState(state)
+        _Obj:assertGetSwitch(switch):setState(state)
     end
     -- Dispatch the semaphore.
     semaphore:setW24(self.w24)

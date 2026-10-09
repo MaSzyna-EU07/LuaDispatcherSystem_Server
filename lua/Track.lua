@@ -25,10 +25,11 @@ end
 function Track:init()
 	_LogWrite("Creating track: " .. self.id, Severity.INFO, 3)
 	_LogWrite("- Creating event callbacks...", Severity.INFO, 3)
-	_API:eventCreate(string.lower(self.id) .. ":busy", 0, 0, function() self:busy() end)
+	-- `:busy` and `:dec` have a very small delay so that both `:busy` and `:free` can refer to whatever is/was on the track at the moment.
+	_API:eventCreate(string.lower(self.id) .. ":busy", 0.001, 0, function() self:busy() end)
 	_API:eventCreate(string.lower(self.id) .. ":free", 0, 0, function() self:free() end)
 	_API:eventCreate(string.lower(self.id) .. ":inc", 0, 0, function(event, activator) self:addVehicle(activator) end)
-	_API:eventCreate(string.lower(self.id) .. ":dec", 0, 0, function(event, activator) self:removeVehicle(activator) end)
+	_API:eventCreate(string.lower(self.id) .. ":dec", 0.001, 0, function(event, activator) self:removeVehicle(activator) end)
 	_LogWrite("Created track: " .. self.id, Severity.SUCCESS, 2)
 end
 
@@ -146,8 +147,21 @@ end
 ---@return string?
 function Track:getTimetable()
 	for vehicle, _ in pairs(self.vehicles) do
-		return _API:trainGetName(vehicle)
+		local name = _API:trainGetName(vehicle)
+		if name then
+			return name
+		end
 	end
+	return #self.vehicles > 0 and "none" or nil
+end
+
+---Generates and sends a new timetable to the train on this track.
+---@param number string The full train number, e.g. `"ROJ55101"`.
+---@param data table The timetable data.
+---@param startTime string The starting timetable time, e.g. `"10:30"`. Fractions are allowed, like `"10:30.5"`.
+function Track:setTimetable(number, data, startTime)
+	_Timetables:generate(number, data, startTime)
+	self:sendCommand("Timetable:luascript/rj_tmp", 0, 0)
 end
 
 -- Wow, the following two functions would not be here if only Lua was like Java and included interfaces!
