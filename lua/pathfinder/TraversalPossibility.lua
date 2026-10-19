@@ -1,5 +1,6 @@
 local Class = require("lua.class")
 local Itinerary = require("lua.pathfinder.Itinerary")
+local TrackFollower = require("lua.pathfinder.TrackFollower")
 
 ---Helper class for the Pathfinder. Represents a single possibility of going somewhere.
 ---Each possibility remembers its full path from the start.
@@ -150,24 +151,26 @@ end
 
 ---Finalizes this possibility by extending its path until a semaphore or a dead end is found.
 function TraversalPossibility:finalize()
-    local n = 0
-    while not (self.tile:isSemaphore() and self.tile:getSemaphoreDirection() == self.direction and self.tile ~= self.pathfinder.start) do
-        local tile = self.tile:getNeighbor(self.direction)
-        if not tile or tile:isEmpty() then
-            -- Dead end.
-            break
+    local follower = TrackFollower(self.tile, self.direction)
+    follower:setPathRecording(true)
+    follower:stepUntil(function(tile) return tile:isSemaphore() and tile:getSemaphoreDirection() == follower.direction and tile ~= self.pathfinder.start end)
+    -- TODO: Remove the following debug logs and make the possibilities themselves use track followers.
+    _LogWrite("Pathfinding result until:")
+    for i, item in ipairs(self.path) do
+        _LogWrite(string.format("(%s, %s) : %s,%s", item.tile.x, item.tile.y, item.dir1 or "-", item.dir2 or "-"))
+    end
+    _LogWrite("Pathfinding result after:")
+    for i, item in ipairs(follower:getPath()) do
+        _LogWrite(string.format("(%s, %s) : %s,%s", item.tile.x, item.tile.y, item.dir1 or "-", item.dir2 or "-"))
+        if i == 1 then
+            self.path[#self.path].dir2 = item.dir2
+        else
+            table.insert(self.path, item)
         end
-        local directions = tile:getPossibleTrackDirections(_InvertDir(self.direction))
-        local direction = directions[1]
-        table.insert(self.path, {tile = tile, dir1 = _InvertDir(self.direction), dir2 = direction})
-        if not direction then
-            -- Dead end.
-            break
-        end
-        self.tile = tile
-        self.direction = direction
-        n = n + 1
-        assert(n < 10000, "Infinite loop")
+    end
+    _LogWrite("Combined result:")
+    for i, item in ipairs(self.path) do
+        _LogWrite(string.format("(%s, %s) : %s,%s", item.tile.x, item.tile.y, item.dir1 or "-", item.dir2 or "-"))
     end
 end
 
@@ -205,6 +208,10 @@ function TraversalPossibility:generateItineraries()
             for suffix, state in pairs(switchStates) do
                 itinerary:addSwitch(node.tile.switchID .. suffix, state, node.tile.trackID)
             end
+            -- Check if we are going through a W24 tile.
+            if node.tile.targetW24 then
+                itinerary:setW24(true)
+            end
             -- First tile determines the semaphore.
             if j == startIndex then
                 itinerary:setSemaphore(assert(node.tile.semaphoreID, "Missing semaphore on starting tile!"))
@@ -214,11 +221,10 @@ function TraversalPossibility:generateItineraries()
                     itinerary:setSpeed(Speed.MS2)
                 end
             end
-            -- Last tile determines the next semaphore if it exists and whether W24 is displayed.
+            -- Last tile determines the next semaphore if it exists.
             -- TODO: Use the track follower for pathfinding means.
             if j == endIndex then
-                itinerary:setNext(node.tile.semaphoreID or (node.tile:isBuffer() and 0 or math.huge))
-                itinerary:setW24(node.tile.targetW24)
+                itinerary:setNext(not node.tile.semaphoreOwnShield and node.tile.semaphoreID or (node.tile:isBuffer() and 0 or math.huge))
                 _Com.highlightTile(node.tile.schematic.shortcut, node.tile.x, node.tile.y, 1)
             end
         end

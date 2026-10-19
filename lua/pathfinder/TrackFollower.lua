@@ -12,8 +12,12 @@ local TrackFollower = Class:derive("TrackFollower")
 function TrackFollower:new(start, direction)
     self.tile = start
     self.direction = direction
+    ---@alias PathItem {tile: Tile, dir1: integer?, dir2: integer?}
+    ---@type PathItem[]
+    self.path = {}
 
     self.switchPolicy = TrackFollowerSwitchPolicy.NORMAL
+    self.pathRecording = false
 end
 
 ---Sets the switch policy for this Track Follower.
@@ -22,10 +26,28 @@ function TrackFollower:setSwitchPolicy(switchPolicy)
     self.switchPolicy = switchPolicy
 end
 
+---Sets whether this Track Follower is going to record the list of tiles it went through and directions.
+---@param pathRecording boolean Whether the path recording should be enabled.
+function TrackFollower:setPathRecording(pathRecording)
+    self.pathRecording = pathRecording
+end
+
+---Returns the list of tiles this follower has went through.
+---Requires `:setPathRecording(true)` to be called before moving.
+---@return PathItem[]
+function TrackFollower:getPath()
+    return self.path
+end
+
 ---Moves this follower to the next tile in the indicated direction.
 ---Returns whether the step was successful. If `false` is returned, a dead end has been found or the policy doesn't allow the follower to continue.
 ---@return boolean
 function TrackFollower:step()
+    -- Record the first tile if recording is enabled.
+    if self.pathRecording and #self.path == 0 then
+        table.insert(self.path, {tile = self.tile})
+    end
+    -- Deduce the source direction. It will be useful later.
     local sourceDir = _InvertDir(self.direction)
     -- Check the switch policy and reject movement if applicable.
     if self.switchPolicy == TrackFollowerSwitchPolicy.STOP and self.tile:isSwitch() then
@@ -66,6 +88,11 @@ function TrackFollower:step()
         return false
     end
     self.tile = nextTile
+    -- Record the new tile if recording is enabled.
+    if self.pathRecording then
+        self.path[#self.path].dir2 = self.direction
+        table.insert(self.path, {tile = self.tile, dir1 = _InvertDir(self.direction)})
+    end
     return true
 end
 

@@ -33,6 +33,7 @@ function Tile:new(schematic, x, y)
 	self.semaphoreShape = false -- Whether this tile's semaphore is a shape semaphore.
 	self.semaphoreNoW24 = false -- Whether this tile's semaphore is UNABLE to display the W24 sign.
 	self.semaphoreNoDanger = false -- Whether this tile's semaphore has no danger light (next semaphore must be displaying a >=100 speed).
+	self.semaphoreOwnShield = false -- Whether this tile's semaphore has its own shield signal and thus should not be considered as a next semaphore when deciding which signal should be used.
 	---@type table<integer, integer>
 	self.semaphoreShortSpeed = {} -- The tile's short speeds. Maps speeds on the next semaphore to maximum speeds on this semaphore.
 	self.semaphoreFourPhase = false -- Whether this tile's semaphore is four phase (when two semaphores ahead are S1, this one will display a fake reduced speed next).
@@ -537,6 +538,7 @@ function Tile:serialize()
 		semaphoreShape = self.semaphoreShape or nil,
 		semaphoreNoW24 = self.semaphoreNoW24 or nil,
 		semaphoreNoDanger = self.semaphoreNoDanger or nil,
+		semaphoreOwnShield = self.semaphoreOwnShield or nil,
 		semaphoreShortSpeed = not _Utils.tableIsEmpty(self.semaphoreShortSpeed) and _Utils.stringifyKeys(self.semaphoreShortSpeed) or nil,
 		semaphoreFourPhase = self.semaphoreFourPhase or nil,
 		semaphoreNext = self.semaphoreNext,
@@ -582,6 +584,7 @@ function Tile:deserialize(t)
 	self.semaphoreShape = t.semaphoreShape == true
 	self.semaphoreNoW24 = t.semaphoreNoW24 == true
 	self.semaphoreNoDanger = t.semaphoreNoDanger == true
+	self.semaphoreOwnShield = t.semaphoreOwnShield == true
 	self.semaphoreShortSpeed = t.semaphoreShortSpeed and (type(t.semaphoreShortSpeed) == "table" and _Utils.numifyKeys(t.semaphoreShortSpeed) or {[0] = t.semaphoreShortSpeed}) or {}
 	self.semaphoreFourPhase = t.semaphoreFourPhase == true
 	self.semaphoreNext = t.semaphoreNext

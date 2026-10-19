@@ -142,6 +142,7 @@ function Semaphore:refreshImage()
 		speed = _StepDownSpeed(speed)
 		if speed > 0 then
 			-- Try again with a lower speed.
+			self.speed = speed
 			image = self:getSupportedImage(speed, nextSpeed)
 		else
 			-- Fall back to Sz.
