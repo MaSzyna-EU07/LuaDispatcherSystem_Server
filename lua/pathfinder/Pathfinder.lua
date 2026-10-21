@@ -82,12 +82,19 @@ end
 
 ---Reserves all tracks, sets all switches and displays a clear signal on the semaphore.
 function Pathfinder:dispatch()
+    local dispatched = 0
     for i, itinerary in ipairs(self.itineraries) do
         -- Itineraries are dispatched only until the first failing one, so that we aren't left with a partially dispatched route.
         if not itinerary:canBeDispatched() then
+            if dispatched == 0 then
+                _Com.notify("None of the itineraries could be dispatched... Check log for details.", NotificationColor.RED)
+            else
+                _Com.notify(string.format("Dispatched only %s out of %s itineraries! Check log for details.", dispatched, #self.itineraries), NotificationColor.ORANGE)
+            end
             return
         end
         itinerary:dispatch()
+        dispatched = dispatched + 1
     end
 end
 

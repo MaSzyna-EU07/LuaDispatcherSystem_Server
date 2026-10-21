@@ -68,8 +68,9 @@ function Track:unreserve()
 	self:setSemaphore()
 end
 
----Oznacza ten tor jako zajęty przez pojazd.
+---Oznacza ten tor jako zajęty przez pojazd i zwalnia rezerwację.
 function Track:busy()
+	self.reserved = false
 	self.occupied = true
 	self:tell("occupied", Severity.INFO, 3)
 	self:refreshSim()

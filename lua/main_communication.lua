@@ -232,6 +232,7 @@ function com.notify(message, color)
 	com.sendBytes({0x02})
 	com.sendBytes({NotificationColorID[color or NotificationColor.GREEN]})
 	com.sendText(message)
+	_LogWrite("[COMMUNICATION] Notification: " .. message, Severity.INFO, 3)
 end
 
 function com.highlightTile(stationID, x, y, type)

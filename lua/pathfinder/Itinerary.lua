@@ -70,10 +70,11 @@ function Itinerary:canBeDispatched()
         local state = _Obj:getTrackState(track)
         -- Ms2 allows tracks to be occupied, but any reserved track will fail the check no matter what.
         if state and ((state.occupied and self.speed ~= Speed.MS2) or state.reserved) then
+            _LogWrite(string.format("Cannot dispatch itinerary from %s: track %s is occupied", self.semaphore, track))
             return false
         end
         if not state then
-            print("WARNING: Track `" .. track .. "` not controlled!")
+            _LogWrite(string.format("WARNING: track `%s` not controlled!", track))
         end
     end
     -- We cannot switch a switch when a train is under it.
@@ -82,12 +83,14 @@ function Itinerary:canBeDispatched()
         local switch = _Obj:assertGetSwitch(switchID)
         local track = _Obj:assertGetTrack(trackID)
         if not track:isClear() and switch.state ~= self.switches[switch] then
+            _LogWrite(string.format("Cannot dispatch itinerary from %s: switch %s cannot be freely switched", self.semaphore, switchID))
             return false
         end
     end
     -- The semaphore must be displaying a stop signal.
     local semaphore = _Obj:assertGetSemaphore(self.semaphore)
     if not semaphore:isStop() then
+        _LogWrite(string.format("Cannot dispatch itinerary from %s: semaphore not displaying stop signal", self.semaphore))
         return false
     end
     return true

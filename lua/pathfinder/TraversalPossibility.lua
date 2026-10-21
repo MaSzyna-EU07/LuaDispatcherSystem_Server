@@ -115,29 +115,32 @@ function TraversalPossibility:isDead()
     local prevTile = self:getPreviousTile()
     if self.tile:isEmpty() then
         -- We've reached a desert.
+        _LogWrite(string.format("After %s tiles at (%s, %s): Empty tile!", #self.path, self.tile.x, self.tile.y))
         return true
     end
     if self.pathfinder.mode == PathMode.TRAIN and self.tile:isTrackClear() == false then
         -- The track is for sure occupied when in train mode.
-        --_Notifications:post(string.format("After %s tiles at (%s, %s): Track occupied!", #self.path, self.tile.x, self.tile.y), NotificationColor.GRAY)
+        _LogWrite(string.format("After %s tiles at (%s, %s): Track occupied!", #self.path, self.tile.x, self.tile.y))
         return true
     elseif self.pathfinder.mode == PathMode.SHUNT and self.tile:isTrackClear() and prevTile and prevTile:isTrackClear() == false then
         -- We went past the occupied segment when shunting. Unfortunately current technology doesn't permit us to jump over a train...
+        _LogWrite(string.format("After %s tiles at (%s, %s): Went past a train in shunting mode!", #self.path, self.tile.x, self.tile.y))
         return true
     end
     if not self.tile:isPathModeAllowed(self.pathfinder.mode) then
         -- The track is not allowing this dispatching mode (i.e. forbids shunting or trains)
-        --_Notifications:post(string.format("After %s tiles at (%s, %s): Mode forbidden!", #self.path, self.tile.x, self.tile.y), NotificationColor.GRAY)
+        _LogWrite(string.format("After %s tiles at (%s, %s): Mode forbidden!", #self.path, self.tile.x, self.tile.y))
         return true
     end
     if self.pathfinder.electrified and not self.tile.electrified then
         -- The track is not electrified while pathfinding for an electric train.
-        --_Notifications:post(string.format("After %s tiles at (%s, %s): Not electrified!", #self.path, self.tile.x, self.tile.y), NotificationColor.GRAY)
+        _LogWrite(string.format("After %s tiles at (%s, %s): Not electrified!", #self.path, self.tile.x, self.tile.y))
         return true
     end
     local segmentSpeed = self.segments[#self.segments].speed
     if #self.segments >= 2 and segmentSpeed < 100 and self.path[self.segments[#self.segments - 1].start].tile.semaphoreNoDanger then
         -- If the segment we're on mandates speeds less than 100 km/h, and the previous semaphore does not allow that, this entire possibility will not pass.
+        _LogWrite(string.format("After %s tiles at (%s, %s): Previous signal not possible, must be at least 100 km/h!", #self.path, self.tile.x, self.tile.y))
         return true
     end
     return false
