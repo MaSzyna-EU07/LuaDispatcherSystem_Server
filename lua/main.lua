@@ -47,13 +47,13 @@ end
 ---@param stationID string? If specified, (re)loads the schematic only for the specified station.
 function _LoadSchematics(stationID)
 	-- Reload the file.
-	local projFilename = _Filename:sub(1, _Filename:len() - 5) .. "_proj.json"
+	local projFilename = _Filename:sub(1, _Filename:len() - 5) .. ".json"
 	local projData = _Utils.loadJson(projFilename)
 	if projData then
 		_LogWrite("Project file (re)loaded: " .. projFilename, Severity.SUCCESS, 3)
 		if stationID then
 			-- Load a single station.
-			local stationData = projData.stations[projData.stationIndex[stationID]]
+			local stationData = projData.stations[stationID]
 			_LoadSchematic(stationData)
 			-- Regenerate its blockades.
 			-- TODO: Any blockades which include this station should be regenerated.
@@ -61,7 +61,7 @@ function _LoadSchematics(stationID)
 			_Obj:getStation(stationID).schematic:generateBlockades()
 		else
 			-- Load all stations.
-			for i, stationData in ipairs(projData.stations) do
+			for shortcut, stationData in pairs(projData.stations) do
 				_LoadSchematic(stationData)
 			end
 			-- (Re)assign automatically generated next semaphores.
@@ -128,7 +128,7 @@ function _DoCallback(name, ...)
 end
 
 function _PrintDiagnostics()
-	_LogWrite("Semaphore assingments:")
+	_LogWrite("Semaphore assignments:")
 	for i, trackID in ipairs(_Obj:getTrackList()) do
 		local track = _Obj:assertGetTrack(trackID)
 		if track.semaphore then

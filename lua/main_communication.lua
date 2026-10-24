@@ -1,3 +1,4 @@
+local json = require "lua.json"
 local com = {}
 
 local COM_IMAGES = {
@@ -9,15 +10,16 @@ local COM_IMAGES = {
 	ms1=0x80, ms2=0x81,
 	sz=0xFF, sz1=0xFF
 }
-local COM_BLOCKADES = {n = true, p = false, x = nil}
+local COM_BLOCKADES = {n = true, p = false, x = nil} -- Used only for client->server communication
 local COM_SAVE_INTERVAL = 1
 local COM_INPUT_FILE = "logs/command.txt"
 
 local com_path = ""
 local com_buffer = ""
 ---Example index: `com_ids.tracks.sta1_iz2.id`
----@type table<string, table<string, {id: integer}>>
-local com_ids = {stations = {}, tracks = {}, switches = {}, semaphores = {}}
+---@alias ComIDTable table<string, {id: integer}>
+---@type table<string, ComIDTable>
+local com_ids = {stations = {}, tracks = {}, switches = {}, semaphores = {}, blockades = {}}
 local com_counters = {}
 
 function com.init(scenario)
@@ -150,6 +152,14 @@ function com.doCommand(command)
 		-- Creates a notification specifying what timetable has the train on the given track. `tt <track_id>`
 		local result = _Obj:assertGetTrack(operands[2]):getTimetable()
 		com.notify(result and "Timetable: " .. result or "No timetable found! :(", result and NotificationColor.GREEN or NotificationColor.RED)
+	elseif operands[1] == "ttd" then
+		-- Generates a timetable and gives it to the train on the given track. `ttd <track_id> <number> <time> <timetable_data...>`
+		-- Timetable data is in stringified JSON.
+		local data = ""
+		for i = 5, #operands do
+			data = data == "" and operands[i] or (data .. " " .. operands[i])
+		end
+		_Obj:assertGetTrack(operands[2]):setTimetable(operands[3], json.decode(data), operands[4])
 	else
 		error("Unrecognized command: " .. tostring(operands[1]))
 	end
@@ -168,10 +178,17 @@ function com.saveBuffer()
 	com_buffer = ""
 end
 
+---Converts an object ID into a list of two bytes.
+---@param id integer The numeric object ID used in the binary communication protocol.
+---@return [integer, integer]
 function com.idToBytes(id)
 	return {math.floor(id / 256), id % 256}
 end
 
+---Converts a string object ID of the provided type into a list of two bytes.
+---@param idTable ComIDTable The ID table for the desired object type.
+---@param id string The string object ID of that type.
+---@return [integer, integer]
 function com.getObjID(idTable, id)
 	if not idTable[id] then
 		_LogWrite("[COMMUNICATION] Tried to access a nonexistent ID: " .. tostring(id), Severity.ERROR, 1)
@@ -180,6 +197,12 @@ function com.getObjID(idTable, id)
 	return com.idToBytes(idTable[id].id)
 end
 
+---Registers a new object into the integer object table, used for the binary communication file.
+---Sends an appropriate object registration function.
+---@param typeByte integer The command opcode responsible for registering this type of object. Must match the client to recognize a new object and properly match integer IDs with string IDs.
+---@param idTable ComIDTable The ID table for the desired object type.
+---@param counter string The object counter ID. Each object type has its own object index namespace. Indices have 2 bytes, so they can fit a total of 65,535 objects of any type.
+---@param name string The object name to be registered.
 function com.initObject(typeByte, idTable, counter, name)
 	com_counters[counter] = (com_counters[counter] or 0) + 1
 	idTable[name] = {id = com_counters[counter]}
@@ -204,6 +227,10 @@ function com.initSemaphore(name, type)
 	com.sendBytes({type})
 end
 
+function com.initBlockade(name)
+	com.initObject(0xF5, com_ids.blockades, "blockade", name)
+end
+
 function com.setTrack(id, occupied, reserved)
 	com.sendBytes({0x12})
 	com.sendBytes(com.getObjID(com_ids.tracks, id))
@@ -221,6 +248,12 @@ function com.setSemaphore(id, speed, nextSpeed, image)
 	com.sendBytes(com.getObjID(com_ids.semaphores, id))
 	com.sendBytes({speed == math.huge and 0x01 or speed, nextSpeed or 0xFF})
 	com.sendBytes({COM_IMAGES[image]})
+end
+
+function com.setBlockade(id, direction)
+	com.sendBytes({0x15})
+	com.sendBytes(com.getObjID(com_ids.blockades, id))
+	com.sendBytes({direction and 0x01 or (direction == false and 0x00 or 0xFF)})
 end
 
 function com.print(message)

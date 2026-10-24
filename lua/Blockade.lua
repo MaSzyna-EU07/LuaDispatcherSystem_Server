@@ -12,6 +12,8 @@ local Blockade = Class:derive("Blockade")
 ---@param id string The blockade ID.
 ---@param data BlockadeData The blockade data.
 function Blockade:new(id, data)
+	_Com.initBlockade(id)
+
 	_LogWrite("Creating blockade: " .. id, Severity.INFO, 3)
     self.id = id
     self.type = data.type
@@ -117,6 +119,7 @@ function Blockade:setDirection(direction)
     end
     self:tell("Switching direction to " .. (direction and "N" or (direction == false and "P" or "-")), Severity.INFO, 3)
     self.direction = direction
+    self:refreshSim()
     -- Reset all semaphores to the other direction.
     -- The direction in which we update the semaphores is crucial, because when dimming semaphores back to front,
     -- the semaphore behind schedules itself to display an S5 signal just before it is dimmed itself.
@@ -131,6 +134,11 @@ function Blockade:setDirection(direction)
             self:freeBlock(i)
         end
     end
+end
+
+---Sends the current blockade state to the log.
+function Blockade:refreshSim()
+	_Com.setBlockade(self.id, self.direction)
 end
 
 return Blockade
