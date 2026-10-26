@@ -16,8 +16,7 @@ end
 ---Seconds can be specified by `.X` for 6-second intervals or `:XX` for specifying an exact number of seconds.
 ---@param time string The time in string format.
 ---@return Time
-function Timetables:timeToObj(time)
-    _LogWrite(string.format("Generating time from string: `%s`", time))
+function Timetables.timeToObj(time)
     local n = "" -- Aggregates a number
     local sep = nil -- Last encountered separator
     local step = 0 -- 0 for hours, 1 for minutes, 2 for seconds
@@ -41,7 +40,6 @@ function Timetables:timeToObj(time)
             step = step + 1
         end
     end
-    _LogWrite(string.format("Result: hour=%s, minute=%s, second=%s", data.hour, data.minute, data.second))
     return Time(data)
 end
 
@@ -49,7 +47,7 @@ end
 ---The resulting format is always `hh.mm.s` with no preceding zeroes and 6-second intervals. The seconds are rounded down if necessary.
 ---@param time Time The time object to be converted.
 ---@return string
-function Timetables:timeToStr(time)
+function Timetables.timeToStr(time)
     return tostring(time.hour) .. (time.minute < 10 and ".0" or ".") .. tostring(time.minute) .. (time.second >= 6 and "." .. math.floor(time.second / 6) or "")
 end
 
@@ -58,8 +56,8 @@ end
 ---@param data table The timetable data.
 ---@param startTime string The starting timetable time, e.g. `"10:30"`. Fractions are allowed, like `"10:30.5"`.
 function Timetables:generate(number, data, startTime)
-    local station1 = _Utils.strReplace(data.station1 or data.stations[1].name, " ", "_")
-    local station2 = _Utils.strReplace(data.station2 or data.stations[#data.stations].name, " ", "_")
+    local station1 = _SanitizeASCII(_Utils.strReplace(data.station1 or data.stations[1].name, " ", "_"))
+    local station2 = _SanitizeASCII(_Utils.strReplace(data.station2 or data.stations[#data.stations].name, " ", "_"))
 
     local result = ""
     -- Header
@@ -75,16 +73,20 @@ function Timetables:generate(number, data, startTime)
     result = result .. "[________________________________________________|_________________]\n"
     -- Stations
     local tracks = 2
-    local time = self:timeToObj(startTime)
+    local time = Timetables.timeToObj(startTime)
     for i, station in ipairs(data.stations) do
         tracks = station.tracks or tracks
         if i > 1 then
             result = result .. "[       |" .. (station.speed and "_____" or "     ") .. "|----------------------------------" .. tracks .. "-----------|-----]\n"
         end
         time = time + (station.travelTime or 0) * 60
-        result = result .. "[ " .. (station.km or "") .. " | " .. (station.speed or "") .. " | " .. _Utils.strReplace(station.name, " ", "_") .. " " .. tracks .. " " .. ((station.stopTime or i == 1 or i == #data.stations) and self:timeToStr(time) or "  |  ") .. " |     ]\n"
+        local km = station.km or ""
+        local speed = station.speed or ""
+        local name = _SanitizeASCII(_Utils.strReplace(station.name, " ", "_"))
+        local strTime = (station.stopTime or i == 1 or i == #data.stations) and Timetables.timeToStr(time) or "  |  "
+        result = result .. "[ " .. km .. " | " .. speed .. " | " .. name .. " " .. tracks .. " " .. strTime .. " |     ]\n"
         time = time + (station.stopTime or 0) * 60
-        result = result .. "[       |     |                              po  " .. tracks .. " " .. (i < #data.stations and self:timeToStr(time) or "") .. " |     ]\n"
+        result = result .. "[       |     |                              po  " .. tracks .. " " .. (i < #data.stations and Timetables.timeToStr(time) or "") .. " |     ]\n"
     end
     result = result .. "[_______|_____|__________________________________" .. tracks .. "___________|_____]\n"
 

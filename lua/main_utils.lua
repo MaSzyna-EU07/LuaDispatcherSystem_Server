@@ -1,3 +1,7 @@
+local utf8 = require "lua.utf8"
+local Timetables = require "lua.Timetables"
+local Time = require "lua.Time"
+
 local verboseValue = 3
 
 ---Writes a message to the MaSzyna's log file.
@@ -154,4 +158,52 @@ function _StrSemaphoreList(semaphores)
 		str = (i == 1 and "" or (str .. ", ")) .. semaphore.id
 	end
 	return str
+end
+
+local asciiInput = "ąćęłńóśźżĄĆĘŁŃÓŚŹŻ"
+local asciiOutput = "acelnoszzACELNOSZZ"
+local asciiTable = {}
+for i = 1, utf8.len(asciiInput) do
+	local c = asciiInput:sub(assert(utf8.offset(asciiInput, i)), (utf8.offset(asciiInput, i + 1) or #asciiInput + 1) - 1)
+	asciiTable[c] = asciiOutput:sub(i, i)
+end
+
+---Sanitizes the provided string so that no Polish characters are present.
+---@param str string The string to be sanitized.
+---@return string
+function _SanitizeASCII(str)
+	local sanitized = ""
+	for i = 1, utf8.len(str) do
+		local c = str:sub(assert(utf8.offset(str, i)), (utf8.offset(str, i + 1) or #str + 1) - 1)
+		sanitized = sanitized .. (asciiTable[c] or c)
+	end
+	return sanitized
+end
+
+---Tests some of the fundamentals of this program.
+function _Test()
+	_LogWrite("Performing tests...")
+	assert(_SanitizeASCII("Warszawa Wschodnia") == "Warszawa Wschodnia")
+	assert(_SanitizeASCII("Sulejówek Miłosna") == "Sulejowek Milosna")
+	assert(_SanitizeASCII(asciiInput) == asciiOutput)
+	local time1 = Timetables.timeToObj("10:30")
+	assert(time1.hour == 10)
+	assert(time1.minute == 30)
+	assert(time1.second == 0)
+	local time2 = Timetables.timeToObj("9:14.3")
+	assert(time2.hour == 9)
+	assert(time2.minute == 14)
+	assert(time2.second == 18)
+	local time3 = Timetables.timeToObj("23:02:14")
+	assert(time3.hour == 23)
+	assert(time3.minute == 2)
+	assert(time3.second == 14)
+	local time4 = Timetables.timeToObj("3.11")
+	assert(time4.hour == 3)
+	assert(time4.minute == 11)
+	assert(Timetables.timeToStr(Time({hour = 10, minute = 30})) == "10.30")
+	assert(Timetables.timeToStr(Time({hour = 9, minute = 14, second = 18})) == "9.14.3")
+	assert(Timetables.timeToStr(Time({hour = 23, minute = 2, second = 14})) == "23.02.2")
+	assert(Timetables.timeToStr(Time({day = 1, hour = 0, minute = 0, second = 5})) == "0.00")
+	_LogWrite("Tests complete!")
 end

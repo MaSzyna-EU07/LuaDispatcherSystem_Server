@@ -187,11 +187,13 @@ end
 
 ---Converts a string object ID of the provided type into a list of two bytes.
 ---@param idTable ComIDTable The ID table for the desired object type.
----@param id string The string object ID of that type.
+---@param id string? The string object ID of that type. If not present, a null identifier `{0x00, 0x00}` will be returned.
 ---@return [integer, integer]
 function com.getObjID(idTable, id)
-	if not idTable[id] then
-		_LogWrite("[COMMUNICATION] Tried to access a nonexistent ID: " .. tostring(id), Severity.ERROR, 1)
+	if not id or not idTable[id] then
+		if id then
+			_LogWrite("[COMMUNICATION] Tried to access a nonexistent ID: " .. tostring(id), Severity.ERROR, 1)
+		end
 		return {0, 0}
 	end
 	return com.idToBytes(idTable[id].id)
@@ -254,6 +256,12 @@ function com.setBlockade(id, direction)
 	com.sendBytes({0x15})
 	com.sendBytes(com.getObjID(com_ids.blockades, id))
 	com.sendBytes({direction and 0x01 or (direction == false and 0x00 or 0xFF)})
+end
+
+function com.setTrackReservation(id, semaphoreID)
+	com.sendBytes({0x21})
+	com.sendBytes(com.getObjID(com_ids.tracks, id))
+	com.sendBytes(com.getObjID(com_ids.semaphores, semaphoreID))
 end
 
 function com.print(message)

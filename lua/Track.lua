@@ -115,6 +115,7 @@ function Track:setSemaphore(semaphore)
 		semaphore:reserveTrack(self)
 	end
 	self.semaphore = semaphore
+	_Com.setTrackReservation(self.id, semaphore and semaphore.id)
 end
 
 ---Adds the specified vehicle to this track. Duplicates are ignored.

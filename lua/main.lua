@@ -137,6 +137,9 @@ function _PrintDiagnostics()
 	end
 end
 
+-- TODO: Find a better way to execute unit tests?
+_Test()
+
 -- TODO: Extract API to a separate file
 return {
 	init = function(config) _TryInit(config.scenario, config.filename) end,
