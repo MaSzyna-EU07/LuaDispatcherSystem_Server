@@ -52,11 +52,11 @@ function Tile:new(schematic, x, y)
 	---@type string?
 	self.blockadeID = nil -- The ID of this blockade.
 	---@type string?
-	self.warp = nil -- An index (shortcut) of the station to jump to when this tile is clicked.
+	self.warp = nil -- An index (shortcut) of the schematic to jump to when this tile is clicked.
 	---@type string?
 	self.warpID = nil -- A unique ID of this exit point.
 	---@type string?
-	self.warpTargetID = nil -- The ID of the exit point on the target station this exit point leads to.
+	self.warpTargetID = nil -- The ID of the exit point on the target schematic this exit point leads to.
 	---@type string?
 	self.command = nil -- A command to be sent to the server when this tile is right clicked.
 end
@@ -428,16 +428,16 @@ function Tile:getWarpDestination()
         _LogWrite("Warp destination search failed: no warp specified", Severity.INFO, 2)
         return
     end
-    local station = _Obj:getStation(self.warp)
-    if not station then
-        -- Warp is to an invalid station
-        _LogWrite(string.format("Warp destination search failed: target station `%s` not found", self.warp), Severity.INFO, 2)
+    local schematic = _Obj:getSchematic(self.warp)
+    if not schematic then
+        -- Warp is to an invalid schematic
+        _LogWrite(string.format("Warp destination search failed: target schematic `%s` not found", self.warp), Severity.INFO, 2)
         return
     end
-    local destination = station.schematic.index:getExit(self.warpTargetID)
+    local destination = schematic.index:getExit(self.warpTargetID)
     if not destination then
-        -- Exit not found on the target station
-        _LogWrite(string.format("Warp destination search failed: target exit point `%s` not found on station `%s`", self.warpTargetID, station.shortcut), Severity.INFO, 2)
+        -- Exit not found on the target schematic
+        _LogWrite(string.format("Warp destination search failed: target exit point `%s` not found on schematic `%s`", self.warpTargetID, schematic.shortcut), Severity.INFO, 2)
         return
     end
     return destination

@@ -10,7 +10,7 @@ local Objects = require("lua.Objects")
 local Timetables = require("lua.Timetables")
 local TileDatabase = require("lua.TileDatabase")
 
-_CurrentTime = Time({hour=11,minute=30})
+_CurrentTime = Time.hm(11, 30)
 ---@type table<string, function[]>
 _Callbacks = {}
 
@@ -36,42 +36,42 @@ function _Init(scenario, filename)
 	_Com.init(scenario)
 	_Filename = filename
 
-	-- Create stations and load schematic data.
+	-- Create schematics and load their data.
 	_LoadSchematics()
 
 	_CreateLoopEvent("loop", _TryLoop, 1)
 	_API:eventCreate("onstart_lua", 0.1, 0, function() _DoCallback("start") end)
 end
 
----(Re)loads schematics for the specified station or for all stations in the project.
----@param stationID string? If specified, (re)loads the schematic only for the specified station.
-function _LoadSchematics(stationID)
+---(Re)loads specified schematics or all schematics in the project.
+---@param schematicID string? If specified, (re)loads only the specified schematics.
+function _LoadSchematics(schematicID)
 	-- Reload the file.
 	local projFilename = _Filename:sub(1, _Filename:len() - 5) .. ".json"
 	local projData = _Utils.loadJson(projFilename)
 	if projData then
 		_LogWrite("Project file (re)loaded: " .. projFilename, Severity.SUCCESS, 3)
-		if stationID then
-			-- Load a single station.
-			local stationData = projData.stations[stationID]
-			_LoadSchematic(stationData)
+		if schematicID then
+			-- Load a single schematic.
+			local schematicData = projData.stations[schematicID]
+			_LoadSchematic(schematicData)
 			-- Regenerate its blockades.
-			-- TODO: Any blockades which include this station should be regenerated.
-			_Obj:getStation(stationID).schematic:generateSemaphoreNextDefaults()
-			_Obj:getStation(stationID).schematic:generateBlockades()
+			-- TODO: Any blockades which include this schematic should be regenerated.
+			_Obj:getSchematic(schematicID):generateSemaphoreNextDefaults()
+			_Obj:getSchematic(schematicID):generateBlockades()
 		else
-			-- Load all stations.
-			for shortcut, stationData in pairs(projData.stations) do
-				_LoadSchematic(stationData)
+			-- Load all schematics.
+			for shortcut, schematicData in pairs(projData.stations) do
+				_LoadSchematic(schematicData)
 			end
 			-- (Re)assign automatically generated next semaphores.
-			for i, name in ipairs(_Obj:getStationList()) do
-				_Obj:getStation(name).schematic:generateSemaphoreNextDefaults()
+			for i, name in ipairs(_Obj:getSchematicList()) do
+				_Obj:getSchematic(name):generateSemaphoreNextDefaults()
 			end
 			-- (Re)create blockades.
 			-- This is done in a separate pass because we could initialize a blockade without all default semaphores set yet (see multi-schematic blockades).
-			for i, name in ipairs(_Obj:getStationList()) do
-				_Obj:getStation(name).schematic:generateBlockades()
+			for i, name in ipairs(_Obj:getSchematicList()) do
+				_Obj:getSchematic(name):generateBlockades()
 			end
 		end
 	else
@@ -79,12 +79,11 @@ function _LoadSchematics(stationID)
 	end
 end
 
-function _LoadSchematic(stationData)
-	local station = _Obj:getStation(stationData.shortcut)
-	if not station then
-		_Obj:addStation(stationData.shortcut)
-	end
-	_Obj:assertGetStation(stationData.shortcut):loadSchematic(stationData)
+---Loads or reloads a schematic.
+---@param data table Schematic data.
+function _LoadSchematic(data)
+	local schematic = _Obj:getSchematic(data.shortcut) or _Obj:addSchematic(data.shortcut)
+	schematic:reload(data)
 end
 
 function _TryLoop()
@@ -111,7 +110,7 @@ end
 
 ---Creates a callback. If the specified action is called, the specified function will be called.
 ---Multiple functions can be bound to the same callback, and they are called in their order of registration.
----@param name string The callback name, `station_X` is the station tick, where `X` is the station shortcut. `start` is launched at the start (after all vehicles are placed).
+---@param name string The callback name, `station_X` is the station tick, where `X` is the schematic shortcut. `start` is launched at the start (after all vehicles are placed).
 ---@param func function The function to be ran whe the specified callback is called.
 function _CreateCallback(name, func)
 	local list = _Callbacks[name] or {}

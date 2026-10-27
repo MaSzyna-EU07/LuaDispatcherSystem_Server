@@ -19,7 +19,7 @@ local com_buffer = ""
 ---Example index: `com_ids.tracks.sta1_iz2.id`
 ---@alias ComIDTable table<string, {id: integer}>
 ---@type table<string, ComIDTable>
-local com_ids = {stations = {}, tracks = {}, switches = {}, semaphores = {}, blockades = {}}
+local com_ids = {schematics = {}, tracks = {}, switches = {}, semaphores = {}, blockades = {}}
 local com_counters = {}
 
 function com.init(scenario)
@@ -126,21 +126,21 @@ function com.doCommand(command)
 		-- Switches the blockade direction. `b <blockade_id> <n|p|x>`
 		_Obj:assertGetBlockade(operands[2]):setDirection(COM_BLOCKADES[operands[3]])
 	elseif operands[1] == "p" then
-		-- Pathfinds a route. `p <station_id> <track1_id> <track2_id> [t|s]`
-		local result = _Obj:assertGetStation(operands[2]).schematic:pathfind(operands[3], operands[4], operands[5] == "s" and PathMode.SHUNT or PathMode.TRAIN)
+		-- Pathfinds a route. `p <schematic_id> <track1_id> <track2_id> [t|s]`
+		local result = _Obj:assertGetSchematic(operands[2]):pathfind(operands[3], operands[4], operands[5] == "s" and PathMode.SHUNT or PathMode.TRAIN)
 		if not result then
 			com.notify("Pathfinding failed... :(", NotificationColor.RED)
 		end
 	elseif operands[1] == "pm" then
-		-- Pathfinds a route by specifying coordinates. `p <station_id> <x1> <y1> <x2> <y2> [t|s]`
-		local schematic = _Obj:assertGetStation(operands[2]).schematic
+		-- Pathfinds a route by specifying coordinates. `p <schematic_id> <x1> <y1> <x2> <y2> [t|s]`
+		local schematic = _Obj:assertGetSchematic(operands[2])
 		local x1, y1, x2, y2 = math.floor(assert(tonumber(operands[3]))), math.floor(assert(tonumber(operands[4]))), math.floor(assert(tonumber(operands[5]))), math.floor(assert(tonumber(operands[6])))
 		local result = schematic:pathfindTiles(schematic:assertGetTile(x1, y1), schematic:assertGetTile(x2, y2), operands[7] == "s" and PathMode.SHUNT or PathMode.TRAIN)
 		if not result then
 			com.notify("Pathfinding failed... :(", NotificationColor.RED)
 		end
 	elseif operands[1] == "r" then
-		-- Reloads all schematics. `r [station_id]`
+		-- Reloads all schematics. `r [schematic_id]`
 		_LoadSchematics(operands[2])
 	elseif operands[1] == "e" then
 		-- Dispatches an event. `e <event>`
@@ -212,8 +212,8 @@ function com.initObject(typeByte, idTable, counter, name)
 	com.sendText(name)
 end
 
-function com.initStation(name)
-	com.initObject(0xF0, com_ids.stations, "station", name)
+function com.initSchematic(name)
+	com.initObject(0xF0, com_ids.schematics, "schematic", name)
 end
 
 function com.initTrack(name)
@@ -276,9 +276,9 @@ function com.notify(message, color)
 	_LogWrite("[COMMUNICATION] Notification: " .. message, Severity.INFO, 3)
 end
 
-function com.highlightTile(stationID, x, y, type)
+function com.highlightTile(schematicID, x, y, type)
 	com.sendBytes({0x03})
-	com.sendBytes(com.getObjID(com_ids.stations, stationID))
+	com.sendBytes(com.getObjID(com_ids.schematics, schematicID))
 	com.sendBytes({x, y, type})
 end
 

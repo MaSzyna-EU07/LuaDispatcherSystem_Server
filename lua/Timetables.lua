@@ -20,7 +20,7 @@ function Timetables.timeToObj(time)
     local n = "" -- Aggregates a number
     local sep = nil -- Last encountered separator
     local step = 0 -- 0 for hours, 1 for minutes, 2 for seconds
-    local data = {hour = 0, minute = 0} -- Data for the time object
+    local data = {h = 0, m = 0} -- Data for the time object
     for i = 1, time:len() do
         local c = time:sub(i, i)
         if c ~= "." and c ~= ":" then
@@ -28,12 +28,12 @@ function Timetables.timeToObj(time)
         end
         if c == "." or c == ":" or i == time:len() then
             if step == 0 then
-                data.hour = assert(tonumber(n), string.format("Invalid hour value: `%s`", n))
+                data.h = assert(tonumber(n), string.format("Invalid hour value: `%s`", n))
             elseif step == 1 then
-                data.minute = assert(tonumber(n), string.format("Invalid minute value: `%s`", n))
+                data.m = assert(tonumber(n), string.format("Invalid minute value: `%s`", n))
             elseif step == 2 then
-                local second = assert(tonumber(n), string.format("Invalid second value: `%s`", n))
-                data.second = sep == ":" and second or second * 6
+                local s = assert(tonumber(n), string.format("Invalid second value: `%s`", n))
+                data.s = sep == ":" and s or s * 6
             end
             n = ""
             sep = c
@@ -48,7 +48,7 @@ end
 ---@param time Time The time object to be converted.
 ---@return string
 function Timetables.timeToStr(time)
-    return tostring(time.hour) .. (time.minute < 10 and ".0" or ".") .. tostring(time.minute) .. (time.second >= 6 and "." .. math.floor(time.second / 6) or "")
+    return tostring(time.h) .. (time.m < 10 and ".0" or ".") .. tostring(time.m) .. (time.s >= 6 and "." .. math.floor(time.s / 6) or "")
 end
 
 ---Generates a timetable file.

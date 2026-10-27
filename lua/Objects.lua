@@ -1,5 +1,5 @@
 local Class = require("lua.class")
-local Station = require("lua.Station")
+local Schematic = require("lua.Schematic")
 local Blockade = require("lua.Blockade")
 local Track = require("lua.Track")
 local Switch = require("lua.Switch")
@@ -10,8 +10,8 @@ local Semaphore = require("lua.Semaphore")
 local Objects = Class:derive("Objects")
 
 function Objects:new()
-    ---@type table<string, Station>
-    self.stations = {}
+    ---@type table<string, Schematic>
+    self.schematics = {}
     ---@type table<string, Blockade>
     self.blockades = {}
     -- Keys for `tracks`, `switches` and `semaphores` are guaranteed to be lowercase.
@@ -23,51 +23,66 @@ function Objects:new()
     self.semaphores = {}
 end
 
----Adds a station to the station list. The index is the station name, e.g. "Eb".
----@param id string The station ID (shortcut).
-function Objects:addStation(id)
-    self.stations[id] = Station(id)
+---Adds a schematic to the schematic list. The index is the schematic name, e.g. "Eb".
+---Returns the created object.
+---@param id string The schematic ID (shortcut).
+---@return Schematic
+function Objects:addSchematic(id)
+    self.schematics[id] = Schematic(id)
+    return self.schematics[id]
 end
 
 ---Adds a blockade to the blockade list. The index is the blockade name, e.g. "Eb-Tp".
+---Returns the created object.
 ---@param id string The blockade ID (shortcut).
 ---@param data table The blockade data.
+---@return Blockade
 function Objects:addBlockade(id, data)
     self.blockades[id] = Blockade(id, data)
+    return self.blockades[id]
 end
 
 ---Adds a track to the track list. The index is the track ID, converted to lowercase, e.g. "Eb_It2" -> "eb_it2".
+---Returns the created object.
 ---@param id string The track ID.
+---@return Track
 function Objects:addTrack(id)
     self.tracks[string.lower(id)] = Track(id)
+    return self.tracks[string.lower(id)]
 end
 
 ---Adds a switch to the switch list. The index is the switch ID, converted to lowercase, e.g. "Eb_25ab" -> "eb_25ab".
+---Returns the created object.
 ---@param id string The switch ID.
+---@return Switch
 function Objects:addSwitch(id)
     self.switches[string.lower(id)] = Switch(id)
+    return self.switches[string.lower(id)]
 end
 
 ---Adds a semaphore to the semaphore list. The index is the semaphore ID, converted to lowercase, e.g. "Eb_A" -> "eb_a".
+---Returns the created object.
 ---@param id string The semaphore ID.
 ---@param data table The semaphore data.
+---@return Semaphore
 function Objects:addSemaphore(id, data)
     self.semaphores[string.lower(id)] = Semaphore(id, data)
+    return self.semaphores[string.lower(id)]
 end
 
----Returns a Station based on its simulation name (shortcut), or `nil` if it's not found.
----@param name string Station shortcut.
----@return Station?
-function Objects:getStation(name)
-	return self.stations[name]
+---Returns a Schematic based on its simulation name (shortcut), or `nil` if it's not found.
+---@param name string Schematic shortcut.
+---@return Schematic?
+function Objects:getSchematic(name)
+	return self.schematics[name]
 end
 
----Returns a Station based on its simulation name (shortcut), or throws an error if it's not found.
----@param name string Station shortcut.
----@return Station
-function Objects:assertGetStation(name)
-    local station = assert(self:getStation(name), "Tried to access a nonexistent station: " .. tostring(name))
-    return station
+---Returns a Schematic based on its simulation name (shortcut), or throws an error if it's not found.
+---@param name string Schematic shortcut.
+---@return Schematic
+function Objects:assertGetSchematic(name)
+    local schematic = assert(self:getSchematic(name), "Tried to access a nonexistent schematic: " .. tostring(name))
+    return schematic
 end
 
 ---Returns a Blockade based on its simulation name, or `nil` if it's not found.
@@ -130,10 +145,10 @@ function Objects:assertGetSemaphore(name)
     return semaphore
 end
 
----Returns a list of station IDs, sorted alphabetically.
+---Returns a list of schematic IDs, sorted alphabetically.
 ---@return string[]
-function Objects:getStationList()
-	return _Utils.tableGetSortedKeys(self.stations)
+function Objects:getSchematicList()
+	return _Utils.tableGetSortedKeys(self.schematics)
 end
 
 ---Returns a list of blockade IDs, sorted alphabetically.
