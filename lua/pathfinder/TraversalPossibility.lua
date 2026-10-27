@@ -57,7 +57,7 @@ function TraversalPossibility:evaluate()
         return {}
     end
     -- See which directions we can go next.
-    local directions = tile:getPossibleTrackDirections(_InvertDir(self.direction))
+    local directions = tile:getPossibleTrackDirections(_Dir.invertDir(self.direction))
     -- Each direction is a single possibility.
     for i, direction in ipairs(directions) do
         -- Create a new copy of this possibility.
@@ -65,14 +65,14 @@ function TraversalPossibility:evaluate()
         newPossibility.tile = tile
         newPossibility.direction = direction
         -- Add the new tile.
-        table.insert(newPossibility.path, {tile = tile, dir1 = _InvertDir(self.direction), dir2 = direction})
+        table.insert(newPossibility.path, {tile = tile, dir1 = _Dir.invertDir(self.direction), dir2 = direction})
         -- A segment splits occurs on a semaphore tile. The semaphore must be faced in our direction. We ignore shunting-only semaphores in train mode.
         if tile:isSemaphore() and tile:getSemaphoreDirection() == direction and (self.pathfinder.mode == PathMode.SHUNT or tile.semaphoreType ~= SemaphoreType.TM) then
             newPossibility.lastSemaphore = tile
             table.insert(newPossibility.segments, {start = #newPossibility.path, speed = math.huge})
         end
         -- Check if we need to lower the speed, globally and for this segment.
-        local speed = tile:getSpeedForDirections(_InvertDir(self.direction), direction)
+        local speed = tile:getSpeedForDirections(_Dir.invertDir(self.direction), direction)
         if speed < self.speed then
             _LogWrite(string.format("Tile (%s,%s) reduces speed from %s to %s", tile.x, tile.y, self.speed, speed))
         end

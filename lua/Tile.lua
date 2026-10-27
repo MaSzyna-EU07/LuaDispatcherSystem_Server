@@ -123,7 +123,7 @@ end
 ---@param dir integer The direction for which the tile should be returned.
 ---@return Tile?
 function Tile:getNeighbor(dir)
-	return self.schematic:getTile(self.x + _DIRS[dir].x, self.y + _DIRS[dir].y)
+	return self.schematic:getTile(self.x + _Dir.DIRS[dir].x, self.y + _Dir.DIRS[dir].y)
 end
 
 ---Returns `true` if this Tile has a track in that direction.
@@ -184,7 +184,7 @@ end
 ---@param sourceDir integer The direction from which we are going from.
 ---@return integer[]
 function Tile:getPossibleTrackDirections(sourceDir)
-	local straight = _InvertDir(sourceDir)
+	local straight = _Dir.invertDir(sourceDir)
 	local left = (straight - 2) % 8 + 1
 	local right = straight % 8 + 1
 	local results = {}
@@ -223,7 +223,7 @@ function Tile:isDimmedBySwitch(sourceDir)
 	for i, dir in ipairs(dirs) do
 		local tile = self:getNeighbor(dir)
 		if tile and tile.trackID == self.trackID then
-			local invDir = _InvertDir(dir)
+			local invDir = _Dir.invertDir(dir)
 			if tile:isSwitch() and not tile:hasTraversibleTrackInDirection(invDir) then
 				return true -- Direct check
 			elseif tile:isDimmedBySwitch(invDir) then
@@ -319,7 +319,7 @@ end
 ---Returns `nil` if this Tile is not a semaphore or there's no track in front of it.
 ---@return string?
 function Tile:getSemaphorePrevTrackID()
-	local prevTile = self:isSemaphore() and self:getNeighbor(_InvertDir(assert(self:getSemaphoreDirection()))) or nil
+	local prevTile = self:isSemaphore() and self:getNeighbor(_Dir.invertDir(assert(self:getSemaphoreDirection()))) or nil
 	return prevTile and prevTile.trackID
 end
 

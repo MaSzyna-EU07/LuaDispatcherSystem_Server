@@ -48,7 +48,7 @@ function TrackFollower:step()
         table.insert(self.path, {tile = self.tile})
     end
     -- Deduce the source direction. It will be useful later.
-    local sourceDir = _InvertDir(self.direction)
+    local sourceDir = _Dir.invertDir(self.direction)
     -- Check the switch policy and reject movement if applicable.
     if self.switchPolicy == TrackFollowerSwitchPolicy.STOP and self.tile:isSwitch() then
         -- Stopped by any switch
@@ -91,7 +91,7 @@ function TrackFollower:step()
     -- Record the new tile if recording is enabled.
     if self.pathRecording then
         self.path[#self.path].dir2 = self.direction
-        table.insert(self.path, {tile = self.tile, dir1 = _InvertDir(self.direction)})
+        table.insert(self.path, {tile = self.tile, dir1 = _Dir.invertDir(self.direction)})
     end
     return true
 end

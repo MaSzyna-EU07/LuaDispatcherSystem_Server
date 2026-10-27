@@ -1,5 +1,4 @@
 local utf8 = require "lua.utf8"
-local Timetables = require "lua.Timetables"
 local Time = require "lua.Time"
 
 local verboseValue = 3
@@ -118,24 +117,6 @@ function _ResolveSemaphore(semaphore)
 	return semaphore
 end
 
-_DIRS = {
-	{x = 0, y = -1},
-	{x = 1, y = -1},
-	{x = 1, y = 0},
-	{x = 1, y = 1},
-	{x = 0, y = 1},
-	{x = -1, y = 1},
-	{x = -1, y = 0},
-	{x = -1, y = -1}
-}
-
----Inverts the provided direction, 1 becomes 5, 2 becomes 6, 7 becomes 3, and so on.
----@param dir integer The direction to invert.
----@return integer
-function _InvertDir(dir)
-	return (dir + 3) % 8 + 1
-end
-
 ---Returns a string list of track IDs from the given track list.
 ---If no tracks are in the list, returns `"none"`.
 ---@param tracks Track[] The list of tracks to fetch IDs from.
@@ -186,24 +167,24 @@ function _Test()
 	assert(_SanitizeASCII("Warszawa Wschodnia") == "Warszawa Wschodnia")
 	assert(_SanitizeASCII("Sulejówek Miłosna") == "Sulejowek Milosna")
 	assert(_SanitizeASCII(asciiInput) == asciiOutput)
-	local time1 = Timetables.timeToObj("10:30")
+	local time1 = _Time.timeToObj("10:30")
 	assert(time1.h == 10)
 	assert(time1.m == 30)
 	assert(time1.s == 0)
-	local time2 = Timetables.timeToObj("9:14.3")
+	local time2 = _Time.timeToObj("9:14.3")
 	assert(time2.h == 9)
 	assert(time2.m == 14)
 	assert(time2.s == 18)
-	local time3 = Timetables.timeToObj("23:02:14")
+	local time3 = _Time.timeToObj("23:02:14")
 	assert(time3.h == 23)
 	assert(time3.m == 2)
 	assert(time3.s == 14)
-	local time4 = Timetables.timeToObj("3.11")
+	local time4 = _Time.timeToObj("3.11")
 	assert(time4.h == 3)
 	assert(time4.m == 11)
-	assert(Timetables.timeToStr(Time.hm(10, 30)) == "10.30")
-	assert(Timetables.timeToStr(Time.hms(9, 14, 18)) == "9.14.3")
-	assert(Timetables.timeToStr(Time.hms(23, 2, 14)) == "23.02.2")
-	assert(Timetables.timeToStr(Time.dhms(1, 0, 0, 5)) == "0.00")
+	assert(_Time.timeToStr(Time.hm(10, 30)) == "10.30")
+	assert(_Time.timeToStr(Time.hms(9, 14, 18)) == "9.14.3")
+	assert(_Time.timeToStr(Time.hms(23, 2, 14)) == "23.02.2")
+	assert(_Time.timeToStr(Time.dhms(1, 0, 0, 5)) == "0.00")
 	_LogWrite("Tests complete!")
 end
