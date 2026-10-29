@@ -23,6 +23,9 @@ function SchematicIndex:new(schematic)
     ---@alias BlockadeIndexData {tracks: Track[], semaphores: Semaphore[], semaphoresN: Semaphore[]}
     ---@type table<string, BlockadeIndexData>
     self.blockades = {}
+    ---@alias StationIndexData {tracks: table<string, Tile>, platforms: table<string, string>}
+    ---@type table<string, StationIndexData>
+    self.stations = {}
 end
 
 ---Registers a switch into this index and also attempts to add it to the device list.
@@ -88,6 +91,17 @@ function SchematicIndex:generateIndex()
             if tile.warpID and tile:isExitPoint() then
                 -- Register the exit point.
                 self.exits[tile.warpID] = tile
+            end
+            if tile.stationName then
+                ---@type StationIndexData
+                local stationData = self.stations[tile.stationName] or {tracks = {}, platforms = {}}
+                if tile.stationTrack then
+                    stationData.tracks[tile.stationTrack] = tile
+                    if tile.stationPlatform then
+                        stationData.platforms[tile.stationTrack] = tile.stationPlatform
+                    end
+                end
+                self.stations[tile.stationName] = stationData
             end
         end
     end
@@ -247,6 +261,19 @@ function SchematicIndex:print()
         _LogWrite(string.format("    - tracks: %s", _StrTrackList(data.tracks)), Severity.INFO, 2)
         _LogWrite(string.format("    - semaphores: %s", _StrSemaphoreList(data.semaphores)), Severity.INFO, 2)
         _LogWrite(string.format("    - semaphores-N: %s", _StrSemaphoreList(data.semaphoresN)), Severity.INFO, 2)
+    end
+    _LogWrite("- Stations:", Severity.INFO, 2)
+    for i, id in ipairs(_Utils.tableGetSortedKeys(self.stations)) do
+        local data = self.stations[id]
+        _LogWrite(string.format("  - %s:", id), Severity.INFO, 2)
+        _LogWrite(string.format("    - tracks:"))
+        for j, track in ipairs(_Utils.tableGetSortedKeys(data.tracks)) do
+            _LogWrite(string.format("      - %s: %s", track, self:getTileLocation(data.tracks[track])))
+        end
+        _LogWrite(string.format("    - platforms:"))
+        for j, track in ipairs(_Utils.tableGetSortedKeys(data.platforms)) do
+            _LogWrite(string.format("      - %s: %s", track, data.platforms[track]))
+        end
     end
 end
 

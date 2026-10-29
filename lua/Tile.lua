@@ -25,8 +25,8 @@ function Tile:new(schematic, x, y)
 	self.switchFlipABCD = false -- Whether the double switch's sides are flipped (`ab` is on the right side, `cd` is on the left side).
 	---@type string?
 	self.semaphoreID = nil -- Semaphore ID for this tile.
-	---@type SemaphoreType?
-	self.semaphoreType = nil -- Semaphore type for this tile.
+	---@type SemaphoreType
+	self.semaphoreType = SemaphoreType.SEM -- Semaphore type for this tile.
 	self.semaphoreAllowTrain = false -- Whether this tile's semaphore can display a clear signal for non-shunting trains.
 	self.semaphoreAllowShunt = false -- Whether this tile's semaphore can display a shunting signal.
 	self.semaphoreAllowSz = false -- Whether this tile's semaphore can display an Sz signal.
@@ -40,7 +40,11 @@ function Tile:new(schematic, x, y)
 	---@type string|Speed?
 	self.semaphoreNext = nil -- The default next speed or semaphore when the pathfinder doesn't specify one.
 	---@type string?
-	self.itineraryEndID = nil -- Itinerary end ID for this Tile. TODO: Later on, check whether we need this. The only reason we would need this is for dispatcher algorithms.
+	self.stationName = nil -- The station name for this track. Should be used only for target tiles.
+	---@type string?
+	self.stationTrack = nil -- The track number for this track on its station. Should be used only for target tiles.
+	---@type string?
+	self.stationPlatform = nil -- The platform number for this track on its station. Should be used only for target tiles.
 	self.maxSpeed = math.huge -- The maximum speed for this Tile. Is `math.huge` if no limit is specified.
 	self.maxSpeedPlus = math.huge -- Maximum speed for this Tile when the switch on this Tile is set to `true` ("+"). Is `math.huge` if no limit is specified.
 	self.maxSpeedMinus = math.huge -- Maximum speed for this Tile when the switch on this Tile is set to `false` ("-"). Is `math.huge` if no limit is specified.
@@ -336,7 +340,14 @@ function Tile:isSemaphoreStop()
 	return state and (state.image == "s1" or state.image == "ms1")
 end
 
----Returns whether any route can ever be reserved by this semaphore.
+---Returns whether this tile's semaphore is currently not displaying anything, or `nil` if there's no semaphore.
+---@return boolean?
+function Tile:isSemaphoreDim()
+	local state = self:getSemaphoreState()
+	return state and state.image == "uszk"
+end
+
+---Returns whether any itinerary can ever be reserved by this semaphore.
 ---@return boolean
 function Tile:isSemaphoreControllable()
 	return self.semaphoreAllowTrain or self.semaphoreAllowShunt or self.semaphoreAllowSz
@@ -496,6 +507,14 @@ function Tile:sendSemaphoreUnreserve()
 	end
 end
 
+---Sends a command to the server to change this tile's blockade direction.
+---@param direction boolean? The target blockade direction.
+function Tile:sendBlockadeDirection(direction)
+	if self.blockadeID then
+		_Com.sendCommand("b " .. self.blockadeID .. " " .. (direction and "n" or (direction == false and "p" or "x")))
+	end
+end
+
 ---Sends a command to the server to send a command to the train on this tile's track.
 ---@param str string The command string.
 ---@param num1 number? The first number.
@@ -531,7 +550,7 @@ function Tile:serialize()
 		switchFlip = self.switchFlip or nil,
 		switchFlipABCD = self.switchFlipABCD or nil,
 		semaphoreID = self.semaphoreID,
-		semaphoreType = self:isSemaphore() and (self.semaphoreType ~= SemaphoreType.SEM and self.semaphoreType or nil) or nil,
+		semaphoreType = self.semaphoreType ~= SemaphoreType.SEM and self.semaphoreType or nil,
 		semaphoreAllowTrain = self.semaphoreAllowTrain or nil,
 		semaphoreAllowShunt = self.semaphoreAllowShunt or nil,
 		semaphoreAllowSz = self.semaphoreAllowSz or nil,
@@ -542,7 +561,9 @@ function Tile:serialize()
 		semaphoreShortSpeed = not _Utils.tableIsEmpty(self.semaphoreShortSpeed) and _Utils.stringifyKeys(self.semaphoreShortSpeed) or nil,
 		semaphoreFourPhase = self.semaphoreFourPhase or nil,
 		semaphoreNext = self.semaphoreNext,
-		itineraryEndID = self.itineraryEndID,
+		stationName = self.stationName,
+		stationTrack = self.stationTrack,
+		stationPlatform = self.stationPlatform,
 		maxSpeed = self.maxSpeed ~= math.huge and self.maxSpeed or nil,
 		maxSpeedPlus = self.maxSpeedPlus ~= math.huge and self.maxSpeedPlus or nil,
 		maxSpeedMinus = self.maxSpeedMinus ~= math.huge and self.maxSpeedMinus or nil,
@@ -577,7 +598,7 @@ function Tile:deserialize(t)
 	self.switchFlip = t.switchFlip == true
 	self.switchFlipABCD = t.switchFlipABCD == true
 	self.semaphoreID = t.semaphoreID
-	self.semaphoreType = t.semaphoreID and (t.semaphoreType or SemaphoreType.SEM) or nil
+	self.semaphoreType = t.semaphoreType or SemaphoreType.SEM
 	self.semaphoreAllowTrain = t.semaphoreAllowTrain == true
 	self.semaphoreAllowShunt = t.semaphoreAllowShunt == true
 	self.semaphoreAllowSz = t.semaphoreAllowSz == true
@@ -588,7 +609,9 @@ function Tile:deserialize(t)
 	self.semaphoreShortSpeed = t.semaphoreShortSpeed and (type(t.semaphoreShortSpeed) == "table" and _Utils.numifyKeys(t.semaphoreShortSpeed) or {[0] = t.semaphoreShortSpeed}) or {}
 	self.semaphoreFourPhase = t.semaphoreFourPhase == true
 	self.semaphoreNext = t.semaphoreNext
-	self.itineraryEndID = t.itineraryEndID
+	self.stationName = t.stationName
+	self.stationTrack = t.stationTrack
+	self.stationPlatform = t.stationPlatform
 	self.maxSpeed = t.maxSpeed or math.huge
 	self.maxSpeedPlus = t.maxSpeedPlus or math.huge
 	self.maxSpeedMinus = t.maxSpeedMinus or math.huge

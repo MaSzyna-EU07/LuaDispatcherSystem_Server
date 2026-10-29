@@ -705,6 +705,18 @@ function utils.strFindLine(s, c)
 	end
 end
 
+---Pads string `s` with character `c` so that its total length is `n`.
+---Padding appears on the right side (text is aligned left) and too long strings are trimmed.
+---@param s string The input string.
+---@param n integer How many characters should there be in total.
+---@param c string? The character (or a sequence of characters) to be added. Defaults to spaces.
+---@return string
+function utils.strPad(s, n, c)
+	c = (c and utf8.len(c) > 0) and c or " "
+	s = s .. c:rep(math.ceil((n - utf8.len(s)) / utf8.len(c)))
+	return s:sub(1, (utf8.offset(s, n + 1) or s:len() + 1) - 1)
+end
+
 ---Strips the extension from a path to a file.
 ---@param path string The path to have its extension stripped.
 ---@return string

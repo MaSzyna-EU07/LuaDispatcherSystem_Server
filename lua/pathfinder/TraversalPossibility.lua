@@ -156,7 +156,7 @@ end
 function TraversalPossibility:finalize()
     local follower = TrackFollower(self.tile, self.direction)
     follower:setPathRecording(true)
-    follower:stepUntil(function(tile) return tile:isSemaphore() and tile:getSemaphoreDirection() == follower.direction and tile ~= self.pathfinder.start end)
+    follower:stepUntil(function(tile) return tile ~= self.pathfinder.start and tile:isSemaphore() and (tile:getSemaphoreDirection() == follower.direction or (self.pathfinder.mode == PathMode.SHUNT and not tile.semaphoreAllowShunt and tile:getSemaphoreDirection() ~= follower.direction)) end)
     -- TODO: Remove the following debug logs and make the possibilities themselves use track followers.
     _LogWrite("Pathfinding result until:")
     for i, item in ipairs(self.path) do

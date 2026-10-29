@@ -216,6 +216,10 @@ end
 --
 function utf8.len( str, startPos, endPos )
 
+	if #str == 0 then
+		return 0
+	end
+
 	startPos, endPos = strRelToAbs( str, startPos or 1, endPos or -1 )
 
 	local len = 0
