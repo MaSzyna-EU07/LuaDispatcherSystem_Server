@@ -74,7 +74,7 @@ function TraversalPossibility:evaluate()
         -- Check if we need to lower the speed, globally and for this segment.
         local speed = tile:getSpeedForDirections(_Dir.invertDir(self.direction), direction)
         if speed < self.speed then
-            _LogWrite(string.format("Tile (%s,%s) reduces speed from %s to %s", tile.x, tile.y, self.speed, speed))
+            _LogWrite(string.format("Tile %s reduces speed from %s to %s", tile:getLocation(), self.speed, speed))
         end
         newPossibility.speed = math.min(self.speed, speed)
         newPossibility.segments[#newPossibility.segments].speed = math.min(newPossibility.segments[#newPossibility.segments].speed, speed)
@@ -115,32 +115,33 @@ function TraversalPossibility:isDead()
     local prevTile = self:getPreviousTile()
     if self.tile:isEmpty() then
         -- We've reached a desert.
-        _LogWrite(string.format("After %s tiles at (%s, %s): Empty tile!", #self.path, self.tile.x, self.tile.y))
+        _LogWrite(string.format("After %s tiles at %s: Empty tile!", #self.path, self.tile:getLocation()))
         return true
     end
     if self.pathfinder.mode == PathMode.TRAIN and self.tile:isTrackClear() == false then
         -- The track is for sure occupied when in train mode.
-        _LogWrite(string.format("After %s tiles at (%s, %s): Track occupied!", #self.path, self.tile.x, self.tile.y))
+        _LogWrite(string.format("After %s tiles at %s: Track occupied!", #self.path, self.tile:getLocation()))
         return true
     elseif self.pathfinder.mode == PathMode.SHUNT and self.tile:isTrackClear() and prevTile and prevTile:isTrackClear() == false then
         -- We went past the occupied segment when shunting. Unfortunately current technology doesn't permit us to jump over a train...
-        _LogWrite(string.format("After %s tiles at (%s, %s): Went past a train in shunting mode!", #self.path, self.tile.x, self.tile.y))
+        _LogWrite(string.format("After %s tiles at %s: Went past a train in shunting mode!", #self.path, self.tile:getLocation()))
         return true
     end
     if not self.tile:isPathModeAllowed(self.pathfinder.mode) then
         -- The track is not allowing this dispatching mode (i.e. forbids shunting or trains)
-        _LogWrite(string.format("After %s tiles at (%s, %s): Mode forbidden!", #self.path, self.tile.x, self.tile.y))
+        _LogWrite(string.format("After %s tiles at %s: Mode forbidden!", #self.path, self.tile:getLocation()))
         return true
     end
     if self.pathfinder.electrified and not self.tile.electrified then
         -- The track is not electrified while pathfinding for an electric train.
-        _LogWrite(string.format("After %s tiles at (%s, %s): Not electrified!", #self.path, self.tile.x, self.tile.y))
+        _LogWrite(string.format("After %s tiles at %s: Not electrified!", #self.path, self.tile:getLocation()))
         return true
     end
     local segmentSpeed = self.segments[#self.segments].speed
     if #self.segments >= 2 and segmentSpeed < 100 and self.path[self.segments[#self.segments - 1].start].tile.semaphoreNoDanger then
         -- If the segment we're on mandates speeds less than 100 km/h, and the previous semaphore does not allow that, this entire possibility will not pass.
-        _LogWrite(string.format("After %s tiles at (%s, %s): Previous signal not possible, must be at least 100 km/h!", #self.path, self.tile.x, self.tile.y))
+        -- TODO: The possibility should pass and an itinerary should be generated, but it should be non-dispatchable if the previous semaphore would not be able to display a proper signal.
+        _LogWrite(string.format("After %s tiles at %s: Previous signal not possible, must be at least 100 km/h!", #self.path, self.tile:getLocation()))
         return true
     end
     return false
@@ -160,11 +161,11 @@ function TraversalPossibility:finalize()
     -- TODO: Remove the following debug logs and make the possibilities themselves use track followers.
     _LogWrite("Pathfinding result until:")
     for i, item in ipairs(self.path) do
-        _LogWrite(string.format("(%s, %s) : %s,%s", item.tile.x, item.tile.y, item.dir1 or "-", item.dir2 or "-"))
+        _LogWrite(string.format("%s : %s,%s", item.tile:getLocation(), item.dir1 or "-", item.dir2 or "-"))
     end
     _LogWrite("Pathfinding result after:")
     for i, item in ipairs(follower:getPath()) do
-        _LogWrite(string.format("(%s, %s) : %s,%s", item.tile.x, item.tile.y, item.dir1 or "-", item.dir2 or "-"))
+        _LogWrite(string.format("%s : %s,%s", item.tile:getLocation(), item.dir1 or "-", item.dir2 or "-"))
         if i == 1 then
             self.path[#self.path].dir2 = item.dir2
         else
@@ -173,7 +174,7 @@ function TraversalPossibility:finalize()
     end
     _LogWrite("Combined result:")
     for i, item in ipairs(self.path) do
-        _LogWrite(string.format("(%s, %s) : %s,%s", item.tile.x, item.tile.y, item.dir1 or "-", item.dir2 or "-"))
+        _LogWrite(string.format("%s : %s,%s", item.tile:getLocation(), item.dir1 or "-", item.dir2 or "-"))
     end
 end
 

@@ -117,6 +117,12 @@ end
 ---------------- L O G I C ---------------
 --######################################--
 
+---Returns the strigified position of this Tile, including its X and Y coordinates as well as the schematic shortcut it's on.
+---@return string
+function Tile:getLocation()
+	return string.format("%s(%s, %s)", self.schematic.shortcut, self.x, self.y)
+end
+
 ---Returns tile data coming from its ID.
 ---@return TileData
 function Tile:getData()
@@ -452,6 +458,27 @@ function Tile:getWarpDestination()
         return
     end
     return destination
+end
+
+---Returns the direction the pathfinder should go in order to properly get out of the warp tile.
+---Returns `nil` if there's no such direction or this is not a warp tile.
+---@return integer?
+function Tile:getWarpExitDirection()
+	if not self:isExitPoint() then
+		return
+	end
+	local result = nil
+	for i, dir in ipairs(self:getTrackDirections()) do
+		local neighbor = self:getNeighbor(dir)
+		if neighbor and neighbor:hasTrackInDirection(_Dir.invertDir(dir)) then
+			if result then
+				-- Multiple directions found, this is an error state.
+				return
+			end
+			result = dir
+		end
+	end
+	return result
 end
 
 --################################################--

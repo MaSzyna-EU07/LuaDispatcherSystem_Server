@@ -106,7 +106,7 @@ function _NextTimeTick()
 end
 
 function _CreateLoopEvent(name, func, delay, randomDelay)
-	_API:eventCreate(name, delay, randomDelay or 0, function(event, activator) func(); _API:eventDispatch(name) end)
+	_API:eventCreate(name, delay, randomDelay or 0, function(event, activator) _API:eventDispatch(name); func() end)
 	_API:eventDispatch(name)
 end
 
@@ -147,10 +147,3 @@ return {
 	getTrack = function(name) return _Obj:getTrack(name) end,
 	setCallback = function(name, func) _CreateCallback(name, func) end
 }
-
--- TODO: Create unit tests
-
---    local s = "Pchnąć w tę łódź ośm skrzyń fig"
---    local a = s:len()
---    local b = utf8.len(s)
---    _LogWrite("Length: " .. tostring(a) .. ", " .. tostring(b), Severity.INFO, 1)

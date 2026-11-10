@@ -39,8 +39,9 @@ function TrackFollower:getPath()
     return self.path
 end
 
----Moves this follower to the next tile in the indicated direction.
----Returns whether the step was successful. If `false` is returned, a dead end has been found or the policy doesn't allow the follower to continue.
+---Attempts to move this follower to the next tile in its current direction.
+---If the follower cannot advance, either because of a missing track or the switch policy, `false` is returned.
+---Otherwise returns `true`.
 ---@return boolean
 function TrackFollower:step()
     -- Record the first tile if recording is enabled.
@@ -62,29 +63,36 @@ function TrackFollower:step()
     if self.tile:isExitPoint() then
         local destination = self.tile:getWarpDestination()
         if not destination then
-            _LogWrite("Warp destination not found (dir=" .. self.direction .. ")", Severity.INFO, 2)
+            _LogWrite("Warp destination not found (dir=" .. self.direction .. ")", Severity.FAIL, 2)
             -- Tile does not lead to a valid destination. End the scan here.
             return false
         end
         self.tile = destination
-        -- TODO: The direction is preserved, but we might come back from a different side. Think about a solution.
-    end
-    -- Move forward. Remember to follow the policy!
-    local dir
-    if self.switchPolicy == TrackFollowerSwitchPolicy.RANDOM then
-        dir = _Utils.iTableGetRandomValue(self.tile:getPossibleTrackDirections(sourceDir))
+        -- The exit can be anywhere on the new schematic, and at any angle too!
+        self.direction = self.tile:getWarpExitDirection()
+        if not self.direction then
+            _LogWrite(string.format("No direction to go towards - probably an improperly set exit tile at %s", self.tile:getLocation()), Severity.FAIL, 2)
+            return false
+        end
     else
-        dir = self.tile:getNextTrackDirection(sourceDir)
+        -- Determine the next direction in a classic way. Remember to follow the policy!
+        local dir
+        if self.switchPolicy == TrackFollowerSwitchPolicy.RANDOM then
+            dir = _Utils.iTableGetRandomValue(self.tile:getPossibleTrackDirections(sourceDir))
+        else
+            dir = self.tile:getNextTrackDirection(sourceDir)
+        end
+        if not dir then
+            -- Dead end.
+            return false
+        end
+        self.direction = dir
     end
-    if not dir then
-        -- Dead end.
-        return false
-    end
-    self.direction = dir
+    -- Move forward.
     local nextTile = self.tile:getNeighbor(self.direction)
     if not nextTile then
         -- We've reached the edge of the schematic. Dead end.
-        _LogWrite("No nextTile (dir=" .. self.direction .. ")", Severity.INFO, 2)
+        _LogWrite("No nextTile (dir=" .. self.direction .. ")", Severity.FAIL, 2)
         return false
     end
     self.tile = nextTile

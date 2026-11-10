@@ -101,6 +101,9 @@ function SchematicIndex:generateIndex()
                         stationData.platforms[tile.stationTrack] = tile.stationPlatform
                     end
                 end
+                if not _Obj:getStation(tile.stationName) then
+                    _Obj:addStation(tile.stationName)
+                end
                 self.stations[tile.stationName] = stationData
             end
         end
@@ -144,7 +147,7 @@ function SchematicIndex:generateBlockades()
                 local n = 0
                 while not (follower.tile:isSemaphore() and follower.tile:isSemaphoreControllable()) do
                     local scanTile = follower.tile
-                    _LogWrite(string.format("Traversing: %s:%s,%s", scanTile.schematic.shortcut, scanTile.x, scanTile.y), Severity.INFO, 1)
+                    _LogWrite(string.format("Traversing: %s", scanTile:getLocation()), Severity.INFO, 1)
                     -- Scan the traversed tile.
                     if scanTile.trackID then
                         table.insert(blockadeData.tracks, _Obj:assertGetTrack(scanTile.trackID))
@@ -228,7 +231,7 @@ end
 ---@param tile Tile? The tile to return the location of.
 ---@return string
 function SchematicIndex:getTileLocation(tile)
-    return tile and string.format("(%s, %s)", tile.x, tile.y) or "none"
+    return tile and tile:getLocation() or "none"
 end
 
 ---Prints the index contents to the log.

@@ -21,4 +21,19 @@ function Timetables:generate(number, data, startTime)
     timetable:exportSim()
 end
 
+---Returns a Timetable based on its simulation name (shortcut), or `nil` if it's not found.
+---@param name string Timetable shortcut.
+---@return Timetable?
+function Timetables:getTimetable(name)
+	return self.timetables[name]
+end
+
+---Returns a Timetable based on its simulation name (shortcut), or throws an error if it's not found.
+---@param name string Timetable shortcut.
+---@return Timetable
+function Timetables:assertGetTimetable(name)
+    local timetable = assert(self:getTimetable(name), "Tried to access a nonexistent timetable: " .. tostring(name))
+    return timetable
+end
+
 return Timetables

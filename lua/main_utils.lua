@@ -164,8 +164,11 @@ end
 ---Tests some of the fundamentals of this program.
 function _Test()
 	_LogWrite("Performing tests...")
+	assert(utf8.len("Pchnąć w tę łódź ośm skrzyń fig") == 31)
+	assert(utf8.len("") == 0)
 	assert(_SanitizeASCII("Warszawa Wschodnia") == "Warszawa Wschodnia")
 	assert(_SanitizeASCII("Sulejówek Miłosna") == "Sulejowek Milosna")
+	assert(_SanitizeASCII("Pchnąć w tę łódź ośm skrzyń fig") == "Pchnac w te lodz osm skrzyn fig")
 	assert(_SanitizeASCII(asciiInput) == asciiOutput)
 	local time1 = _Time.timeToObj("10:30")
 	assert(time1.h == 10)

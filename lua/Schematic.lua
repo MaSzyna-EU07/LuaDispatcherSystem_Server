@@ -1,6 +1,7 @@
 local Class = require("lua.class")
 local Tile = require("lua.Tile")
 local SchematicIndex = require("lua.SchematicIndex")
+local Dispatcher = require("lua.Dispatcher")
 local Pathfinder = require("lua.pathfinder.Pathfinder")
 
 ---Represents a station schematic, comprised of tiles.
@@ -21,9 +22,7 @@ function Schematic:new(shortcut)
     self.tiles = {}
 
     self.index = nil
-
-	-- Initialize a station dispatch callback, which will be called once every 0-90 seconds.
-	_CreateLoopEvent("s_" .. shortcut, function() _DoCallback("station_" .. shortcut, self) end, 0, 90)
+	self.dispatcher = Dispatcher(self)
 end
 
 ---Reloads this schematic.
@@ -51,7 +50,7 @@ end
 ---@param y integer Y coordinate of the tile.
 ---@return Tile
 function Schematic:assertGetTile(x, y)
-	return assert(self:getTile(x, y), string.format("There is no tile at (%s, %s)", x, y))
+	return assert(self:getTile(x, y), string.format("There is no tile at %s:%s,%s", self.shortcut, x, y))
 end
 
 ---Fills in default next semaphore pointers based on the schematic layout.

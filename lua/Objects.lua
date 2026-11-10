@@ -1,6 +1,7 @@
 local Class = require("lua.class")
 local Schematic = require("lua.Schematic")
 local Blockade = require("lua.Blockade")
+local Station = require("lua.Station")
 local Track = require("lua.Track")
 local Switch = require("lua.Switch")
 local Semaphore = require("lua.Semaphore")
@@ -14,6 +15,8 @@ function Objects:new()
     self.schematics = {}
     ---@type table<string, Blockade>
     self.blockades = {}
+    ---@type table<string, Station>
+    self.stations = {}
     -- Keys for `tracks`, `switches` and `semaphores` are guaranteed to be lowercase.
     ---@type table<string, Track>
     self.tracks = {}
@@ -40,6 +43,15 @@ end
 function Objects:addBlockade(id, data)
     self.blockades[id] = Blockade(id, data)
     return self.blockades[id]
+end
+
+---Adds a station to the station list. The index is the station name, e.g. "Sulejówek Miłosna".
+---Returns the created object.
+---@param id string The station ID (its full name).
+---@return Station
+function Objects:addStation(id)
+    self.stations[id] = Station(id)
+    return self.stations[id]
 end
 
 ---Adds a track to the track list. The index is the track ID, converted to lowercase, e.g. "Eb_It2" -> "eb_it2".
@@ -100,6 +112,21 @@ function Objects:assertGetBlockade(name)
     return blockade
 end
 
+---Returns a Station based on its simulation name, or `nil` if it's not found.
+---@param name string Station ID.
+---@return Station?
+function Objects:getStation(name)
+	return self.stations[name]
+end
+
+---Returns a Station based on its simulation name, or throws an error if it's not found.
+---@param name string Station ID.
+---@return Station
+function Objects:assertGetStation(name)
+	local station = assert(self:getStation(name), "Tried to access a nonexistent station: " .. tostring(name))
+    return station
+end
+
 ---Returns a Track based on its simulation name, or `nil` if it is not found.
 ---@param name string For example: `"Eb_It2"`. Case-insensitive.
 ---@return Track?
@@ -155,6 +182,12 @@ end
 ---@return string[]
 function Objects:getBlockadeList()
 	return _Utils.tableGetSortedKeys(self.blockades)
+end
+
+---Returns a list of station IDs, sorted alphabetically.
+---@return string[]
+function Objects:getStationList()
+	return _Utils.tableGetSortedKeys(self.stations)
 end
 
 ---Returns a list of track IDs, sorted alphabetically.
