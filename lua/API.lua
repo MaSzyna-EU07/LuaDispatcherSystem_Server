@@ -113,4 +113,12 @@ function API:memcellUpdate(name, values)
     api.memcell_update_n(name, values)
 end
 
+---Returns the current simulation time: hours, minutes.
+---TODO: Replace with a proper call once time can be obtained directly from EXE.
+---@return integer, integer
+function API:getTime()
+    local vals = self:memcellRead("__simulation.time")
+    return vals.num1, vals.num2
+end
+
 return API

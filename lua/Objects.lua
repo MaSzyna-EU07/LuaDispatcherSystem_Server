@@ -2,6 +2,7 @@ local Class = require("lua.class")
 local Schematic = require("lua.Schematic")
 local Blockade = require("lua.Blockade")
 local Station = require("lua.Station")
+local Timetable = require("lua.Timetable")
 local Track = require("lua.Track")
 local Switch = require("lua.Switch")
 local Semaphore = require("lua.Semaphore")
@@ -17,6 +18,8 @@ function Objects:new()
     self.blockades = {}
     ---@type table<string, Station>
     self.stations = {}
+    ---@type table<string, Timetable>
+    self.timetables = {}
     -- Keys for `tracks`, `switches` and `semaphores` are guaranteed to be lowercase.
     ---@type table<string, Track>
     self.tracks = {}
@@ -52,6 +55,17 @@ end
 function Objects:addStation(id)
     self.stations[id] = Station(id)
     return self.stations[id]
+end
+
+---Adds a timetable to the timetable list. The index is the timetable name, e.g. "ROJ55101".
+---Returns the created object.
+---@param id string The timetable ID (its full name).
+---@param data table The timetable data.
+---@param startTime string The starting timetable time, e.g. `"10:30"`. Fractions are allowed, like `"10:30.5"`.
+---@return Timetable
+function Objects:addTimetable(id, data, startTime)
+    self.timetables[id] = Timetable(id, data, startTime)
+    return self.timetables[id]
 end
 
 ---Adds a track to the track list. The index is the track ID, converted to lowercase, e.g. "Eb_It2" -> "eb_it2".
@@ -127,6 +141,21 @@ function Objects:assertGetStation(name)
     return station
 end
 
+---Returns a Timetable based on its name (number), or `nil` if it's not found.
+---@param name string Timetable shortcut.
+---@return Timetable?
+function Objects:getTimetable(name)
+	return self.timetables[name]
+end
+
+---Returns a Timetable based on its name (number), or throws an error if it's not found.
+---@param name string Timetable shortcut.
+---@return Timetable
+function Objects:assertGetTimetable(name)
+    local timetable = assert(self:getTimetable(name), "Tried to access a nonexistent timetable: " .. tostring(name))
+    return timetable
+end
+
 ---Returns a Track based on its simulation name, or `nil` if it is not found.
 ---@param name string For example: `"Eb_It2"`. Case-insensitive.
 ---@return Track?
@@ -188,6 +217,12 @@ end
 ---@return string[]
 function Objects:getStationList()
 	return _Utils.tableGetSortedKeys(self.stations)
+end
+
+---Returns a list of timetable IDs, sorted alphabetically.
+---@return string[]
+function Objects:getTimetableList()
+	return _Utils.tableGetSortedKeys(self.timetables)
 end
 
 ---Returns a list of track IDs, sorted alphabetically.

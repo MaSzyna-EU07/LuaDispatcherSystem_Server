@@ -81,6 +81,13 @@ function Track:busy()
 		self.semaphore:stop()
 		self:setSemaphore()
 	end
+	-- Check if there's any train on now busy track and ping its timetable.
+	-- This is done for the purposes of counting train entering/leaving the station!
+	local timetableID = self:getTimetable()
+	local timetable = timetableID and _Obj:getTimetable(timetableID)
+	if timetable then
+		timetable:onTrackBusy(self.id)
+	end
 	self:call("busy")
 end
 
@@ -162,7 +169,8 @@ end
 ---@param data table The timetable data.
 ---@param startTime string The starting timetable time, e.g. `"10:30"`. Fractions are allowed, like `"10:30.5"`.
 function Track:setTimetable(number, data, startTime)
-	_Timetables:generate(number, data, startTime)
+	local timetable = _Obj:addTimetable(number, data, startTime)
+	timetable:exportSim()
 	self:sendCommand("Timetable:luascript/rj_tmp", 0, 0)
 end
 

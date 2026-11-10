@@ -8,7 +8,9 @@ local Timetable = Class:derive("Timetable")
 ---@field name string Station name.
 ---@field track string? Track this train should stop on or go through. The train is not guaranteed to go exactly there, though.
 ---@field arrival Time? The arrival time. May be absent if the train is not stopping there.
+---@field arrivalAct Time? The actual arrival time. Counted when the train enters the station track.
 ---@field departure Time? The departure time. May be absent if this is the final stop.
+---@field departureAct Time? The actual departure time. Counted when the train leaves the station track.
 ---@field speed integer? Specifies a new maximum speed. Due to how MaSzyna works, this applies BEFORE the station, not after it.
 ---@field km number? Kilometer this station is on.
 ---@field tracks 1|2? If specified, specifies the new amount of tracks on the route past this station.
@@ -36,9 +38,9 @@ function Timetable:new(id, data, startTime)
 
     ---@type TimetableEntry[]
     self.stations = {}
+    self.currentStation = 1 -- Index of the current station, or the next station.
 
-    _LogWrite("- Stations:")
-    _LogWrite("  -  Station             | Arr   | Dep   | Track | Speed | Km    | Tracks")
+    -- Generate actual data.
     local time = _Time.timeToObj(startTime)
     for i, stationData in ipairs(data.stations) do
         ---@type TimetableEntry
@@ -58,17 +60,12 @@ function Timetable:new(id, data, startTime)
         -- Departure time is present if this is not the final stop
         station.departure = i < #data.stations and time or nil
 
-        local strStation = _Utils.strPad(station.name, 20)
-        local strArr = _Utils.strPad(station.arrival and _Time.timeToStrRJ(station.arrival) or "  |  ", 7)
-        local strDep = _Utils.strPad(station.departure and _Time.timeToStrRJ(station.departure) or "", 7)
-        local strTrack = _Utils.strPad(station.track or "", 5)
-        local strSpeed = _Utils.strPad(station.speed and tostring(station.speed) or "", 5)
-        local strKm = _Utils.strPad(station.km and tostring(station.km) or "", 7)
-        local strTracks = _Utils.strPad(station.tracks and tostring(station.tracks) or "", 5)
-        _LogWrite(string.format("  - %s |%s|%s| %s | %s |%s| %s", strStation, strArr, strDep, strTrack, strSpeed, strKm, strTracks))
-
         self.stations[i] = station
     end
+
+    _LogWrite("- Stations:")
+    self:printData()
+
     _LogWrite(string.format("Created timetable `%s`!", id))
 end
 
@@ -82,6 +79,87 @@ end
 ---@return string
 function Timetable:getFinalStationName()
     return self.stations[#self.stations].name
+end
+
+---Executed when a train with this timetable enters the specified track by its ID.
+---@param trackID string The track ID.
+function Timetable:onTrackBusy(trackID)
+    -- This might be the train entering or leaving the station. Look for a station ID attached to this track... somewhere.
+    local stationID = nil
+    for i, schematicID in ipairs(_Obj:getSchematicList()) do
+        -- TODO: Instead of iterating against every schematic, consider making a single global index.
+        local schematic = _Obj:assertGetSchematic(schematicID)
+        local trackIndexData = schematic.index:getTrack(trackID)
+        if trackIndexData and trackIndexData.stationID then
+            -- Found a station!
+            stationID = trackIndexData.stationID
+            break
+        end
+    end
+    if stationID then
+        -- Bingo! We've just entered a station. Which one?
+        for i = self.currentStation, #self.stations do
+            local stationEntry = self.stations[i]
+            if stationEntry.name == stationID then
+                self:say(string.format("Arrived to %s at %s", stationEntry.name, _CurrentTime:str()))
+                -- If this is not the station we were supposed to go now, but instead later, advance the marker and print a warning.
+                if i > self.currentStation then
+                    self:say(string.format("WARNING: While doing so, %s stations have been omitted from the timetable!", i - self.currentStation))
+                    -- If the current station has arrival and no departure time set, set it now before skipping over stations.
+                    local currentStationEntry = self.stations[self.currentStation]
+                    if (currentStationEntry.arrivalAct or self.currentStation == 1) and not currentStationEntry.departureAct then
+                        currentStationEntry.departureAct = _CurrentTime
+                    end
+                    self.currentStation = i
+                end
+                -- Mark the arrival time.
+                stationEntry.arrivalAct = _CurrentTime
+                -- Avoid looking for another station. We've marked this one, that's enough. Especially important if we are going to be back here later.
+                break
+            end
+        end
+    elseif self.currentStation < #self.stations then
+        -- We have entered a non-station track, so we need to mark the current station as left if we have arrived but not departed yet.
+        -- TODO: Stuff like loco swapping or turning the loco around will trigger this mechanism! Make sure to rewrite this mechanism
+        -- so that it activates when the train LEAVES the station track.
+        local stationEntry = self.stations[self.currentStation]
+        if (stationEntry.arrivalAct or self.currentStation == 1) and not stationEntry.departureAct then
+            self:say(string.format("Departed from %s at %s", stationEntry.name, _CurrentTime:str()))
+            -- Mark the departure time.
+            stationEntry.departureAct = _CurrentTime
+            -- Advance to the next station!
+            self.currentStation = self.currentStation + 1
+        end
+    end
+    self:say("Ping!")
+    self:printData()
+end
+
+---Prints the current state of this timetable to the simulation log file.
+function Timetable:printData()
+    _LogWrite("========================================================================================================")
+    _LogWrite("        > Timetable for train: " .. self.id)
+    _LogWrite("                         | Arrival             | Departure           |       |       |       |       ")
+    _LogWrite("     Station             | Plan  | Act   | +/- | Plan  | Act   | +/- | Track | Speed | Km    | Tracks")
+    _LogWrite("-------------------------|-------|-------|-----|-------|-------|-----|-------|-------|-------|-------")
+    for i, station in ipairs(self.stations) do
+        local strCurrent = self.currentStation == i and ">>>" or "   "
+        local strStation = _Utils.strPad(station.name, 20)
+        local strArr = _Utils.strPad(station.arrival and _Time.timeToStrRJ(station.arrival) or "  |  ", 7)
+        local strArrAct = _Utils.strPad(station.arrivalAct and _Time.timeToStrRJ(station.arrivalAct) or "", 7)
+        local arrDelay = station.arrival and station.arrivalAct and (station.arrivalAct - station.arrival):getInt()
+        local strArrDelay = _Utils.strPad(arrDelay and (arrDelay >= 60 and "+" .. math.floor(arrDelay / 60) or tostring(math.floor(arrDelay / 60))) or "", 5)
+        local strDep = _Utils.strPad(station.departure and _Time.timeToStrRJ(station.departure) or "", 7)
+        local strDepAct = _Utils.strPad(station.departureAct and _Time.timeToStrRJ(station.departureAct) or "", 7)
+        local depDelay = station.departure and station.departureAct and (station.departureAct - station.departure):getInt()
+        local strDepDelay = _Utils.strPad(depDelay and (depDelay >= 60 and "+" .. math.floor(depDelay / 60) or tostring(math.floor(depDelay / 60))) or "", 5)
+        local strTrack = _Utils.strPad(station.track or "", 5)
+        local strSpeed = _Utils.strPad(station.speed and tostring(station.speed) or "", 5)
+        local strKm = _Utils.strPad(station.km and tostring(station.km) or "", 7)
+        local strTracks = _Utils.strPad(station.tracks and tostring(station.tracks) or "", 5)
+        _LogWrite(string.format("%s %s |%s|%s|%s|%s|%s|%s| %s | %s |%s| %s", strCurrent, strStation, strArr, strArrAct, strArrDelay, strDep, strDepAct, strDepDelay, strTrack, strSpeed, strKm, strTracks))
+    end
+    _LogWrite("========================================================================================================")
 end
 
 ---Generates timetable text to be parsed by the simulator.
@@ -130,6 +208,14 @@ end
 ---Saves the timetable text to a temporary file that can be loaded by the simulator.
 function Timetable:exportSim()
     _Utils.saveFile("scenery/luascript/rj_tmp.txt", self:generateSimText())
+end
+
+---Sends an information about this timetable to the log.
+---@param text string The message to be written.
+---@param severity Severity? The message severity.
+---@param weight integer? The message weight.
+function Timetable:say(text, severity, weight)
+	_LogWrite(string.format("%s: %s", self.id, text), severity, weight)
 end
 
 return Timetable

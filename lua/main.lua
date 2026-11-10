@@ -9,17 +9,15 @@ _Com = require("lua.main_communication")
 
 local Time = require("lua.Time")
 local Objects = require("lua.Objects")
-local Timetables = require("lua.Timetables")
 local TileDatabase = require("lua.TileDatabase")
 
+_Ticks = 0
 _CurrentTime = Time.hm(11, 30)
 ---@type table<string, function[]>
 _Callbacks = {}
 
 ---@type Objects
 _Obj = Objects()
----@type Timetables
-_Timetables = Timetables()
 ---@type TileDatabase
 _TileDB = TileDatabase()
 
@@ -96,13 +94,21 @@ function _TryLoop()
 end
 
 function _Loop()
+	_UpdateCurrentTime()
 	_NextTimeTick()
+end
+
+function _UpdateCurrentTime()
+	_CurrentTime = Time.hm(_API:getTime())
+	_LogWrite("Time: " .. _CurrentTime:str(), Severity.INFO, 1)
 end
 
 function _NextTimeTick()
 	_Com.sendBytes({0xFF})
-	_CurrentTime = _CurrentTime + 1
-	_LogWrite("Time: " .. tostring(_CurrentTime), Severity.INFO, 2)
+	_Ticks = _Ticks + 1
+	if _Ticks % 15 == 0 then
+		--_PrintDiagnostics()
+	end
 end
 
 function _CreateLoopEvent(name, func, delay, randomDelay)

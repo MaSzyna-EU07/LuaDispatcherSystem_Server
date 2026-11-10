@@ -74,7 +74,7 @@ function Dispatcher:tick()
         local tile = self.schematic.index.exits[exitID]
         local timetableID = self:getApproachingTrainTimetableForExit(tile)
         if timetableID then
-            local timetable = _Timetables:getTimetable(timetableID)
+            local timetable = _Obj:getTimetable(timetableID)
             if timetable then
                 _LogWrite(string.format(" - %s: %s -> %s", exitID, timetableID, timetable:getFinalStationName()))
             else

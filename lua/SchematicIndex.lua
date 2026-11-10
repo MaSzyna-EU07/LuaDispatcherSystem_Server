@@ -11,7 +11,7 @@ local SchematicIndex = Class:derive("SchematicIndex")
 ---@param schematic Schematic The station schematic this Index is of.
 function SchematicIndex:new(schematic)
     self.schematic = schematic
-    ---@alias TrackIndexData {trainTarget: Tile?, shuntTarget: Tile?, semaphores: Semaphore[]}
+    ---@alias TrackIndexData {trainTarget: Tile?, shuntTarget: Tile?, semaphores: Semaphore[], stationID: string?}
     ---@type table<string, TrackIndexData>
     self.tracks = {}
     ---@type table<string, Tile>
@@ -49,6 +49,7 @@ function SchematicIndex:generateIndex()
                 local trackData = self.tracks[tile.trackID] or {semaphores = {}}
                 trackData.trainTarget = tile.trainTarget and tile or trackData.trainTarget
                 trackData.shuntTarget = tile.shuntTarget and tile or trackData.shuntTarget
+                trackData.stationID = tile.stationName or trackData.stationID
                 if not _Obj:getTrack(tile.trackID) then
                     _Obj:addTrack(tile.trackID)
                 end
@@ -243,7 +244,8 @@ function SchematicIndex:print()
         local trainLocation = self:getTileLocation(data.trainTarget)
         local shuntLocation = self:getTileLocation(data.shuntTarget)
         local semaphoreList = _StrSemaphoreList(data.semaphores)
-        _LogWrite(string.format("  - %s: P -> %s, M -> %s, semaphores: %s", id, trainLocation, shuntLocation, semaphoreList), Severity.INFO, 2)
+        local stationID = data.stationID
+        _LogWrite(string.format("  - %s: P -> %s, M -> %s, semaphores: %s, station: %s", id, trainLocation, shuntLocation, semaphoreList, stationID), Severity.INFO, 2)
     end
     _LogWrite("- Switches:", Severity.INFO, 2)
     for i, id in ipairs(_Utils.tableGetSortedKeys(self.switches)) do
