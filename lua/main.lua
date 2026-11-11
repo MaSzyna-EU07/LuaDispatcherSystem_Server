@@ -2,8 +2,8 @@ VERSION = "5.0 Edition (2025 Reboot Alpha)"
 require("lua.main_enums")
 require("lua.main_utils")
 _Utils = require("lua.utils")
-_Time = require("lua.utils.TimeUtils")
-_Dir = require("lua.utils.DirUtils")
+_Time = require("lua.Utils.TimeUtils")
+_Dir = require("lua.Utils.DirUtils")
 _API = require("lua.API")
 _Com = require("lua.main_communication")
 

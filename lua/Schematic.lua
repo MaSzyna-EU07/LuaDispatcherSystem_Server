@@ -2,7 +2,7 @@ local Class = require("lua.class")
 local Tile = require("lua.Tile")
 local SchematicIndex = require("lua.SchematicIndex")
 local Dispatcher = require("lua.Dispatcher")
-local Pathfinder = require("lua.pathfinder.Pathfinder")
+local Pathfinder = require("lua.Pathfinder.Pathfinder")
 
 ---Represents a station schematic, comprised of tiles.
 ---@class Schematic : Class
@@ -87,16 +87,12 @@ function Schematic:pathfind(track1, track2, mode)
 	end
 	-- Attempt to pathfind from any of the semaphores on the starting track.
 	for i, semaphore in ipairs(track1Info.semaphores) do
-		local tile = self.index:getSemaphore(semaphore.id)
 		self:tell(string.format("Attempting with %s...", semaphore.id), Severity.INFO, 1)
+		local tile = self.index:getSemaphore(semaphore.id)
 		if tile then
-			-- Summon a pathfinder and let it find the path...
-			local pathfinder = Pathfinder(tile, target)
-			pathfinder:setMode(mode)
-			local success = pathfinder:calculatePath()
-			if success then
-				-- We found a route! Dispatch it and we can start a party
-				pathfinder:dispatch()
+			local result = self:pathfindTiles(tile, target, mode)
+			if result then
+				-- Hooray! The route has been found and dispatched!
 				return true
 			end
 		end

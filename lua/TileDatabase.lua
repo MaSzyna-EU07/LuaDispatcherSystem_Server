@@ -250,4 +250,30 @@ function TileDatabase:idToString(id)
     return self.compatibilityList[id] or tostring(id)
 end
 
+---Returns a tile ID with the specified track layout.
+---If no tile with that layout exists, returns `nil`.
+---@param tracks integer The track mask.
+---@param refID string? The tile ID to be used as a reference for maximum similarity.
+---@return string?
+function TileDatabase:getTileWithTracks(tracks, refID)
+    if tracks == 0 then
+        return ""
+    end
+    -- First pass: Try to match the original tile
+    if refID then
+        local ref = self:getTile(refID)
+        for id, data in pairs(self.tiles) do
+            if data.tracks == tracks and data.blockade == ref.blockade and data.derailer == ref.derailer and data.derailerL == ref.derailerL and data.exit == ref.exit and data.semaphore == ref.semaphore and data.background == ref.background then
+                return id
+            end
+        end
+    end
+    -- Second pass: Raw track
+    for id, data in pairs(self.tiles) do
+        if data.tracks == tracks and not data.blockade and not data.derailer and not data.derailerL and not data.exit and not data.semaphore and not data.background then
+            return id
+        end
+    end
+end
+
 return TileDatabase

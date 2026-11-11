@@ -1,5 +1,5 @@
 local Class = require("lua.class")
-local TrackFollower = require("lua.pathfinder.TrackFollower")
+local TrackFollower = require("lua.Pathfinder.TrackFollower")
 
 ---Represents an index of a station schematic. Indexes a schematic, registers objects
 ---and stores a map of object names to tiles for pathfinding convenience.
@@ -26,6 +26,9 @@ function SchematicIndex:new(schematic)
     ---@alias StationIndexData {tracks: table<string, Tile>, platforms: table<string, string>}
     ---@type table<string, StationIndexData>
     self.stations = {}
+    ---@alias NeighborSchematicIndexData {exits: string[]}
+    ---@type table<string, NeighborSchematicIndexData>
+    self.neighborSchematics = {}
 end
 
 ---Registers a switch into this index and also attempts to add it to the device list.
@@ -89,9 +92,18 @@ function SchematicIndex:generateIndex()
                     self.tracks[prevTrackID] = trackData
                 end
             end
-            if tile.warpID and tile:isExitPoint() then
-                -- Register the exit point.
-                self.exits[tile.warpID] = tile
+            if tile:isExitPoint() then
+                if tile.warpID then
+                    -- Register the exit point.
+                    self.exits[tile.warpID] = tile
+                    if tile.warp then
+                        -- Register the neighbor schematic.
+                        ---@type NeighborSchematicIndexData
+                        local neighborSchematicData = self.neighborSchematics[tile.warp] or {exits = {}}
+                        table.insert(neighborSchematicData.exits, tile.warpID)
+                        self.neighborSchematics[tile.warp] = neighborSchematicData
+                    end
+                end
             end
             if tile.stationName then
                 ---@type StationIndexData
@@ -279,6 +291,10 @@ function SchematicIndex:print()
         for j, track in ipairs(_Utils.tableGetSortedKeys(data.platforms)) do
             _LogWrite(string.format("      - %s: %s", track, data.platforms[track]))
         end
+    end
+    _LogWrite("- Neighbor schematics:", Severity.INFO, 2)
+    for i, id in ipairs(_Utils.tableGetSortedKeys(self.neighborSchematics)) do
+        _LogWrite(string.format("  - %s: %s", id, table.concat(self.neighborSchematics[id].exits, ", ")), Severity.INFO, 2)
     end
 end
 

@@ -1,5 +1,5 @@
 local Class = require("lua.class")
-local TraversalPossibility = require("lua.pathfinder.TraversalPossibility")
+local TraversalPossibility = require("lua.Pathfinder.TraversalPossibility")
 
 ---@class Pathfinder : Class
 ---@overload fun(start: Tile, target: Tile): Pathfinder

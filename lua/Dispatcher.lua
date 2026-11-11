@@ -1,5 +1,5 @@
 local Class = require("lua.class")
-local TrackFollower = require("lua.pathfinder.TrackFollower")
+local TrackFollower = require("lua.Pathfinder.TrackFollower")
 
 ---@class Dispatcher : Class
 ---@overload fun(schematic: Schematic): Dispatcher
