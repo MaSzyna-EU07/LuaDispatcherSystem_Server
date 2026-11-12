@@ -23,14 +23,14 @@ end
 
 ---Initializes callbacks which listen for the changes in the simulator.
 function Track:init()
-	_LogWrite("Creating track: " .. self.id, Severity.INFO, 3)
-	_LogWrite("- Creating event callbacks...", Severity.INFO, 3)
+	_Log.write("Creating track: " .. self.id, Severity.INFO, 3)
+	_Log.write("- Creating event callbacks...", Severity.INFO, 3)
 	-- `:busy` and `:dec` have a very small delay so that both `:busy` and `:free` can refer to whatever is/was on the track at the moment.
 	_API:eventCreate(string.lower(self.id) .. ":busy", 0.001, 0, function() self:busy() end)
 	_API:eventCreate(string.lower(self.id) .. ":free", 0, 0, function() self:free() end)
 	_API:eventCreate(string.lower(self.id) .. ":inc", 0, 0, function(event, activator) self:addVehicle(activator) end)
 	_API:eventCreate(string.lower(self.id) .. ":dec", 0.001, 0, function(event, activator) self:removeVehicle(activator) end)
-	_LogWrite("Created track: " .. self.id, Severity.SUCCESS, 2)
+	_Log.write("Created track: " .. self.id, Severity.SUCCESS, 2)
 end
 
 function Track:__tostring()
@@ -42,7 +42,7 @@ end
 ---@param severity Severity Severity.
 ---@param weight integer Weight.
 function Track:tell(text, severity, weight)
-	_LogWrite(tostring(self.id) .. ": " .. text, severity, weight)
+	_Log.write(tostring(self.id) .. ": " .. text, severity, weight)
 end
 
 ---Zwraca true, jeżeli tor nie jest zarezerwowany ani zajęty.

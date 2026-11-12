@@ -25,7 +25,7 @@ local Timetable = Class:derive("Timetable")
 ---@param data table Timetable data.
 ---@param startTime string The starting timetable time, e.g. `"10:30"`. Fractions are allowed, like `"10:30.5"`.
 function Timetable:new(id, data, startTime)
-    _LogWrite(string.format("Creating timetable for train `%s`, starting at %s...", id, startTime))
+    _Log.write(string.format("Creating timetable for train `%s`, starting at %s...", id, startTime))
     self.id = id
 
     -- TODO: Add loco type, loco haul and required brake force to the timetable data
@@ -63,10 +63,10 @@ function Timetable:new(id, data, startTime)
         self.stations[i] = station
     end
 
-    _LogWrite("- Stations:")
+    _Log.write("- Stations:")
     self:printData()
 
-    _LogWrite(string.format("Created timetable `%s`!", id))
+    _Log.write(string.format("Created timetable `%s`!", id))
 end
 
 ---Returns the name of the first station in this timetable.
@@ -137,11 +137,11 @@ end
 
 ---Prints the current state of this timetable to the simulation log file.
 function Timetable:printData()
-    _LogWrite("========================================================================================================")
-    _LogWrite("        > Timetable for train: " .. self.id)
-    _LogWrite("                         | Arrival             | Departure           |       |       |       |       ")
-    _LogWrite("     Station             | Plan  | Act   | +/- | Plan  | Act   | +/- | Track | Speed | Km    | Tracks")
-    _LogWrite("-------------------------|-------|-------|-----|-------|-------|-----|-------|-------|-------|-------")
+    _Log.write("========================================================================================================")
+    _Log.write("        > Timetable for train: " .. self.id)
+    _Log.write("                         | Arrival             | Departure           |       |       |       |       ")
+    _Log.write("     Station             | Plan  | Act   | +/- | Plan  | Act   | +/- | Track | Speed | Km    | Tracks")
+    _Log.write("-------------------------|-------|-------|-----|-------|-------|-----|-------|-------|-------|-------")
     for i, station in ipairs(self.stations) do
         local strCurrent = self.currentStation == i and ">>>" or "   "
         local strStation = _Utils.strPad(station.name, 20)
@@ -157,9 +157,9 @@ function Timetable:printData()
         local strSpeed = _Utils.strPad(station.speed and tostring(station.speed) or "", 5)
         local strKm = _Utils.strPad(station.km and tostring(station.km) or "", 7)
         local strTracks = _Utils.strPad(station.tracks and tostring(station.tracks) or "", 5)
-        _LogWrite(string.format("%s %s |%s|%s|%s|%s|%s|%s| %s | %s |%s| %s", strCurrent, strStation, strArr, strArrAct, strArrDelay, strDep, strDepAct, strDepDelay, strTrack, strSpeed, strKm, strTracks))
+        _Log.write(string.format("%s %s |%s|%s|%s|%s|%s|%s| %s | %s |%s| %s", strCurrent, strStation, strArr, strArrAct, strArrDelay, strDep, strDepAct, strDepDelay, strTrack, strSpeed, strKm, strTracks))
     end
-    _LogWrite("========================================================================================================")
+    _Log.write("========================================================================================================")
 end
 
 ---Generates timetable text to be parsed by the simulator.
@@ -215,7 +215,7 @@ end
 ---@param severity Severity? The message severity.
 ---@param weight integer? The message weight.
 function Timetable:say(text, severity, weight)
-	_LogWrite(string.format("%s: %s", self.id, text), severity, weight)
+	_Log.write(string.format("%s: %s", self.id, text), severity, weight)
 end
 
 return Timetable

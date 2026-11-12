@@ -24,7 +24,7 @@ local com_counters = {}
 
 function com.init(scenario)
 	com_path = "logs/" .. scenario .. "@" .. os.date("%Y-%m-%d_%H-%M-%S") .. ".dsl"
-	_LogWrite("[COMMUNICATION] File Name: " .. com_path, Severity.INFO, 1)
+	_Log.write("[COMMUNICATION] File Name: " .. com_path, Severity.INFO, 1)
 	com.sendBytes({0x70, 0xA0, 0xE0, 0x07})
 	com.sendBytes({0x05, 0x00, 0x00, 0xFF}) -- version ID
 	-- Clear any residue commands so that they aren't executed right at the start of the next session.
@@ -40,7 +40,7 @@ function com.sendBytes(bytes)
 		if type(n) == "number" then
 			com_buffer = com_buffer .. string.char(n == math.huge and 255 or n % 256)
 		else
-			_LogWrite("Ignored illegal byte in `com.sendBytes()`: " .. tostring(n), Severity.ERROR, 3)
+			_Log.write("Ignored illegal byte in `com.sendBytes()`: " .. tostring(n), Severity.ERROR, 3)
 		end
 	end
 end
@@ -65,7 +65,7 @@ function com.readCommands()
 	for i, line in ipairs(lines) do
 		local success, result = pcall(function() com.doCommand(line) end)
 		if not success then
-			_LogWrite("[COMMUNICATION] Error executing command `" .. line .. "`: " .. result, Severity.ERROR, 3)
+			_Log.write("[COMMUNICATION] Error executing command `" .. line .. "`: " .. result, Severity.ERROR, 3)
 		end
 	end
 	_Utils.saveFile(COM_INPUT_FILE, "")
@@ -75,7 +75,7 @@ function com.doCommand(command)
 	if command == "" then
 		return
 	end
-	_LogWrite("[COMMUNICATION] Processing command: `" .. command .. "`", Severity.INFO, 1)
+	_Log.write("[COMMUNICATION] Processing command: `" .. command .. "`", Severity.INFO, 1)
 	local operands = _Utils.strSplit(command, " ")
 	if operands[1] == "s" then
 		-- Sets a semaphore. `s <semaphore_id> <speed> [next] ["w24"]`
@@ -169,7 +169,7 @@ function com.saveBuffer()
 	if com_buffer == "" then return end
 	local file = io.open(com_path, "ab")
 	if not file then
-		_LogWrite("Potential problem! If this is the last line you see before crashing, make sure to make changes in `main_communication.lua`. Thanks!", Severity.ERROR, 3)
+		_Log.write("Potential problem! If this is the last line you see before crashing, make sure to make changes in `main_communication.lua`. Thanks!", Severity.ERROR, 3)
 	end
 	assert(file, "Could not open file at " .. com_path)
 	io.output(file)
@@ -192,7 +192,7 @@ end
 function com.getObjID(idTable, id)
 	if not id or not idTable[id] then
 		if id then
-			_LogWrite("[COMMUNICATION] Tried to access a nonexistent ID: " .. tostring(id), Severity.ERROR, 1)
+			_Log.write("[COMMUNICATION] Tried to access a nonexistent ID: " .. tostring(id), Severity.ERROR, 1)
 		end
 		return {0, 0}
 	end
@@ -273,7 +273,7 @@ function com.notify(message, color)
 	com.sendBytes({0x02})
 	com.sendBytes({NotificationColorID[color or NotificationColor.GREEN]})
 	com.sendText(message)
-	_LogWrite("[COMMUNICATION] Notification: " .. message, Severity.INFO, 3)
+	_Log.write("[COMMUNICATION] Notification: " .. message, Severity.INFO, 3)
 end
 
 function com.highlightTile(schematicID, x, y, type)

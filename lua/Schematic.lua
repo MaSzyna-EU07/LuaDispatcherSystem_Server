@@ -131,7 +131,7 @@ end
 ---@param severity Severity The message severity.
 ---@param weight integer The message weight.
 function Schematic:tell(text, severity, weight)
-	_LogWrite(string.format("%s: %s", self.shortcut, text), severity, weight)
+	_Log.write(string.format("%s: %s", self.shortcut, text), severity, weight)
 end
 
 ---Deserializes the schematic data loaded from a file.

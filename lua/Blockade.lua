@@ -14,7 +14,7 @@ local Blockade = Class:derive("Blockade")
 function Blockade:new(id, data)
 	_Com.initBlockade(id)
 
-	_LogWrite("Creating blockade: " .. id, Severity.INFO, 3)
+	_Log.write("Creating blockade: " .. id, Severity.INFO, 3)
     self.id = id
     self.type = data.type
     self.bidirectional = data.bidirectional
@@ -28,16 +28,16 @@ function Blockade:new(id, data)
         block.track:monitor("busy", self.occupyBlock, self, i)
         block.track:monitor("free", self.freeBlock, self, i)
     end
-	_LogWrite("Created blockade: " .. id, Severity.SUCCESS, 2)
-    _LogWrite("Blocks:", Severity.INFO, 1)
+	_Log.write("Created blockade: " .. id, Severity.SUCCESS, 2)
+    _Log.write("Blocks:", Severity.INFO, 1)
     for i, block in ipairs(self.blocks) do
-        _LogWrite(string.format("- %s: track %s, sem %s, semN %s", i, block.track, block.semaphore, block.semaphoreN), Severity.INFO, 1)
+        _Log.write(string.format("- %s: track %s, sem %s, semN %s", i, block.track, block.semaphore, block.semaphoreN), Severity.INFO, 1)
     end
 end
 
 ---Initializes the blockade state.
 function Blockade:init()
-	_LogWrite("Initializing blockade: " .. self.id, Severity.INFO, 3)
+	_Log.write("Initializing blockade: " .. self.id, Severity.INFO, 3)
     for i, block in ipairs(self.blocks) do
         if block.track.occupied then
             -- If the track is occupied at start, mark it as pre-occupied.
@@ -47,7 +47,7 @@ function Blockade:init()
             self:freeBlock(i)
         end
     end
-	_LogWrite("Initialized blockade: " .. self.id, Severity.SUCCESS, 2)
+	_Log.write("Initialized blockade: " .. self.id, Severity.SUCCESS, 2)
 end
 
 ---Sends an information about this blockade to the log.
@@ -55,7 +55,7 @@ end
 ---@param severity Severity Severity.
 ---@param weight integer Weight.
 function Blockade:tell(text, severity, weight)
-	_LogWrite("Blockade(" .. tostring(self.id) .. "): " .. text, severity, weight)
+	_Log.write("Blockade(" .. tostring(self.id) .. "): " .. text, severity, weight)
 end
 
 ---Marks the n-th block in this blockade as occupied.

@@ -48,6 +48,7 @@ function Pathfinder:calculatePath()
         ---@type TraversalPossibility
         local possibility = table.remove(self.possibilities, 1)
         if possibility:isWinning() then
+            -- We won!
             possibility:finalize()
             possibility:notifyLastSemaphore()
             winner = possibility
@@ -58,12 +59,13 @@ function Pathfinder:calculatePath()
     end
 
     if not winner then
+        _Log.write("Path not found!", Severity.FAIL, 1)
         return false
     end
 
-    _LogWrite("Path found:", Severity.SUCCESS, 1)
+    _Log.write("Path found:", Severity.SUCCESS, 1)
     for i, node in ipairs(winner.path) do
-        _LogWrite(string.format("    %s: pos=%s,%s dirs=%s,%s", i, node.tile.x, node.tile.y, node.dir1, node.dir2), Severity.SUCCESS, 1)
+        _Log.write(string.format("    %s: pos=%s,%s dirs=%s,%s", i, node.tile.x, node.tile.y, node.dir1, node.dir2), Severity.SUCCESS, 1)
     end
     self.itineraries = winner:generateItineraries()
     return true

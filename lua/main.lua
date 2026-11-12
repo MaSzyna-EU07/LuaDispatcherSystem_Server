@@ -4,6 +4,7 @@ require("lua.main_utils")
 _Utils = require("lua.utils")
 _Time = require("lua.Utils.TimeUtils")
 _Dir = require("lua.Utils.DirUtils")
+_Log = require("lua.Utils.LogUtils")
 _API = require("lua.API")
 _Com = require("lua.main_communication")
 
@@ -26,12 +27,12 @@ _Filename = nil
 function _TryInit(scenario, filename)
 	local success, result = pcall(_Init, scenario, filename)
 	if not success then
-		_LogWrite("INIT FATAL ERROR: " .. tostring(result), Severity.ERROR, 3)
+		_Log.write("INIT FATAL ERROR: " .. tostring(result), Severity.ERROR, 3)
 	end
 end
 
 function _Init(scenario, filename)
-	_LogWrite("\n     __                   \n    / /  DISPATCHER SYSTEM\n   / /     __  __  ____   \n  / /     / / / / / __ \\  \n / /___  / / / / / /_/ /_ \n/_____/ |_____/  \\______/ \n               for MaSzyna\n\nBrought to you by jakubg1\n\nVERSION: " .. VERSION, Severity.INFO, 1)
+	_Log.write("\n     __                   \n    / /  DISPATCHER SYSTEM\n   / /     __  __  ____   \n  / /     / / / / / __ \\  \n / /___  / / / / / /_/ /_ \n/_____/ |_____/  \\______/ \n               for MaSzyna\n\nBrought to you by jakubg1\n\nVERSION: " .. VERSION, Severity.INFO, 1)
 
 	_Com.init(scenario)
 	_Filename = filename
@@ -50,7 +51,7 @@ function _LoadSchematics(schematicID)
 	local projFilename = _Filename:sub(1, _Filename:len() - 5) .. ".json"
 	local projData = _Utils.loadJson(projFilename)
 	if projData then
-		_LogWrite("Project file (re)loaded: " .. projFilename, Severity.SUCCESS, 3)
+		_Log.write("Project file (re)loaded: " .. projFilename, Severity.SUCCESS, 3)
 		if schematicID then
 			-- Load a single schematic.
 			local schematicData = projData.stations[schematicID]
@@ -75,7 +76,7 @@ function _LoadSchematics(schematicID)
 			end
 		end
 	else
-		_LogWrite("Failed to (re)load project file: " .. projFilename, Severity.ERROR, 3)
+		_Log.write("Failed to (re)load project file: " .. projFilename, Severity.ERROR, 3)
 	end
 end
 
@@ -89,7 +90,7 @@ end
 function _TryLoop()
 	local success, result = pcall(_Loop)
 	if not success then
-		_LogWrite("LOOP FATAL ERROR: " .. tostring(result), Severity.ERROR, 3)
+		_Log.write("LOOP FATAL ERROR: " .. tostring(result), Severity.ERROR, 3)
 	end
 end
 
@@ -100,7 +101,7 @@ end
 
 function _UpdateCurrentTime()
 	_CurrentTime = Time.hm(_API:getTime())
-	_LogWrite("Time: " .. _CurrentTime:str(), Severity.INFO, 1)
+	_Log.write("Time: " .. _CurrentTime:str(), Severity.INFO, 1)
 end
 
 function _NextTimeTick()
@@ -135,11 +136,11 @@ function _DoCallback(name, ...)
 end
 
 function _PrintDiagnostics()
-	_LogWrite("Semaphore assignments:")
+	_Log.write("Semaphore assignments:")
 	for i, trackID in ipairs(_Obj:getTrackList()) do
 		local track = _Obj:assertGetTrack(trackID)
 		if track.semaphore then
-			_LogWrite(string.format("%s -> %s", trackID, track.semaphore.id))
+			_Log.write(string.format("%s -> %s", trackID, track.semaphore.id))
 		end
 	end
 end

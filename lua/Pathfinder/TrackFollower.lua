@@ -63,7 +63,7 @@ function TrackFollower:step()
     if self.tile:isExitPoint() then
         local destination = self.tile:getWarpDestination()
         if not destination then
-            _LogWrite("Warp destination not found (dir=" .. self.direction .. ")", Severity.FAIL, 2)
+            _Log.write("Warp destination not found (dir=" .. self.direction .. ")", Severity.FAIL, 2)
             -- Tile does not lead to a valid destination. End the scan here.
             return false
         end
@@ -71,7 +71,7 @@ function TrackFollower:step()
         -- The exit can be anywhere on the new schematic, and at any angle too!
         self.direction = self.tile:getWarpExitDirection()
         if not self.direction then
-            _LogWrite(string.format("No direction to go towards - probably an improperly set exit tile at %s", self.tile:getLocation()), Severity.FAIL, 2)
+            _Log.write(string.format("No direction to go towards - probably an improperly set exit tile at %s", self.tile:getLocation()), Severity.FAIL, 2)
             return false
         end
     else
@@ -92,7 +92,7 @@ function TrackFollower:step()
     local nextTile = self.tile:getNeighbor(self.direction)
     if not nextTile then
         -- We've reached the edge of the schematic. Dead end.
-        _LogWrite("No nextTile (dir=" .. self.direction .. ")", Severity.FAIL, 2)
+        _Log.write("No nextTile (dir=" .. self.direction .. ")", Severity.FAIL, 2)
         return false
     end
     self.tile = nextTile

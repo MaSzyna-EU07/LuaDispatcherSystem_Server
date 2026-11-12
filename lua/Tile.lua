@@ -442,19 +442,19 @@ end
 function Tile:getWarpDestination()
 	if not self.warp or not self.warpTargetID then
         -- No warp specified
-        _LogWrite("Warp destination search failed: no warp specified", Severity.INFO, 2)
+        _Log.write("Warp destination search failed: no warp specified", Severity.INFO, 2)
         return
     end
     local schematic = _Obj:getSchematic(self.warp)
     if not schematic then
         -- Warp is to an invalid schematic
-        _LogWrite(string.format("Warp destination search failed: target schematic `%s` not found", self.warp), Severity.INFO, 2)
+        _Log.write(string.format("Warp destination search failed: target schematic `%s` not found", self.warp), Severity.INFO, 2)
         return
     end
     local destination = schematic.index:getExit(self.warpTargetID)
     if not destination then
         -- Exit not found on the target schematic
-        _LogWrite(string.format("Warp destination search failed: target exit point `%s` not found on schematic `%s`", self.warpTargetID, schematic.shortcut), Severity.INFO, 2)
+        _Log.write(string.format("Warp destination search failed: target exit point `%s` not found on schematic `%s`", self.warpTargetID, schematic.shortcut), Severity.INFO, 2)
         return
     end
     return destination

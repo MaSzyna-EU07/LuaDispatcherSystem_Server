@@ -51,8 +51,8 @@ end
 
 ---Initializes callbacks which listen for the changes in the simulator.
 function Semaphore:init()
-	_LogWrite("Creating semaphore: " .. self.id, Severity.INFO, 3)
-	_LogWrite("- Creating event callbacks...", Severity.INFO, 3)
+	_Log.write("Creating semaphore: " .. self.id, Severity.INFO, 3)
+	_Log.write("- Creating event callbacks...", Severity.INFO, 3)
 	if self.type == SemaphoreType.SEM then
 		_API:eventCreate(string.lower(self.id) .. (self.shape and "_sr1" or "_s1"), 0, 0, function() self:stop() end)
 		_API:eventCreate(string.lower(self.id) .. (self.shape and "_sygsz_wyg90" or "_wyg_sz"), 0, 0, function() self:unreserveAllTracks() end)
@@ -66,7 +66,7 @@ function Semaphore:init()
 	end
 	_API:eventCreate(string.lower(self.id) .. "_uszk", 0, 0, function() self:dim() end)
 
-	_LogWrite("Created semaphore: " .. self.id, Severity.SUCCESS, 2)
+	_Log.write("Created semaphore: " .. self.id, Severity.SUCCESS, 2)
 end
 
 function Semaphore:__tostring()
@@ -86,7 +86,7 @@ end
 ---@param severity Severity Severity.
 ---@param weight integer Weight.
 function Semaphore:tell(text, severity, weight)
-	_LogWrite(tostring(self.id) .. ": " .. text, severity, weight)
+	_Log.write(tostring(self.id) .. ": " .. text, severity, weight)
 end
 
 ---Returns whether this semaphore can physically display the specified image.

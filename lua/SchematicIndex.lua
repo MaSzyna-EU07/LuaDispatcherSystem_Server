@@ -135,12 +135,12 @@ function SchematicIndex:generateSemaphoreNextDefaults()
     for semaphoreID, tile in pairs(self.semaphores) do
         local semaphore = _Obj:assertGetSemaphore(semaphoreID)
         if not tile:isSemaphoreControllable() and semaphore.nextDefault == math.huge then
-            _LogWrite(string.format("Looking for an automatically assigned next semaphore for semaphore `%s`", semaphoreID), Severity.INFO, 2)
+            _Log.write(string.format("Looking for an automatically assigned next semaphore for semaphore `%s`", semaphoreID), Severity.INFO, 2)
             -- Scan for the next semaphore.
             local follower = TrackFollower(tile, assert(tile:getSemaphoreDirection()))
             follower:setSwitchPolicy(TrackFollowerSwitchPolicy.STOP_DIVERGING)
             follower:stepUntil(function(stepTile) return stepTile:isSemaphore() and stepTile:getSemaphoreDirection() == follower.direction end)
-            _LogWrite(string.format("Found next semaphore for `%s` -> `%s`", semaphoreID, follower:getTile().semaphoreID), Severity.INFO, 2)
+            _Log.write(string.format("Found next semaphore for `%s` -> `%s`", semaphoreID, follower:getTile().semaphoreID), Severity.INFO, 2)
             semaphore:setNextDefault(follower:getTile().semaphoreID)
         end
     end
@@ -152,7 +152,7 @@ function SchematicIndex:generateBlockades()
         for y = 1, self.schematic.h do
             local tile = self.schematic:assertGetTile(x, y)
             if tile.blockadeID and tile:isBlockadeGenerator() then
-                _LogWrite(string.format("Blockade start found: %s (%s)", tile.blockadeID, self.schematic.name), Severity.INFO, 2)
+                _Log.write(string.format("Blockade start found: %s (%s)", tile.blockadeID, self.schematic.name), Severity.INFO, 2)
                 ---@type BlockadeIndexData
                 local blockadeData = {tracks = {}, semaphores = {}, semaphoresN = {}}
                 -- Start going through tiles until we find a controlled semaphore.
@@ -160,7 +160,7 @@ function SchematicIndex:generateBlockades()
                 local n = 0
                 while not (follower.tile:isSemaphore() and follower.tile:isSemaphoreControllable()) do
                     local scanTile = follower.tile
-                    _LogWrite(string.format("Traversing: %s", scanTile:getLocation()), Severity.INFO, 1)
+                    _Log.write(string.format("Traversing: %s", scanTile:getLocation()), Severity.INFO, 1)
                     -- Scan the traversed tile.
                     if scanTile.trackID then
                         table.insert(blockadeData.tracks, _Obj:assertGetTrack(scanTile.trackID))
@@ -186,13 +186,13 @@ function SchematicIndex:generateBlockades()
                 -- Before we confirm the blockade, verify a few assumptions.
                 local valid = true
                 if #blockadeData.tracks == 0 then
-                    _LogWrite(string.format("Blockade `%s` invalid: No tracks found!", tile.blockadeID), Severity.FAIL, 2)
+                    _Log.write(string.format("Blockade `%s` invalid: No tracks found!", tile.blockadeID), Severity.FAIL, 2)
                     valid = false
                 elseif #blockadeData.semaphores ~= #blockadeData.tracks - 1 then
-                    _LogWrite(string.format("Blockade `%s` invalid: Number of semaphores (%s) does not match number of tracks (%s) minus 1!", tile.blockadeID, #blockadeData.semaphores, #blockadeData.tracks), Severity.FAIL, 2)
+                    _Log.write(string.format("Blockade `%s` invalid: Number of semaphores (%s) does not match number of tracks (%s) minus 1!", tile.blockadeID, #blockadeData.semaphores, #blockadeData.tracks), Severity.FAIL, 2)
                     valid = false
                 elseif #blockadeData.semaphoresN > 0 and #blockadeData.semaphoresN ~= #blockadeData.tracks - 1 then
-                    _LogWrite(string.format("Blockade `%s` invalid: Number of semaphores-N (%s) does neither equal 0 nor match number of tracks (%s) minus 1!", tile.blockadeID, #blockadeData.semaphoresN, #blockadeData.tracks), Severity.FAIL, 2)
+                    _Log.write(string.format("Blockade `%s` invalid: Number of semaphores-N (%s) does neither equal 0 nor match number of tracks (%s) minus 1!", tile.blockadeID, #blockadeData.semaphoresN, #blockadeData.tracks), Severity.FAIL, 2)
                     valid = false
                 end
                 if valid then
@@ -239,6 +239,18 @@ function SchematicIndex:getExit(name)
     return self.exits[name]
 end
 
+---Returns the list of exits on this schematic - the exit name is the key, and the tile it corresponds to is the value.
+---@return table<string, Tile>
+function SchematicIndex:getExits()
+    return self.exits
+end
+
+---Returns the list of neighbor schematics based on this schematic's exits.
+---@return table<string, NeighborSchematicIndexData>
+function SchematicIndex:getNeighborSchematics()
+    return self.neighborSchematics
+end
+
 ---Returns the tile location or `"none"` when the tile doesn't exist.
 ---@private
 ---@param tile Tile? The tile to return the location of.
@@ -249,52 +261,52 @@ end
 
 ---Prints the index contents to the log.
 function SchematicIndex:print()
-    _LogWrite(string.format("Schematic index for station %s:", self.schematic.name), Severity.INFO, 2)
-    _LogWrite("- Tracks:", Severity.INFO, 2)
+    _Log.write(string.format("Schematic index for station %s:", self.schematic.name), Severity.INFO, 2)
+    _Log.write("- Tracks:", Severity.INFO, 2)
     for i, id in ipairs(_Utils.tableGetSortedKeys(self.tracks)) do
         local data = self.tracks[id]
         local trainLocation = self:getTileLocation(data.trainTarget)
         local shuntLocation = self:getTileLocation(data.shuntTarget)
         local semaphoreList = _StrSemaphoreList(data.semaphores)
         local stationID = data.stationID
-        _LogWrite(string.format("  - %s: P -> %s, M -> %s, semaphores: %s, station: %s", id, trainLocation, shuntLocation, semaphoreList, stationID), Severity.INFO, 2)
+        _Log.write(string.format("  - %s: P -> %s, M -> %s, semaphores: %s, station: %s", id, trainLocation, shuntLocation, semaphoreList, stationID), Severity.INFO, 2)
     end
-    _LogWrite("- Switches:", Severity.INFO, 2)
+    _Log.write("- Switches:", Severity.INFO, 2)
     for i, id in ipairs(_Utils.tableGetSortedKeys(self.switches)) do
-        _LogWrite(string.format("  - %s: %s", id, self:getTileLocation(self.switches[id])), Severity.INFO, 2)
+        _Log.write(string.format("  - %s: %s", id, self:getTileLocation(self.switches[id])), Severity.INFO, 2)
     end
-    _LogWrite("- Semaphores:", Severity.INFO, 2)
+    _Log.write("- Semaphores:", Severity.INFO, 2)
     for i, id in ipairs(_Utils.tableGetSortedKeys(self.semaphores)) do
-        _LogWrite(string.format("  - %s: %s", id, self:getTileLocation(self.semaphores[id])), Severity.INFO, 2)
+        _Log.write(string.format("  - %s: %s", id, self:getTileLocation(self.semaphores[id])), Severity.INFO, 2)
     end
-    _LogWrite("- Exits:", Severity.INFO, 2)
+    _Log.write("- Exits:", Severity.INFO, 2)
     for i, id in ipairs(_Utils.tableGetSortedKeys(self.exits)) do
-        _LogWrite(string.format("  - %s: %s", id, self:getTileLocation(self.exits[id])), Severity.INFO, 2)
+        _Log.write(string.format("  - %s: %s", id, self:getTileLocation(self.exits[id])), Severity.INFO, 2)
     end
-    _LogWrite("- Blockades:", Severity.INFO, 2)
+    _Log.write("- Blockades:", Severity.INFO, 2)
     for i, id in ipairs(_Utils.tableGetSortedKeys(self.blockades)) do
         local data = self.blockades[id]
-        _LogWrite(string.format("  - %s:", id), Severity.INFO, 2)
-        _LogWrite(string.format("    - tracks: %s", _StrTrackList(data.tracks)), Severity.INFO, 2)
-        _LogWrite(string.format("    - semaphores: %s", _StrSemaphoreList(data.semaphores)), Severity.INFO, 2)
-        _LogWrite(string.format("    - semaphores-N: %s", _StrSemaphoreList(data.semaphoresN)), Severity.INFO, 2)
+        _Log.write(string.format("  - %s:", id), Severity.INFO, 2)
+        _Log.write(string.format("    - tracks: %s", _StrTrackList(data.tracks)), Severity.INFO, 2)
+        _Log.write(string.format("    - semaphores: %s", _StrSemaphoreList(data.semaphores)), Severity.INFO, 2)
+        _Log.write(string.format("    - semaphores-N: %s", _StrSemaphoreList(data.semaphoresN)), Severity.INFO, 2)
     end
-    _LogWrite("- Stations:", Severity.INFO, 2)
+    _Log.write("- Stations:", Severity.INFO, 2)
     for i, id in ipairs(_Utils.tableGetSortedKeys(self.stations)) do
         local data = self.stations[id]
-        _LogWrite(string.format("  - %s:", id), Severity.INFO, 2)
-        _LogWrite(string.format("    - tracks:"))
+        _Log.write(string.format("  - %s:", id), Severity.INFO, 2)
+        _Log.write(string.format("    - tracks:"))
         for j, track in ipairs(_Utils.tableGetSortedKeys(data.tracks)) do
-            _LogWrite(string.format("      - %s: %s", track, self:getTileLocation(data.tracks[track])))
+            _Log.write(string.format("      - %s: %s", track, self:getTileLocation(data.tracks[track])))
         end
-        _LogWrite(string.format("    - platforms:"))
+        _Log.write(string.format("    - platforms:"))
         for j, track in ipairs(_Utils.tableGetSortedKeys(data.platforms)) do
-            _LogWrite(string.format("      - %s: %s", track, data.platforms[track]))
+            _Log.write(string.format("      - %s: %s", track, data.platforms[track]))
         end
     end
-    _LogWrite("- Neighbor schematics:", Severity.INFO, 2)
+    _Log.write("- Neighbor schematics:", Severity.INFO, 2)
     for i, id in ipairs(_Utils.tableGetSortedKeys(self.neighborSchematics)) do
-        _LogWrite(string.format("  - %s: %s", id, table.concat(self.neighborSchematics[id].exits, ", ")), Severity.INFO, 2)
+        _Log.write(string.format("  - %s: %s", id, table.concat(self.neighborSchematics[id].exits, ", ")), Severity.INFO, 2)
     end
 end
 

@@ -41,12 +41,12 @@ end
 function Dispatcher:getApproachingTrainTimetableForExit(tile)
     -- Check some preconditions.
     if not tile:getWarpDestination() then
-        _LogWrite(string.format("WARNING: Exit `%s` not checked - no destination set", tile.warpID or "nil"))
+        _Log.write(string.format("WARNING: Exit `%s` not checked - no destination set", tile.warpID or "nil"))
         return
     end
     local dir = tile:getWarpExitDirection()
     if not dir then
-        _LogWrite(string.format("WARNING: Exit `%s` not checked - illegal exit tile placement", tile.warpID or "nil"))
+        _Log.write(string.format("WARNING: Exit `%s` not checked - illegal exit tile placement", tile.warpID or "nil"))
         return
     end
     -- Set up an expedition for the train.
@@ -62,29 +62,29 @@ end
 
 ---Ticks the dispatcher logic.
 function Dispatcher:tick()
-    _LogWrite("======================================================================")
-    _LogWrite("   Ticked schematic: " .. self.schematic.name)
-    _LogWrite("======================================================================")
-    _LogWrite("Stations:")
+    _Log.write("======================================================================")
+    _Log.write("   Ticked schematic: " .. self.schematic.name)
+    _Log.write("======================================================================")
+    _Log.write("Stations:")
     for i, station in ipairs(self:getStationList()) do
-        _LogWrite(" - " .. station.id)
+        _Log.write(" - " .. station.id)
     end
-    _LogWrite("Exits:")
+    _Log.write("Exits:")
     for i, exitID in ipairs(_Utils.tableGetSortedKeys(self.schematic.index.exits)) do
-        local tile = self.schematic.index.exits[exitID]
+        local tile = assert(self.schematic.index:getExit(exitID))
         local timetableID = self:getApproachingTrainTimetableForExit(tile)
         if timetableID then
             local timetable = _Obj:getTimetable(timetableID)
             if timetable then
-                _LogWrite(string.format(" - %s: %s -> %s", exitID, timetableID, timetable:getFinalStationName()))
+                _Log.write(string.format(" - %s: %s -> %s", exitID, timetableID, timetable:getFinalStationName()))
             else
-                _LogWrite(string.format(" - %s: %s (Could not get timetable data!)", exitID, timetableID))
+                _Log.write(string.format(" - %s: %s (Could not get timetable data!)", exitID, timetableID))
             end
         else
-            _LogWrite(string.format(" - %s: ---", exitID))
+            _Log.write(string.format(" - %s: ---", exitID))
         end
     end
-    _LogWrite("======================================================================")
+    _Log.write("======================================================================")
 end
 
 return Dispatcher

@@ -1,23 +1,6 @@
 local utf8 = require "lua.utf8"
 local Time = require "lua.Time"
 
-local verboseValue = 3
-
----Writes a message to the MaSzyna's log file.
----@param text string The message to be printed.
----@param severity Severity? The severity.
----@param weight integer? The verbosity. The higher the value, the less important output.
-function _LogWrite(text, severity, weight)
-	if verboseValue >= (weight or 1) then
-		_API:log("LuaDispatcher -> [" .. (severity or Severity.DEBUG) .. "] " .. text)
-	end
-end
-
-function _FindLast(text, toFind)
-	local a, b = string.find(text:reverse(), toFind:reverse())
-	return #text - b + 1, #text - a + 1
-end
-
 ---Returns the value matching the highest number key of table `t` below or equal to the specified value `n`.
 ---@param t table The table to be searched.
 ---@param n number The key value threshold.
@@ -163,7 +146,7 @@ end
 
 ---Tests some of the fundamentals of this program.
 function _Test()
-	_LogWrite("Performing tests...")
+	_Log.write("Performing tests...")
 	assert(utf8.len("Pchnąć w tę łódź ośm skrzyń fig") == 31)
 	assert(utf8.len("") == 0)
 	assert(_SanitizeASCII("Warszawa Wschodnia") == "Warszawa Wschodnia")
@@ -189,5 +172,5 @@ function _Test()
 	assert(_Time.timeToStr(Time.hms(9, 14, 18)) == "9.14.3")
 	assert(_Time.timeToStr(Time.hms(23, 2, 14)) == "23.02.2")
 	assert(_Time.timeToStr(Time.dhms(1, 0, 0, 5)) == "0.00")
-	_LogWrite("Tests complete!")
+	_Log.write("Tests complete!")
 end

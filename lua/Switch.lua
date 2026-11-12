@@ -17,11 +17,11 @@ end
 
 ---Initializes callbacks which listen for the changes in the simulator.
 function Switch:init()
-	_LogWrite("Creating switch: " .. self.id, Severity.INFO, 3)
-	_LogWrite("- Creating event callbacks...", Severity.INFO, 3)
+	_Log.write("Creating switch: " .. self.id, Severity.INFO, 3)
+	_Log.write("- Creating event callbacks...", Severity.INFO, 3)
 	_API:eventCreate(string.lower(self.id) .. ":forced-", 0, 0, function() self:forceState(true) end)
 	_API:eventCreate(string.lower(self.id) .. ":forced+", 0, 0, function() self:forceState(false) end)
-	_LogWrite("Created switch: " .. self.id, Severity.SUCCESS, 2)
+	_Log.write("Created switch: " .. self.id, Severity.SUCCESS, 2)
 end
 
 function Switch:__tostring()
@@ -33,7 +33,7 @@ end
 ---@param severity Severity Severity.
 ---@param weight integer Weight.
 function Switch:tell(text, severity, weight)
-	_LogWrite(tostring(self.id) .. ": " .. text, severity, weight)
+	_Log.write(tostring(self.id) .. ": " .. text, severity, weight)
 end
 
 ---Sets the Switch state.
