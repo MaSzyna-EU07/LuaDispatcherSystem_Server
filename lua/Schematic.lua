@@ -116,14 +116,33 @@ function Schematic:pathfindTiles(tile1, tile2, mode)
 	-- Summon a pathfinder and let it find the path...
 	local pathfinder = Pathfinder(tile1, tile2)
 	pathfinder:setMode(mode)
-	local success = pathfinder:calculatePath()
-	if success then
+	local itineraries = pathfinder:findPathAndGetItineraries()
+	if itineraries then
 		-- We found a route! Dispatch it and we can start a party
-		pathfinder:dispatch()
+		self:dispatchItineraries(itineraries)
 		return true
 	end
 	-- We didn't find the path...
 	return false
+end
+
+---Reserves all tracks, sets all switches and displays a clear signal on the semaphore.
+---@param itineraries Itinerary[] The list of itineraries to be dispatched.
+function Schematic:dispatchItineraries(itineraries)
+    local dispatched = 0
+    for i, itinerary in ipairs(itineraries) do
+        -- Itineraries are dispatched only until the first failing one, so that we aren't left with a partially dispatched route.
+        if not itinerary:canBeDispatched() then
+            if dispatched == 0 then
+                _Com.notify("None of the itineraries could be dispatched... Check log for details.", NotificationColor.RED)
+            else
+                _Com.notify(string.format("Dispatched only %s out of %s itineraries! Check log for details.", dispatched, #itineraries), NotificationColor.ORANGE)
+            end
+            return
+        end
+        itinerary:dispatch()
+        dispatched = dispatched + 1
+    end
 end
 
 ---Sends an information about this schematic to the log.

@@ -1,4 +1,5 @@
 local Class = require("lua.class")
+local TrackFollowerSwitchPolicy = require("lua.Pathfinder.TrackFollowerSwitchPolicy")
 
 ---This is a simple class which wraps logic associated with "I want to see what's 5 tiles away" and can be utilized for scanning or other stuff.
 ---Think of it as a board game pawn which can move around the station schematics.
@@ -8,12 +9,14 @@ local TrackFollower = Class:derive("TrackFollower")
 
 ---Creates a Track Follower.
 ---@param start Tile The tile this Track Follower starts on.
----@param direction integer The direction this Track Follower will go in.
+---@param direction integer The direction this Track Follower will go towards. Actually can be the inverse of the source direction.
 function TrackFollower:new(start, direction)
     self.tile = start
+    -- TODO: Consider taking `sourceDir` and inverting it here instead to be even less misleading!
     self.direction = direction
-    ---@alias PathItem {tile: Tile, dir1: integer?, dir2: integer?}
-    ---@type PathItem[]
+    ---@alias PathNode {tile: Tile, dir1: integer?, dir2: integer?}
+    ---@alias Path PathNode[]
+    ---@type Path
     self.path = {}
 
     self.switchPolicy = TrackFollowerSwitchPolicy.NORMAL
@@ -34,7 +37,7 @@ end
 
 ---Returns the list of tiles this follower has went through.
 ---Requires `:setPathRecording(true)` to be called before moving.
----@return PathItem[]
+---@return Path
 function TrackFollower:getPath()
     return self.path
 end

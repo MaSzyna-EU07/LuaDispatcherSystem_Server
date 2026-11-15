@@ -50,6 +50,12 @@ function Itinerary:setSpeed(speed)
     self.speed = speed
 end
 
+---Decreases the speed of this itinerary. Speeds like Ms2, Sz, etc. are untouched.
+---@param speed integer The speed for the semaphore to be decreased to.
+function Itinerary:decreaseSpeed(speed)
+    self.speed = self.speed > 9 and math.min(self.speed, speed) or self.speed
+end
+
 ---Sets whether to display the W24 sign when this itinerary is dispatched.
 ---@param w24 boolean Whether the W24 signal should be displayed.
 function Itinerary:setW24(w24)
@@ -114,6 +120,17 @@ function Itinerary:dispatch()
     -- Dispatch the semaphore.
     semaphore:setW24(self.w24)
     semaphore:setSpeed(self.speed, _ResolveSemaphore(self.next))
+end
+
+---Prints diagnostic information for this itinerary.
+function Itinerary:examine()
+    _Log.write("Itinerary information:")
+    _Log.write(" - Semaphore: " .. self.semaphore .. " (speed: " .. tostring(self.speed) .. ", W24: " .. tostring(self.w24) .. ", next: " .. tostring(self.next) .. ")")
+    _Log.write(" - Tracks: " .. table.concat(_Utils.tableGetSortedKeys(self.tracks), ", "))
+    _Log.write(" - Switches:")
+    for i, switch in ipairs(_Utils.tableGetSortedKeys(self.switches)) do
+        _Log.write("   - " .. switch .. (self.switches[switch] and "+" or "-") .. " => " .. self.switchesToTracks[switch])
+    end
 end
 
 return Itinerary
