@@ -10,16 +10,18 @@ _Com = require("lua.main_communication")
 
 local Time = require("lua.Time")
 local Objects = require("lua.Objects")
+local MapIndex = require("lua.MapIndex")
 local TileDatabase = require("lua.TileDatabase")
+
+local MapPathfinder = require("lua.MapPathfinder.MapPathfinder")
 
 _Ticks = 0
 _CurrentTime = Time.hm(11, 30)
 ---@type table<string, function[]>
 _Callbacks = {}
 
----@type Objects
 _Obj = Objects()
----@type TileDatabase
+_MapIndex = MapIndex()
 _TileDB = TileDatabase()
 
 _Filename = nil

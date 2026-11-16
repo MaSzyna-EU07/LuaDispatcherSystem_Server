@@ -38,6 +38,30 @@ function Pathfinder:setElectrified(electrified)
     self.electrified = electrified
 end
 
+---Creates the initial possibility starting from this Pathfinder's first tile.
+---@private
+function Pathfinder:createInitialPossibility()
+    assert(_Utils.tableIsEmpty(self.tiles), "Attempted to create initial possibilities for a non-empty pathfinder!")
+    local dirFrom = assert(self.start:getSemaphoreDirection(), "First tile must be a semaphore! (if you're reading this that means it isn't lol)")
+    self.tiles[self.start] = {cost = {base = 0, speedPenaltyMult = 1, heuristic = self:getHeuristic(self.start), total = self:getHeuristic(self.start)}, explored = false, speed = math.huge, dirFrom = _Dir.invertDir(dirFrom)}
+end
+
+---Does a single step of the pathfinding procedure.
+---Returns `true` if we've found the target tile, `false` if there are no tiles left to explore, and `nil` if the pathfinder should keep going.
+---@return boolean?
+function Pathfinder:findPathStep()
+    -- Find the unexplored tile with the lowest cost and explore it.
+    -- TODO: Separate the queue?
+    local tile = self:getNextUnexploredTile()
+    if not tile then
+        return false
+    end
+    self:exploreTile(tile)
+    if tile == self.target then
+        return true
+    end
+end
+
 ---Finds the best path considering the constraints.
 ---Returns the path if it has been found, `nil` otherwise.
 ---Throws an error after 100,000 iterations, which means there's a very possible infinite loop.
@@ -65,44 +89,6 @@ function Pathfinder:findPath()
         _Log.write(string.format("    %s: pos=%s,%s dirs=%s,%s", i, node.tile.x, node.tile.y, node.dir1, node.dir2), Severity.SUCCESS, 1)
     end
     return path
-end
-
----Returns the already calculated path from the following tile.
----Returns `nil` if the specified tile hasn't been explored and as such found a way to.
----@param tile Tile The tile to be calculated from.
----@return Path?
-function Pathfinder:getPath(tile)
-    if not self.tiles[tile] then
-        return
-    end
-    -- Work our way backwards.
-    ---@type Path
-    local path = {}
-    local curTile = tile
-    while true do
-        table.insert(path, 1, {tile = curTile, dir1 = self.tiles[curTile].dirFrom, dir2 = path[1] and _Dir.invertDir(path[1].dir1)})
-        if curTile == self.start then
-            break
-        end
-        curTile = assert(curTile:getNeighbor(self.tiles[curTile].dirFrom))
-    end
-    return path
-end
-
----Does a single step of the pathfinding procedure.
----Returns `true` if we've found the target tile, `false` if there are no tiles left to explore, and `nil` if the pathfinder should keep going.
----@return boolean?
-function Pathfinder:findPathStep()
-    -- Find the unexplored tile with the lowest cost and explore it.
-    -- TODO: Separate the queue?
-    local tile = self:getNextUnexploredTile()
-    if not tile then
-        return false
-    end
-    self:exploreTile(tile)
-    if tile == self.target then
-        return true
-    end
 end
 
 ---Explores the possibilities for the specified tile and registers new tiles if anything new is found.
@@ -214,12 +200,26 @@ function Pathfinder:canEnterTile(tile, prevTile)
     return true
 end
 
----Creates the initial possibility starting from this Pathfinder's first tile.
----@private
-function Pathfinder:createInitialPossibility()
-    assert(_Utils.tableIsEmpty(self.tiles), "Attempted to create initial possibilities for a non-empty pathfinder!")
-    local dirFrom = assert(self.start:getSemaphoreDirection(), "First tile must be a semaphore! (if you're reading this that means it isn't lol)")
-    self.tiles[self.start] = {cost = {base = 0, speedPenaltyMult = 1, heuristic = self:getHeuristic(self.start), total = self:getHeuristic(self.start)}, explored = false, speed = math.huge, dirFrom = _Dir.invertDir(dirFrom)}
+---Returns the already calculated path from the following tile.
+---Returns `nil` if the specified tile hasn't been explored and as such found a way to.
+---@param tile Tile The tile to be calculated from.
+---@return Path?
+function Pathfinder:getPath(tile)
+    if not self.tiles[tile] then
+        return
+    end
+    -- Work our way backwards.
+    ---@type Path
+    local path = {}
+    local curTile = tile
+    while true do
+        table.insert(path, 1, {tile = curTile, dir1 = self.tiles[curTile].dirFrom, dir2 = path[1] and _Dir.invertDir(path[1].dir1)})
+        if curTile == self.start then
+            break
+        end
+        curTile = assert(curTile:getNeighbor(self.tiles[curTile].dirFrom))
+    end
+    return path
 end
 
 ---Extends the specified path to the next semaphore.
