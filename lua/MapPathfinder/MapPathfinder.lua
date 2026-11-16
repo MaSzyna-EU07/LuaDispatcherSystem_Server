@@ -188,10 +188,13 @@ end
 ---@param exitOut string The outbound exit of the schematic.
 ---@return boolean
 function MapPathfinder:canPassSchematic(schematic, exitIn, exitOut)
-    local info = schematic:getRoutingInfo(exitIn, exitOut)
+    if not exitIn then
+        -- TODO: This is not always true! Depending on the track, we might be barred from accessing some exits.
+        return true
+    end
+    local info = schematic.index:assertGetRoutingInfo(exitIn, exitOut)
     if not info.traversable then
-        -- There is no track physically between the two exits.
-        _Log.write(string.format("At %s (%s -> %s): No path!", schematic.shortcut, exitIn, exitOut))
+        -- There is no physical track between the two exits.
         return false
     end
     return true

@@ -1,4 +1,5 @@
 local Class = require("lua.class")
+local Pathfinder = require("lua.Pathfinder.Pathfinder")
 local TrackFollower = require("lua.Pathfinder.TrackFollower")
 local TrackFollowerSwitchPolicy = require("lua.Pathfinder.TrackFollowerSwitchPolicy")
 
@@ -30,6 +31,9 @@ function SchematicIndex:new(schematic)
     ---@alias NeighborSchematicIndexData {exits: string[]}
     ---@type table<string, NeighborSchematicIndexData>
     self.neighborSchematics = {}
+    ---@alias RoutingInfo {traversable: boolean}
+    ---@type table<string, table<string, RoutingInfo>>
+    self.routingInfo = {}
 end
 
 ---Registers a switch into this index and also attempts to add it to the device list.
@@ -120,6 +124,38 @@ function SchematicIndex:generateIndex()
                 end
                 self.stations[tile.stationName] = stationData
             end
+        end
+    end
+
+    -- Also, generate routing information.
+    self:generateRoutingInfo()
+end
+
+---Checks paths from all exits to all exits (including themselves) and saves details about each pass for use by dispatchers.
+function SchematicIndex:generateRoutingInfo()
+    for i, exitIn in ipairs(_Utils.tableGetSortedKeys(self.exits)) do
+        self.routingInfo[exitIn] = {}
+        for j, exitOut in ipairs(_Utils.tableGetSortedKeys(self.exits)) do
+            local routingInfoData = {traversable = false}
+            _Log.write(string.format("Getting route info from %s to %s", exitIn, exitOut))
+            local tileIn = assert(self.exits[exitIn], "Could not find tile for exit " .. tostring(exitIn))
+            local tileOut = assert(self.exits[exitOut], "Could not find tile for exit " .. tostring(exitOut))
+            _Log.write(string.format("Tiles: %s -> %s, %s -> %s", exitIn, tileIn:getLocation(), exitOut, tileOut:getLocation()))
+            -- Move the first tile to the entry semaphore.
+            local exitDir = tileIn:getWarpExitDirection()
+            if exitDir then
+                local start = assert(tileIn:getNeighbor(exitDir))
+                _Log.write(string.format("Starting from tile %s", start:getLocation()))
+                local follower = TrackFollower(start, exitDir)
+                if not (start:isSemaphore() and start:getSemaphoreDirection() == follower.direction) then
+                    follower:stepUntil(function(tile) return tile:isSemaphore() and tile:getSemaphoreDirection() == follower.direction end)
+                end
+                _Log.write(string.format("Found entrance semaphore %s at %s", follower.tile.semaphoreID, follower.tile:getLocation()))
+                local pathfinder = Pathfinder(follower.tile, tileOut)
+                local path = pathfinder:findPath()
+                routingInfoData.traversable = path ~= nil
+            end
+            self.routingInfo[exitIn][exitOut] = routingInfoData
         end
     end
 end
@@ -252,6 +288,25 @@ function SchematicIndex:getNeighborSchematics()
     return self.neighborSchematics
 end
 
+---Returns routing information for this schematic between two exits.
+---If one or both of these exits do not exist, returns `nil`.
+---@param exitIn string The inbound exit to check its route from.
+---@param exitOut string The outbound exit to check its route towards.
+---@return RoutingInfo?
+function SchematicIndex:getRoutingInfo(exitIn, exitOut)
+    return self.routingInfo[exitIn] and self.routingInfo[exitIn][exitOut]
+end
+
+---Returns routing information for this schematic between two exits.
+---If one or both of these exits do not exist, throws an error.
+---@param exitIn string The inbound exit to check its route from.
+---@param exitOut string The outbound exit to check its route towards.
+---@return RoutingInfo
+function SchematicIndex:assertGetRoutingInfo(exitIn, exitOut)
+	local routingInfo = assert(self:getRoutingInfo(exitIn, exitOut), string.format("Attempted to get routing info for an invalid pair of exits: %s -> %s", tostring(exitIn), tostring(exitOut)))
+    return routingInfo
+end
+
 ---Returns the tile location or `"none"` when the tile doesn't exist.
 ---@private
 ---@param tile Tile? The tile to return the location of.
@@ -308,6 +363,13 @@ function SchematicIndex:print()
     _Log.write("- Neighbor schematics:", Severity.INFO, 2)
     for i, id in ipairs(_Utils.tableGetSortedKeys(self.neighborSchematics)) do
         _Log.write(string.format("  - %s: %s", id, table.concat(self.neighborSchematics[id].exits, ", ")), Severity.INFO, 2)
+    end
+    _Log.write("- Routing information:", Severity.INFO, 2)
+    for i, exitIn in ipairs(_Utils.tableGetSortedKeys(self.routingInfo)) do
+        for j, exitOut in ipairs(_Utils.tableGetSortedKeys(self.routingInfo[exitIn])) do
+            local data = self.routingInfo[exitIn][exitOut]
+            _Log.write(string.format("  - %s->%s: %s", exitIn, exitOut, data.traversable and "traversable" or "non-traversable"), Severity.INFO, 2)
+        end
     end
 end
 

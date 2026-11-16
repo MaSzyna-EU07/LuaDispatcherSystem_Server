@@ -69,12 +69,13 @@ function Dispatcher:getApproachingTrainTimetableForExit(tile)
 end
 
 ---Returns a list of timetable entries to be dispatched towards for the given timetable, in the order of their servicing.
+---Already serviced stations are omitted.
 ---@param timetable Timetable The timetable to source the station list from.
 ---@return TimetableEntry[]
 function Dispatcher:getStationListForTimetable(timetable)
     local entries = {}
     for i, entry in ipairs(timetable.stations) do
-        if self.schematic.index.stations[entry.name] then
+        if not entry.departureAct and self.schematic.index.stations[entry.name] then
             table.insert(entries, entry)
         end
     end
@@ -174,41 +175,6 @@ function Dispatcher:dispatchStep(timetable)
         train.step = train.step + 1
     end
     return success
-end
-
----Dispatches the passthrough signals from the specified exit towards the specified station.
----@param tile Tile The tile from which to pathfind. It can be an exit, and in the future, a track at the station (start).
----@param targetStation string The destination for the train.
-function Dispatcher:dispatchThroughForTrain(tile, targetStation)
-    _Log.write(string.format("Dispatching from tile %s towards %s", tile:getLocation(), targetStation), Severity.INFO)
-    if not tile.trackID then
-        _Log.write(string.format("Tile %s does not have track ID, aborting", tile:getLocation()))
-        return
-    end
-    local targetSchematic = _MapIndex:getSchematicForStation(targetStation)
-    if not targetSchematic then
-        _Log.write(string.format("Could not find schematic for station %s, aborting", targetStation))
-        return
-    end
-    local pathfinder = MapPathfinder(self.schematic, targetSchematic)
-    -- TODO: Train properties
-    local path = pathfinder:findPath()
-    if not path then
-        _Log.write(string.format("Could not find path from %s to %s, aborting", self.schematic.shortcut, targetSchematic.shortcut))
-        return
-    end
-    local exitOut = assert(path[1].exitOut)
-    local exitTile = self.schematic.index:getExit(exitOut)
-    if not exitTile then
-        _Log.write(string.format("Target tile pertaining to exit %s not found, aborting", exitOut))
-        return
-    end
-    if not exitTile.trackID then
-        _Log.write(string.format("Target tile %s pertaining to exit %s does not have track ID, aborting", exitTile:getLocation(), exitOut))
-        return
-    end
-    _Log.write(string.format("Found target tile %s pertaining to exit %s, pathfinding!", exitTile:getLocation(), exitOut))
-    self.schematic:pathfind(tile.trackID, exitTile.trackID, PathMode.TRAIN)
 end
 
 ---Ticks the dispatcher logic.

@@ -146,39 +146,6 @@ function Schematic:dispatchItineraries(itineraries)
     end
 end
 
----@alias RoutingInfo {traversable: boolean}
-
----Returns routing information from the specified exit to the specified exit on this schematic.
----Throws an error if an invalid exit is specified.
----@param exitIn string? The inbound exit where the pathfinding starts.
----@param exitOut string The outbound exit where the pathfinding ends.
----@return RoutingInfo
-function Schematic:getRoutingInfo(exitIn, exitOut)
-	_Log.write(string.format("> Getting route info from %s to %s", exitIn, exitOut))
-	-- TODO: Write this again, but not in a half-assed way.
-	if not exitIn then
-		return {traversable = true}
-	end
-	local tileIn = assert(self.index:getExit(exitIn), "Could not find tile for exit " .. tostring(exitIn))
-	local tileOut = assert(self.index:getExit(exitOut), "Could not find tile for exit " .. tostring(exitOut))
-	--_Log.write(string.format("> Tiles: %s -> %s, %s -> %s", exitIn, tileIn:getLocation(), exitOut, tileOut:getLocation()))
-	-- Move the first tile to the entry semaphore.
-	local exitDir = tileIn:getWarpExitDirection()
-	if not exitDir then
-		return {traversable = false}
-	end
-	local start = assert(tileIn:getNeighbor(exitDir))
-	--_Log.write(string.format("> Starting from tile %s", start:getLocation()))
-	local follower = TrackFollower(start, exitDir)
-	if not (start:isSemaphore() and start:getSemaphoreDirection() == follower.direction) then
-		follower:stepUntil(function(tile) return tile:isSemaphore() and tile:getSemaphoreDirection() == follower.direction end)
-	end
-	--_Log.write(string.format("> Found entrance semaphore %s at %s", follower.tile.semaphoreID, follower.tile:getLocation()))
-	local pathfinder = Pathfinder(follower.tile, tileOut)
-	local path = pathfinder:findPath()
-	return {traversable = path ~= nil}
-end
-
 ---Sends an information about this schematic to the log.
 ---@param text string The message to be written.
 ---@param severity Severity The message severity.
