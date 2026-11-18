@@ -212,7 +212,7 @@ end
 
 ---Sends an information about this timetable to the log.
 ---@param text string The message to be written.
----@param severity Severity? The message severity.
+---@param severity LogSeverity? The message severity.
 ---@param weight integer? The message weight.
 function Timetable:say(text, severity, weight)
 	_Log.write(string.format("%s: %s", self.id, text), severity, weight)

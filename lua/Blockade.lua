@@ -1,4 +1,5 @@
 local Class = require("lua.core.class")
+local Severity = require("lua.core.Utils.LogSeverity")
 
 -- Represents a blockade (C, Eap or Eac (SBL)) between two stations.
 ---@class Blockade : Class
@@ -52,8 +53,8 @@ end
 
 ---Sends an information about this blockade to the log.
 ---@param text string The message.
----@param severity Severity Severity.
----@param weight integer Weight.
+---@param severity LogSeverity? Severity.
+---@param weight integer? Weight.
 function Blockade:tell(text, severity, weight)
 	_Log.write("Blockade(" .. tostring(self.id) .. "): " .. text, severity, weight)
 end

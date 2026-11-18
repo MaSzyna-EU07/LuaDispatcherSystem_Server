@@ -1,4 +1,5 @@
-local json = require "lua.core.json"
+local json = require("lua.core.json")
+local Severity = require("lua.core.Utils.LogSeverity")
 local com = {}
 
 local COM_IMAGES = {

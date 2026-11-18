@@ -1,7 +1,8 @@
-local class = require "lua.core.class"
+local Class = require("lua.core.class")
+local Severity = require("lua.core.Utils.LogSeverity")
 
 ---@class Semaphore
-local Semaphore = class:derive("Semaphore")
+local Semaphore = Class:derive("Semaphore")
 
 ---Tworzy semafor.
 ---@param id string Pełna nazwa semafora, np. `"sta1_C"`.
@@ -83,8 +84,8 @@ end
 
 ---Sends an information about this semaphore to the log.
 ---@param text string The message.
----@param severity Severity Severity.
----@param weight integer Weight.
+---@param severity LogSeverity? Severity.
+---@param weight integer? Weight.
 function Semaphore:tell(text, severity, weight)
 	_Log.write(tostring(self.id) .. ": " .. text, severity, weight)
 end

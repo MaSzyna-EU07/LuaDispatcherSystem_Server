@@ -1,4 +1,5 @@
 local Class = require("lua.core.class")
+local Severity = require("lua.core.Utils.LogSeverity")
 
 ---@class MapPathfinder : Class
 ---@overload fun(start: Schematic, target: Schematic): MapPathfinder

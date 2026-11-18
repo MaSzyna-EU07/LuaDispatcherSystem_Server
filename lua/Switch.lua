@@ -1,7 +1,8 @@
-local class = require "lua.core.class"
+local Class = require("lua.core.class")
+local Severity = require("lua.core.Utils.LogSeverity")
 
 ---@class Switch
-local Switch = class:derive("Switch")
+local Switch = Class:derive("Switch")
 
 ---Creates a switch.
 ---@param id string Full switch name, e.g. `"sta1_3"`.
@@ -30,8 +31,8 @@ end
 
 ---Sends an information about this switch to the log.
 ---@param text string The message.
----@param severity Severity Severity.
----@param weight integer Weight.
+---@param severity LogSeverity? Severity.
+---@param weight integer? Weight.
 function Switch:tell(text, severity, weight)
 	_Log.write(tostring(self.id) .. ": " .. text, severity, weight)
 end

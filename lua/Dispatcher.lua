@@ -1,6 +1,7 @@
 local Class = require("lua.core.class")
 local TrackFollower = require("lua.core.Pathfinder.TrackFollower")
 local MapPathfinder = require("lua.MapPathfinder.MapPathfinder")
+local Severity = require("lua.core.Utils.LogSeverity")
 
 ---@class Dispatcher : Class
 ---@overload fun(schematic: Schematic): Dispatcher

@@ -19,15 +19,6 @@ PathMode = {
 	SHUNT = 1
 }
 
----@enum Severity
-Severity = {
-	DEBUG = "DEBUG",
-    INFO = "INFO",
-    ERROR = "ERROR",
-    SUCCESS = "SUCCESS",
-    FAIL = "FAIL"
-}
-
 ---@enum NotificationColor
 NotificationColor = {
 	GREEN = {0.15, 0.6, 0.05},

@@ -3,7 +3,7 @@ local Tile = require("lua.core.Tile")
 local SchematicIndex = require("lua.SchematicIndex")
 local Dispatcher = require("lua.Dispatcher")
 local Pathfinder = require("lua.core.Pathfinder.Pathfinder")
-local TrackFollower = require("lua.core.Pathfinder.TrackFollower")
+local Severity = require("lua.core.Utils.LogSeverity")
 
 ---Represents a station schematic, comprised of tiles.
 ---@class Schematic : Class
@@ -164,8 +164,8 @@ end
 
 ---Sends an information about this schematic to the log.
 ---@param text string The message to be written.
----@param severity Severity The message severity.
----@param weight integer The message weight.
+---@param severity LogSeverity? The message severity.
+---@param weight integer? The message weight.
 function Schematic:tell(text, severity, weight)
 	_Log.write(string.format("%s: %s", self.shortcut, text), severity, weight)
 end

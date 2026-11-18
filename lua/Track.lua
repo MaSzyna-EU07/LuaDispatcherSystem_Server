@@ -1,8 +1,9 @@
-local class = require "lua.core.class"
+local Class = require("lua.core.class")
 local Monitoring = require("lua.Monitoring")
+local Severity = require("lua.core.Utils.LogSeverity")
 
 ---@class Track
-local Track = class:derive("Track")
+local Track = Class:derive("Track")
 
 ---Tworzy tor.
 ---@param id string Pełna nazwa toru, np. `"sta1_Iz1"`.
@@ -39,7 +40,7 @@ end
 
 ---Sends an information about this track to the log.
 ---@param text string The message.
----@param severity Severity? Severity.
+---@param severity LogSeverity? Severity.
 ---@param weight integer? Weight.
 function Track:tell(text, severity, weight)
 	_Log.write(tostring(self.id) .. ": " .. text, severity, weight)
