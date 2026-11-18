@@ -12,11 +12,16 @@ local COM_IMAGES = {
 	sz=0xFF, sz1=0xFF
 }
 local COM_BLOCKADES = {n = true, p = false, x = nil} -- Used only for client->server communication
-local COM_SAVE_INTERVAL = 1
+
+-- Settings that should be changeable by the player!
+local COM_IO_INTERVAL = 0.25
 local COM_INPUT_FILE = "logs/command.txt"
+local COM_SAVE_BUFFER = true
 
 local com_path = ""
-local com_buffer = ""
+---@type file*?
+local com_file = nil -- File handle. If present, the log contents will be instantly saved there.
+local com_buffer = "" -- Log buffer. If `com_file` is `nil`, this will be populated with contents.
 ---Example index: `com_ids.tracks.sta1_iz2.id`
 ---@alias ComIDTable table<string, {id: integer}>
 ---@type table<string, ComIDTable>
@@ -25,12 +30,18 @@ local com_counters = {}
 
 function com.init(scenario)
 	com_path = "logs/" .. scenario .. "@" .. os.date("%Y-%m-%d_%H-%M-%S") .. ".dsl"
+	if not COM_SAVE_BUFFER then
+		com_file = io.open(com_path, "ab")
+		if not com_file then
+			_Log.write("Could not open the log file at " .. com_path .. ", falling back to buffered mode", Severity.ERROR, 3)
+		end
+	end
 	_Log.write("[COMMUNICATION] File Name: " .. com_path, Severity.INFO, 1)
 	com.sendBytes({0x70, 0xA0, 0xE0, 0x07})
 	com.sendBytes({0x05, 0x00, 0x00, 0xFF}) -- version ID
 	-- Clear any residue commands so that they aren't executed right at the start of the next session.
 	_Utils.saveFile(COM_INPUT_FILE, "")
-	_CreateLoopEvent("tick_com", com.tick, COM_SAVE_INTERVAL)
+	_CreateLoopEvent("tick_com", com.tick, COM_IO_INTERVAL)
 end
 
 ---Sends some bytes. A list of bytes is expected, not the raw byte value.
@@ -39,7 +50,7 @@ end
 function com.sendBytes(bytes)
 	for i, n in ipairs(bytes) do
 		if type(n) == "number" then
-			com_buffer = com_buffer .. string.char(n == math.huge and 255 or n % 256)
+			com.send(string.char(n == math.huge and 255 or n % 256))
 		else
 			_Log.write("Ignored illegal byte in `com.sendBytes()`: " .. tostring(n), Severity.ERROR, 3)
 		end
@@ -49,7 +60,18 @@ end
 ---Sends a text message in bytes, alongside a null terminator byte.
 ---@param text string Text to be sent to the log file.
 function com.sendText(text)
-	com_buffer = com_buffer .. text .. string.char(0x00)
+	com.send(text .. string.char(0x00))
+end
+
+---Sends a raw string of bytes directly to the buffer or to the log file.
+---@param str string Raw string to be added.
+function com.send(str)
+	if com_file then
+		com_file:write(str)
+		com_file:flush()
+	else
+		com_buffer = com_buffer .. str
+	end
 end
 
 function com.tick()
@@ -62,14 +84,20 @@ function com.readCommands()
 	if not data or data == "" then
 		return
 	end
-	local lines = _Utils.strSplit(data, "\n")
+	com.doCommands(data)
+	_Utils.saveFile(COM_INPUT_FILE, "")
+end
+
+---Processes multiple commands, separated by newline characters.
+---@param commands string The commands.
+function com.doCommands(commands)
+	local lines = _Utils.strSplit(commands, "\n")
 	for i, line in ipairs(lines) do
 		local success, result = pcall(function() com.doCommand(line) end)
 		if not success then
 			_Log.write("[COMMUNICATION] Error executing command `" .. line .. "`: " .. result, Severity.ERROR, 3)
 		end
 	end
-	_Utils.saveFile(COM_INPUT_FILE, "")
 end
 
 function com.doCommand(command)
