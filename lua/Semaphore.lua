@@ -1,4 +1,4 @@
-local class = require "lua.class"
+local class = require "lua.core.class"
 
 ---@class Semaphore
 local Semaphore = class:derive("Semaphore")

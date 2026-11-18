@@ -1,4 +1,4 @@
-local Class = require("lua.class")
+local Class = require("lua.core.class")
 
 ---Represents an index of the entire map. Indexes relations between schematics.
 ---Indexing is done once per reload and allows various elements to directly fetch data about certain states

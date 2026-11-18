@@ -1,4 +1,4 @@
-local Class = require("lua.class")
+local Class = require("lua.core.class")
 
 -- Represents a blockade (C, Eap or Eac (SBL)) between two stations.
 ---@class Blockade : Class

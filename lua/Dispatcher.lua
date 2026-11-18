@@ -1,5 +1,5 @@
-local Class = require("lua.class")
-local TrackFollower = require("lua.Pathfinder.TrackFollower")
+local Class = require("lua.core.class")
+local TrackFollower = require("lua.core.Pathfinder.TrackFollower")
 local MapPathfinder = require("lua.MapPathfinder.MapPathfinder")
 
 ---@class Dispatcher : Class

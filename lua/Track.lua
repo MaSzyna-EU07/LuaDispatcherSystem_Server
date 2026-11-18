@@ -1,4 +1,4 @@
-local class = require "lua.class"
+local class = require "lua.core.class"
 local Monitoring = require("lua.Monitoring")
 
 ---@class Track

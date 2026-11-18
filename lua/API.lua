@@ -1,4 +1,4 @@
-local Class = require("lua.class")
+local Class = require("lua.core.class")
 local api = require("eu07.events")
 
 ---@alias TEvent* userdata

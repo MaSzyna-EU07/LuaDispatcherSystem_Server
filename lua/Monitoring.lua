@@ -1,4 +1,4 @@
-local Class = require("lua.class")
+local Class = require("lua.core.class")
 
 -- This class is used to implement subscriptions (not the monthly payments, you dummie!).
 -- No, not the YouTube or Twitch kind either!
