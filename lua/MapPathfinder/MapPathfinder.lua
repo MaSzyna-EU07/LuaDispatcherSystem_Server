@@ -1,4 +1,4 @@
-local Class = require("lua.class")
+local Class = require("lua.core.class")
 
 ---@class MapPathfinder : Class
 ---@overload fun(start: Schematic, target: Schematic): MapPathfinder

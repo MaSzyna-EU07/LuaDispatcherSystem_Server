@@ -1,4 +1,4 @@
-local json = require "lua.json"
+local json = require "lua.core.json"
 local com = {}
 
 local COM_IMAGES = {

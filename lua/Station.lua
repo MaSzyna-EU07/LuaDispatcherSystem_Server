@@ -1,4 +1,4 @@
-local Class = require("lua.class")
+local Class = require("lua.core.class")
 
 ---@class Station : Class
 ---@overload fun(id: string): Station

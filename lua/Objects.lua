@@ -1,4 +1,4 @@
-local Class = require("lua.class")
+local Class = require("lua.core.class")
 local Schematic = require("lua.Schematic")
 local Blockade = require("lua.Blockade")
 local Station = require("lua.Station")

@@ -1,5 +1,5 @@
-local utf8 = require "lua.utf8"
-local Time = require "lua.Time"
+local utf8 = require "lua.core.utf8"
+local Time = require "lua.core.Time"
 
 ---Returns the value matching the highest number key of table `t` below or equal to the specified value `n`.
 ---@param t table The table to be searched.

@@ -5,6 +5,11 @@ It is intended to be ran by the simulator itself.
 
 # How to run
 
+The code shared with the client is in the `lua/core` directory, which is a git submodule
+([LuaDispatcherSystem_CORE](https://github.com/MaSzyna-EU07/LuaDispatcherSystem_CORE)).
+Clone this repository with `git clone --recurse-submodules`, or run `git submodule update --init` in an existing clone.
+Without it the `lua/core` directory is empty and the server does not start.
+
 Copy the `lua` directory to the main MaSzyna directory. This is temporary, as I don't really want those scripts to be there.
 
 I'd advise to make a script which copies the directory to your root MaSzyna directory so that the running copy is separated from the git repository.

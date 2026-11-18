@@ -1,9 +1,9 @@
-local Class = require("lua.class")
-local Tile = require("lua.Tile")
+local Class = require("lua.core.class")
+local Tile = require("lua.core.Tile")
 local SchematicIndex = require("lua.SchematicIndex")
 local Dispatcher = require("lua.Dispatcher")
-local Pathfinder = require("lua.Pathfinder.Pathfinder")
-local TrackFollower = require("lua.Pathfinder.TrackFollower")
+local Pathfinder = require("lua.core.Pathfinder.Pathfinder")
+local TrackFollower = require("lua.core.Pathfinder.TrackFollower")
 
 ---Represents a station schematic, comprised of tiles.
 ---@class Schematic : Class
@@ -52,6 +52,22 @@ end
 ---@return Tile
 function Schematic:assertGetTile(x, y)
 	return assert(self:getTile(x, y), string.format("There is no tile at %s:%s,%s", self.shortcut, x, y))
+end
+
+---Returns another schematic of this project, or `nil` if there is none with that shortcut.
+---The shared `Tile` code resolves warps through this function.
+---@param shortcut string The schematic shortcut.
+---@return Schematic?
+function Schematic:findSchematic(shortcut)
+	return _Obj:getSchematic(shortcut)
+end
+
+---Returns the exit point tile with the given ID on this schematic, or `nil` if there is none.
+---The shared `Tile` code resolves warps through this function.
+---@param exitID string The exit point ID.
+---@return Tile?
+function Schematic:getExitTile(exitID)
+	return self.index:getExit(exitID)
 end
 
 ---Fills in default next semaphore pointers based on the schematic layout.

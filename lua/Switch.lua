@@ -1,4 +1,4 @@
-local class = require "lua.class"
+local class = require "lua.core.class"
 
 ---@class Switch
 local Switch = class:derive("Switch")

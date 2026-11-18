@@ -1,17 +1,17 @@
 VERSION = "5.0 Edition (2025 Reboot Alpha)"
 require("lua.main_enums")
 require("lua.main_utils")
-_Utils = require("lua.utils")
-_Time = require("lua.Utils.TimeUtils")
-_Dir = require("lua.Utils.DirUtils")
+_Utils = require("lua.core.utils")
+_Time = require("lua.core.Utils.TimeUtils")
+_Dir = require("lua.core.Utils.DirUtils")
 _Log = require("lua.Utils.LogUtils")
 _API = require("lua.API")
 _Com = require("lua.main_communication")
 
-local Time = require("lua.Time")
+local Time = require("lua.core.Time")
 local Objects = require("lua.Objects")
 local MapIndex = require("lua.MapIndex")
-local TileDatabase = require("lua.TileDatabase")
+local TileDatabase = require("lua.core.TileDatabase")
 
 local MapPathfinder = require("lua.MapPathfinder.MapPathfinder")
 

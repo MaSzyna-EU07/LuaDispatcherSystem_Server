@@ -1,7 +1,7 @@
-local Class = require("lua.class")
-local Pathfinder = require("lua.Pathfinder.Pathfinder")
-local TrackFollower = require("lua.Pathfinder.TrackFollower")
-local TrackFollowerSwitchPolicy = require("lua.Pathfinder.TrackFollowerSwitchPolicy")
+local Class = require("lua.core.class")
+local Pathfinder = require("lua.core.Pathfinder.Pathfinder")
+local TrackFollower = require("lua.core.Pathfinder.TrackFollower")
+local TrackFollowerSwitchPolicy = require("lua.core.Pathfinder.TrackFollowerSwitchPolicy")
 
 ---Represents an index of a station schematic. Indexes a schematic, registers objects
 ---and stores a map of object names to tiles for pathfinding convenience.
