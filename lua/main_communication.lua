@@ -173,9 +173,8 @@ function com.saveBuffer()
 		_Log.write("Potential problem! If this is the last line you see before crashing, make sure to make changes in `main_communication.lua`. Thanks!", Severity.ERROR, 3)
 	end
 	assert(file, "Could not open file at " .. com_path)
-	io.output(file)
-	io.write(com_buffer)
-	io.close(file)
+	file:write(com_buffer)
+	file:close()
 	com_buffer = ""
 end
 
