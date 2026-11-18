@@ -88,7 +88,7 @@ function Itinerary:canBeDispatched()
     for switchID, trackID in pairs(self.switchesToTracks) do
         local switch = _Obj:assertGetSwitch(switchID)
         local track = _Obj:assertGetTrack(trackID)
-        if not track:isClear() and switch.state ~= self.switches[switch] then
+        if not track:isClear() and switch.state ~= self.switches[switchID] then
             _Log.write(string.format("Cannot dispatch itinerary from %s: switch %s cannot be freely switched", self.semaphore, switchID))
             return false
         end

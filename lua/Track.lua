@@ -136,6 +136,10 @@ end
 ---Removes the specified vehicle from this track.
 ---@param vehicle TDynamicObject* The vehicle to be removed from this track.
 function Track:removeVehicle(vehicle)
+	if not self.vehicles[vehicle] then
+		self:tell("Attempt to remove vehicle " .. tostring(vehicle) .. " with already 0 axles on this track!", Severity.ERROR, 3)
+		return
+	end
 	self.vehicles[vehicle] = self.vehicles[vehicle] > 1 and self.vehicles[vehicle] - 1 or nil
 	_Com.decTrackVehicle(self.id, tostring(vehicle))
 	self:tell("Removed vehicle " .. tostring(vehicle) .. ", now " .. tostring(self.vehicles[vehicle] or 0))
@@ -165,7 +169,7 @@ function Track:getTimetable()
 			return name
 		end
 	end
-	return #self.vehicles > 0 and "none" or nil
+	return _Utils.tableIsEmpty(self.vehicles) and nil or "none"
 end
 
 ---Generates and sends a new timetable to the train on this track.

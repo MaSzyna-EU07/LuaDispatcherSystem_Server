@@ -124,7 +124,7 @@ function Pathfinder:exploreTile(tile)
             -- Check if that's a reduction from the currently known maximum speed. If so, incur a penalty.
             if speed < entry.speed then
                 _Log.write(string.format("Tile %s reduces speed from %s to %s", tile:getLocation(), entry.speed, speed))
-                nextEntry.cost.speedPenaltyMult = entry.speed and math.max(self.speed / entry.speed, 1) or 1
+                nextEntry.cost.speedPenaltyMult = speed and math.max(self.speed / speed, 1) or 1
                 nextEntry.speed = speed
             end
             -- Also check if we will reset the maximum speed on this tile, if it's a new semaphore tile.

@@ -103,7 +103,12 @@ function Dispatcher:generateStepsForTrain(tile, timetable)
     -- TODO: What about passing through the schematic multiple times?
     local entries = self:getStationListForTimetable(timetable)
     for i, entry in ipairs(entries) do
-        table.insert(train.steps, {tile = self.schematic.index.stations[entry.name].tracks[entry.track]})
+        local stationTile = self.schematic.index.stations[entry.name].tracks[entry.track]
+        if stationTile then
+            table.insert(train.steps, {tile = stationTile})
+        else
+            _Log.write(string.format("Skipped missing tile for station %s track %s on schematic %s", entry.name, entry.track, self.schematic.shortcut), Severity.ERROR)
+        end
     end
     -- Find out the correct exit tile.
     local destination = timetable:getFinalStationName()

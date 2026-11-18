@@ -290,7 +290,7 @@ function Semaphore:refreshSim()
 	-- W24
 	_API:eventDispatchIfExists(string.lower(self.id) .. (self.w24 and "_w24" or "_w24off"))
 	-- W21
-	if not _IsSpeedStopIsh(speed) and speed ~= 40 and speed ~= 60 and speed ~= 100 then
+	if not _IsSpeedStopIsh(speed) and speed ~= 40 and speed ~= 60 and speed ~= 100 and speed ~= math.huge then
 		_API:eventDispatchIfExists(string.lower(self.id) .. "_w21_" .. math.floor(speed / 10))
 	else
 		_API:eventDispatchIfExists(string.lower(self.id) .. "_w21_off")
