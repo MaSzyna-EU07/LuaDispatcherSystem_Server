@@ -39,8 +39,8 @@ end
 
 ---Sends an information about this track to the log.
 ---@param text string The message.
----@param severity Severity Severity.
----@param weight integer Weight.
+---@param severity Severity? Severity.
+---@param weight integer? Weight.
 function Track:tell(text, severity, weight)
 	_Log.write(tostring(self.id) .. ": " .. text, severity, weight)
 end
@@ -129,12 +129,16 @@ end
 ---@param vehicle TDynamicObject* The vehicle to be added to this track.
 function Track:addVehicle(vehicle)
 	self.vehicles[vehicle] = (self.vehicles[vehicle] or 0) + 1
+	_Com.incTrackVehicle(self.id, tostring(vehicle))
+	self:tell("Added vehicle " .. tostring(vehicle) .. ", now " .. tostring(self.vehicles[vehicle]))
 end
 
 ---Removes the specified vehicle from this track.
 ---@param vehicle TDynamicObject* The vehicle to be removed from this track.
 function Track:removeVehicle(vehicle)
 	self.vehicles[vehicle] = self.vehicles[vehicle] > 1 and self.vehicles[vehicle] - 1 or nil
+	_Com.decTrackVehicle(self.id, tostring(vehicle))
+	self:tell("Removed vehicle " .. tostring(vehicle) .. ", now " .. tostring(self.vehicles[vehicle] or 0))
 end
 
 ---Sends a command to the train which is on the track.

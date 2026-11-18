@@ -60,11 +60,14 @@ function Dispatcher:getApproachingTrainTimetableForExit(tile)
     -- Set up an expedition for the train.
     -- The scan stops at the first unreserved switch, as that's the switch the train may go a different direction in
     -- (we're basically not guaranteed the train will go towards our schematic specifically).
+    _Log.write(string.format("Starting from tile %s", tile:getLocation()))
     local follower = TrackFollower(tile, _Dir.invertDir(dir))
     follower:stepUntil(function(scanTile) return scanTile:isTrackOccupied() or (scanTile:isSwitch() and not scanTile:isTrackReserved()) end)
     -- The moment of truth. Did we catch the rabbit?
     local foundTile = follower:getTile()
+    _Log.write(string.format("Landed on tile %s", foundTile:getLocation()))
     local track = foundTile.trackID and _Obj:getTrack(foundTile.trackID)
+    _Log.write(string.format("Track: %s, %s (%s vehicles)", tostring(foundTile.trackID), tostring(track), tostring(track and _Utils.tableCountKeys(track.vehicles))))
     return track and track:getTimetable()
 end
 

@@ -19,7 +19,7 @@ local com_buffer = ""
 ---Example index: `com_ids.tracks.sta1_iz2.id`
 ---@alias ComIDTable table<string, {id: integer}>
 ---@type table<string, ComIDTable>
-local com_ids = {schematics = {}, tracks = {}, switches = {}, semaphores = {}, blockades = {}}
+local com_ids = {schematics = {}, tracks = {}, switches = {}, semaphores = {}, blockades = {}, vehicles = {}}
 local com_counters = {}
 
 function com.init(scenario)
@@ -233,6 +233,10 @@ function com.initBlockade(name)
 	com.initObject(0xF5, com_ids.blockades, "blockade", name)
 end
 
+function com.initVehicle(name)
+	com.initObject(0xF6, com_ids.vehicles, "vehicle", name)
+end
+
 function com.setTrack(id, occupied, reserved)
 	com.sendBytes({0x12})
 	com.sendBytes(com.getObjID(com_ids.tracks, id))
@@ -262,6 +266,22 @@ function com.setTrackReservation(id, semaphoreID)
 	com.sendBytes({0x21})
 	com.sendBytes(com.getObjID(com_ids.tracks, id))
 	com.sendBytes(com.getObjID(com_ids.semaphores, semaphoreID))
+end
+
+function com.incTrackVehicle(id, vehicleID)
+	-- Register the vehicle ad-hoc when not registered yet.
+	if not com_ids.vehicles[vehicleID] then
+		com.initVehicle(vehicleID)
+	end
+	com.sendBytes({0x24})
+	com.sendBytes(com.getObjID(com_ids.tracks, id))
+	com.sendBytes(com.getObjID(com_ids.vehicles, vehicleID))
+end
+
+function com.decTrackVehicle(id, vehicleID)
+	com.sendBytes({0x25})
+	com.sendBytes(com.getObjID(com_ids.tracks, id))
+	com.sendBytes(com.getObjID(com_ids.vehicles, vehicleID))
 end
 
 function com.print(message)
