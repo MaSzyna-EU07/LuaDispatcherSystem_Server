@@ -14,6 +14,7 @@ local MapPathfinder = Class:derive("MapPathfinder")
 ---@param target Schematic The target schematic.
 function MapPathfinder:new(start, target)
     self.start = start
+    self.startInboundExit = nil
     self.target = target
     self.speed = 160
     self.mode = PathMode.TRAIN
@@ -32,8 +33,7 @@ function MapPathfinder:new(start, target)
     ---@alias MapPathfinderEntry {cost: {base: number, total: number}, explored: boolean, prev: {schematic: Schematic, exit: string, exitOut: string}?}
     ---@type table<Schematic, table<string, MapPathfinderEntry>>
     self.schematics = {}
-
-    self:createInitialPossibility()
+    self.targetInboundExit = nil -- Stores the inbound exit of the target schematic after pathfinding is complete.
 end
 
 ---Returns a pathfinder entry for the specified combination of schematic and its inbound exit, or `nil` if it is not there.
@@ -53,6 +53,12 @@ end
 function MapPathfinder:setEntry(schematic, exit, entry)
     self.schematics[schematic] = self.schematics[schematic] or {}
     self.schematics[schematic][exit or ""] = entry
+end
+
+---Sets the starting inbound exit for the starting schematic for this Map Pathfinder.
+---@param exitIn string? The exit to be considered as the entrance for this Pathfinder.
+function MapPathfinder:setInboundExit(exitIn)
+    self.startInboundExit = exitIn
 end
 
 ---Sets the dispatching mode for this MapPathfinder. This affects the possible paths and the displayed signal.
@@ -77,23 +83,29 @@ end
 ---@private
 function MapPathfinder:createInitialPossibility()
     assert(_Utils.tableIsEmpty(self.schematics), "Attempted to create initial possibilities for a non-empty pathfinder!")
-    self:setEntry(self.start, nil, {cost = {base = 0, total = 0}, explored = false})
+    self:setEntry(self.start, self.startInboundExit, {cost = {base = 0, total = 0}, explored = false})
 end
 
 ---Does a single step of the pathfinding procedure.
----Returns `true` if we've found the target tile, `false` if there are no tiles left to explore, and `nil` if the pathfinder should keep going.
+---Returns `true` if we've found the target schematic (this also sets the `targetInboundExit` field), `false` if there are no tiles left to explore, and `nil` if the pathfinder should keep going.
 ---@return boolean?
 function MapPathfinder:findPathStep()
+    -- Create the initial possibility if we don't have anything yet.
+    if _Utils.tableIsEmpty(self.schematics) then
+        self:createInitialPossibility()
+    end
     -- Find the unexplored tile with the lowest cost and explore it.
     -- TODO: Separate the queue?
     local schematic, exitIn = self:getNextUnexploredSchematic()
     if not schematic then
         return false
     end
-    self:exploreSchematic(schematic, exitIn)
     if schematic == self.target then
+        -- We've taken a winner!
+        self.targetInboundExit = exitIn
         return true
     end
+    self:exploreSchematic(schematic, exitIn)
 end
 
 ---Finds the best path considering the constraints.
@@ -117,7 +129,7 @@ function MapPathfinder:findPath()
     end
 
     -- If we've got here, we've found the path !!
-    local path = assert(self:getPath(self.target, _Utils.tableGetSortedKeys(self.schematics[self.target])[1]))
+    local path = assert(self:getPath(self.target, self.targetInboundExit))
     _Log.write("Path found:", Severity.SUCCESS, 1)
     for i, node in ipairs(path) do
         _Log.write(string.format("  - %s%s%s", node.exitIn and ("[" .. node.exitIn .. "] => ") or "", node.schematic.shortcut, node.exitOut and (" => [" .. node.exitOut .. "]") or ""), Severity.SUCCESS, 1)
@@ -230,6 +242,18 @@ function MapPathfinder:getPath(schematic, exit)
         table.insert(path, {schematic = curEntry.schematic, exitIn = curEntry.exitIn, exitOut = entries[i + 1] and entries[i + 1].entry.prev.exitOut})
     end
     return path
+end
+
+---Prints internal state of this Map Pathfinder for debugging purposes.
+function MapPathfinder:examine()
+    _Log.write(string.format("State of MapPathfinder from %s to %s:", self.start.shortcut, self.target.shortcut))
+    _Log.write("- Schematics:")
+    for schematic, entries in pairs(self.schematics) do
+        for exitIn, entry in pairs(entries) do
+            local prevText = entry.prev and string.format("%s(%s)", entry.prev.schematic.shortcut, entry.prev.exit) or "none"
+            _Log.write(string.format("  - %s(%s) -> cost: %s, explored: %s, prev: %s", schematic.shortcut, exitIn, entry.cost.total, entry.explored, prevText))
+        end
+    end
 end
 
 return MapPathfinder

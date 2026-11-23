@@ -63,13 +63,20 @@ function Dispatcher:getApproachingTrainTimetableForExit(tile)
     -- (we're basically not guaranteed the train will go towards our schematic specifically).
     _Log.write(string.format("Starting from tile %s", tile:getLocation()))
     local follower = TrackFollower(tile, _Dir.invertDir(dir))
+    -- Abort the scan if the switch is switched the other way, so we don't "slide" into another path.
+    follower:setSwitchForceStop(true)
     follower:stepUntil(function(scanTile) return scanTile:isTrackOccupied() or (scanTile:isSwitch() and not scanTile:isTrackReserved()) end)
     -- The moment of truth. Did we catch the rabbit?
     local foundTile = follower:getTile()
     _Log.write(string.format("Landed on tile %s", foundTile:getLocation()))
     local track = foundTile.trackID and _Obj:getTrack(foundTile.trackID)
+    if not track or track:isClear() then
+        -- We might have ended the scan at an unreserved switch. In that case, the search fails.
+        _Log.write("Search ended on a dead end or an unoccupied/unreserved tile! Whoops!", Severity.FAIL, 1)
+        return
+    end
     _Log.write(string.format("Track: %s, %s (%s vehicles)", tostring(foundTile.trackID), tostring(track), tostring(track and _Utils.tableCountKeys(track.vehicles))))
-    return track and track:getTimetable()
+    return track:getTimetable()
 end
 
 ---Returns a list of timetable entries to be dispatched towards for the given timetable, in the order of their servicing.
@@ -121,8 +128,11 @@ function Dispatcher:generateStepsForTrain(tile, timetable)
             return
         end
         local pathfinder = MapPathfinder(self.schematic, targetSchematic)
+        -- Make sure to consider only exits that this schematic can physically find the path to.
+        pathfinder:setInboundExit(tile.warpID)
         -- TODO: Train properties
         local path = pathfinder:findPath()
+        pathfinder:examine()
         if not path then
             _Log.write(string.format("Could not find path from %s to %s, aborting", self.schematic.shortcut, targetSchematic.shortcut))
             return

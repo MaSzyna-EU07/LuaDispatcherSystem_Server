@@ -170,7 +170,7 @@ function Track:getTimetable()
 			return name
 		end
 	end
-	return _Utils.tableIsEmpty(self.vehicles) and nil or "none"
+	return not _Utils.tableIsEmpty(self.vehicles) and "none" or nil
 end
 
 ---Generates and sends a new timetable to the train on this track.
