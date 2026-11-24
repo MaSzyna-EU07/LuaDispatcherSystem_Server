@@ -32,6 +32,8 @@ function SchematicIndex:new(schematic)
     ---@alias NeighborSchematicIndexData {exits: string[]}
     ---@type table<string, NeighborSchematicIndexData>
     self.neighborSchematics = {}
+    ---@type table<string, string>
+    self.exitsToEntranceSemaphores = {} -- Maps exits to the first CONTROLLED semaphore on the way that is not behind a switch.
     ---@alias RoutingInfo {traversable: boolean}
     ---@type table<string, table<string, RoutingInfo>>
     self.routingInfo = {}
@@ -129,11 +131,34 @@ function SchematicIndex:generateIndex()
     end
 
     -- Also, generate routing information.
+    self:scanEntranceSemaphores()
     self:generateRoutingInfo()
+end
+
+---Scans for an entrance semaphore for all exits in this index.
+function SchematicIndex:scanEntranceSemaphores()
+    _Log.write("Scanning entrance semaphores...")
+    for i, exitIn in ipairs(_Utils.tableGetSortedKeys(self.exits)) do
+        local tileIn = assert(self.exits[exitIn], "Could not find tile for exit " .. tostring(exitIn))
+        local exitDir = tileIn:getWarpExitDirection()
+        if exitDir then
+            _Log.write(string.format("Starting from tile %s", tileIn:getLocation()))
+            local follower = TrackFollower(tileIn, exitDir)
+            follower:setSwitchPolicy(TrackFollowerSwitchPolicy.STOP)
+            follower:setSwitchForceStop(true)
+            follower:stepUntil(function(tile) return tile:isSemaphore() and tile:getSemaphoreDirection() == follower.direction and tile:isSemaphoreControllable() end)
+            if follower.tile.schematic == self.schematic then
+                -- Entrance semaphores on other schematics are not interesting us.
+                _Log.write(string.format("Found entrance semaphore %s at %s", follower.tile.semaphoreID, follower.tile:getLocation()))
+                self.exitsToEntranceSemaphores[exitIn] = follower.tile.semaphoreID
+            end
+        end
+    end
 end
 
 ---Checks paths from all exits to all exits (including themselves) and saves details about each pass for use by dispatchers.
 function SchematicIndex:generateRoutingInfo()
+    _Log.write("Generating routing information...")
     for i, exitIn in ipairs(_Utils.tableGetSortedKeys(self.exits)) do
         self.routingInfo[exitIn] = {}
         for j, exitOut in ipairs(_Utils.tableGetSortedKeys(self.exits)) do
@@ -143,16 +168,10 @@ function SchematicIndex:generateRoutingInfo()
             local tileOut = assert(self.exits[exitOut], "Could not find tile for exit " .. tostring(exitOut))
             _Log.write(string.format("Tiles: %s -> %s, %s -> %s", exitIn, tileIn:getLocation(), exitOut, tileOut:getLocation()))
             -- Move the first tile to the entry semaphore.
-            local exitDir = tileIn:getWarpExitDirection()
-            if exitDir then
-                local start = assert(tileIn:getNeighbor(exitDir))
-                _Log.write(string.format("Starting from tile %s", start:getLocation()))
-                local follower = TrackFollower(start, exitDir)
-                if not (start:isSemaphore() and start:getSemaphoreDirection() == follower.direction) then
-                    follower:stepUntil(function(tile) return tile:isSemaphore() and tile:getSemaphoreDirection() == follower.direction end)
-                end
-                _Log.write(string.format("Found entrance semaphore %s at %s", follower.tile.semaphoreID, follower.tile:getLocation()))
-                local pathfinder = Pathfinder(follower.tile, tileOut)
+            local entrySemaphore = self.exitsToEntranceSemaphores[exitIn]
+            if entrySemaphore then
+                local tileInSem = self:assertGetSemaphore(entrySemaphore)
+                local pathfinder = Pathfinder(tileInSem, tileOut)
                 local path = pathfinder:findPath()
                 routingInfoData.traversable = path ~= nil
             end
@@ -170,6 +189,7 @@ end
 ---Typically, this only affects blockade semaphores.
 ---The reason why we're not doing this in the blockade itself is that the station entrance semaphores are not considered part of the blockade.
 function SchematicIndex:generateSemaphoreNextDefaults()
+    _Log.write("Generating next semaphore defaults...")
     for semaphoreID, tile in pairs(self.semaphores) do
         local semaphore = _Obj:assertGetSemaphore(semaphoreID)
         if not tile:isSemaphoreControllable() and semaphore.nextDefault == math.huge then
@@ -186,6 +206,7 @@ end
 
 ---Generates blockades which start on this schematic.
 function SchematicIndex:generateBlockades()
+    _Log.write("Generating blockades...")
     for x = 1, self.schematic.w do
         for y = 1, self.schematic.h do
             local tile = self.schematic:assertGetTile(x, y)
@@ -268,6 +289,14 @@ end
 ---@return Tile?
 function SchematicIndex:getSemaphore(name)
     return self.semaphores[name]
+end
+
+---Returns the tile on which the provided semaphore is on. If the semaphore doesn't exist in the index, throws an error.
+---@param name string The semaphore name.
+---@return Tile
+function SchematicIndex:assertGetSemaphore(name)
+    local semaphore = assert(self.semaphores[name], "Could not find tile for semaphore " .. tostring(name))
+    return semaphore
 end
 
 ---Returns the tile on which the provided exit is on. If the exit doesn't exist in the index, returns `nil`.
@@ -364,6 +393,10 @@ function SchematicIndex:print()
     _Log.write("- Neighbor schematics:", Severity.INFO, 2)
     for i, id in ipairs(_Utils.tableGetSortedKeys(self.neighborSchematics)) do
         _Log.write(string.format("  - %s: %s", id, table.concat(self.neighborSchematics[id].exits, ", ")), Severity.INFO, 2)
+    end
+    _Log.write("- Entrance semaphores:", Severity.INFO, 2)
+    for i, exit in ipairs(_Utils.tableGetSortedKeys(self.exitsToEntranceSemaphores)) do
+        _Log.write(string.format("  - %s: %s", exit, self.exitsToEntranceSemaphores[exit]))
     end
     _Log.write("- Routing information:", Severity.INFO, 2)
     for i, exitIn in ipairs(_Utils.tableGetSortedKeys(self.routingInfo)) do
