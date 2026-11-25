@@ -1,24 +1,3 @@
----@enum Speed
-Speed = {
-    DIM = -1,
-	STOP = 0,
-	MS1 = 5,
-	MS2 = 6,
-	SZ = 7
-}
-
----@enum SemaphoreType
-SemaphoreType = {
-	SEM = 0,
-	TM = 1
-}
-
----@enum PathMode
-PathMode = {
-	TRAIN = 0,
-	SHUNT = 1
-}
-
 ---@enum NotificationColor
 NotificationColor = {
 	GREEN = {0.15, 0.6, 0.05},

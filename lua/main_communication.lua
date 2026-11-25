@@ -1,5 +1,7 @@
 local json = require("lua.core.json")
 local Severity = require("lua.core.Utils.LogSeverity")
+local PathMode = require("lua.core.Enums.PathMode")
+
 local com = {}
 
 local COM_IMAGES = {

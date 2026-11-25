@@ -1,6 +1,7 @@
 local Class = require("lua.core.class")
 local Monitoring = require("lua.Monitoring")
 local Severity = require("lua.core.Utils.LogSeverity")
+local Speed = require("lua.core.Enums.Speed")
 
 ---@class Track
 local Track = Class:derive("Track")

@@ -1,5 +1,6 @@
 local Class = require("lua.core.class")
 local Severity = require("lua.core.Utils.LogSeverity")
+local PathMode = require("lua.core.Enums.PathMode")
 
 ---@class MapPathfinder : Class
 ---@overload fun(start: Schematic, target: Schematic): MapPathfinder

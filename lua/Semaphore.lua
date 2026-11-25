@@ -1,5 +1,7 @@
 local Class = require("lua.core.class")
 local Severity = require("lua.core.Utils.LogSeverity")
+local SemaphoreType = require("lua.core.Enums.SemaphoreType")
+local Speed = require("lua.core.Enums.Speed")
 
 ---@class Semaphore
 local Semaphore = Class:derive("Semaphore")

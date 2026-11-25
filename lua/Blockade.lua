@@ -1,5 +1,6 @@
 local Class = require("lua.core.class")
 local Severity = require("lua.core.Utils.LogSeverity")
+local Speed = require("lua.core.Enums.Speed")
 
 -- Represents a blockade (C, Eap or Eac (SBL)) between two stations.
 ---@class Blockade : Class

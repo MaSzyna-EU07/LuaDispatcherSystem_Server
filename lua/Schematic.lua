@@ -4,6 +4,7 @@ local SchematicIndex = require("lua.SchematicIndex")
 local Dispatcher = require("lua.Dispatcher")
 local Pathfinder = require("lua.core.Pathfinder.Pathfinder")
 local Severity = require("lua.core.Utils.LogSeverity")
+local PathMode = require("lua.core.Enums.PathMode")
 
 ---Represents a station schematic, comprised of tiles.
 ---@class Schematic : Class
