@@ -3,6 +3,7 @@ local Pathfinder = require("lua.core.Pathfinder.Pathfinder")
 local TrackFollower = require("lua.core.Pathfinder.TrackFollower")
 local TrackFollowerSwitchPolicy = require("lua.core.Pathfinder.TrackFollowerSwitchPolicy")
 local Severity = require("lua.core.Utils.LogSeverity")
+local PathMode = require("lua.core.Enums.PathMode")
 
 ---Represents an index of a station schematic. Indexes a schematic, registers objects
 ---and stores a map of object names to tiles for pathfinding convenience.
@@ -174,6 +175,11 @@ function SchematicIndex:generateRoutingInfo()
                 local pathfinder = Pathfinder(tileInSem, tileOut)
                 local path = pathfinder:findPath()
                 routingInfoData.traversable = path ~= nil
+            elseif tileIn ~= tileOut and tileIn:getWarpExitDirection() then
+                -- Backup path. If there is no entry semaphore, check if there is a direct path between two exits.
+                local pathfinder = Pathfinder(tileIn, tileOut)
+                pathfinder:setMode(PathMode.TRAIN)
+                routingInfoData.traversable = pathfinder:findPath() ~= nil
             end
             self.routingInfo[exitIn][exitOut] = routingInfoData
         end
