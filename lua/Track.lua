@@ -97,6 +97,8 @@ end
 function Track:free()
 	self.reserved = false
 	self.occupied = false
+	-- TODO: Remove this once better axle counting lands in the simulator.
+	_Utils.emptyTable(self.vehicles)
 	self:say("freed", Severity.INFO, 3)
 	self:refreshSim()
 	-- Display a stop signal, if Ms2 is displayed.

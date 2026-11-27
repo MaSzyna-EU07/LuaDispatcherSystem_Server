@@ -63,32 +63,26 @@ function Dispatcher:getApproachingTrainTimetableForExit(tile)
     -- Set up an expedition for the train.
     -- The scan stops at the first unreserved switch, as that's the switch the train may go a different direction in
     -- (we're basically not guaranteed the train will go towards our schematic specifically).
-    _Log.write(string.format("Starting from tile %s", tile:getLocation()))
+    --_Log.write(string.format("Starting from tile %s", tile:getLocation()))
     local follower = TrackFollower(tile, _Dir.invertDir(dir))
     -- Abort the scan if the switch is switched the other way, so we don't "slide" into another path.
     follower:setSwitchForceStop(true)
     follower:stepUntil(function(scanTile) return scanTile:isTrackOccupied() or (scanTile:isSwitch() and not scanTile:isTrackReserved()) end)
     -- The moment of truth. Did we catch the rabbit?
     local foundTile = follower:getTile()
-    _Log.write(string.format("Landed on tile %s", foundTile:getLocation()))
     local track = foundTile:getTrack()
-    if not track or track:isClear() then
-        -- We might have ended the scan at an unreserved switch. In that case, the search fails.
-        _Log.write("Search ended on a dead end or an unoccupied/unreserved tile! Whoops!", Severity.FAIL, 1)
-        return
-    end
-    _Log.write(string.format("Track: %s, %s (%s vehicles)", tostring(foundTile.trackID), tostring(track), tostring(track and _Utils.tableCountKeys(track.vehicles))))
-    return track:getTimetable()
+    --_Log.write(string.format("Landed on tile %s, track: %s", foundTile:getLocation(), foundTile:getTrack()))
+    return track and track:getTimetable()
 end
 
 ---Returns a list of timetable entries to be dispatched towards for the given timetable, in the order of their servicing.
----Already serviced stations are omitted.
+---Already serviced stations or stations where the train does not stop are omitted.
 ---@param timetable Timetable The timetable to source the station list from.
 ---@return TimetableEntry[]
 function Dispatcher:getStationListForTimetable(timetable)
     local entries = {}
     for i, entry in ipairs(timetable.stations) do
-        if not entry.departureAct and self.schematic.index.stations[entry.name] then
+        if entry.arrival and not entry.departureAct and self.schematic.index.stations[entry.name] then
             table.insert(entries, entry)
         end
     end
@@ -118,6 +112,7 @@ function Dispatcher:generateStepsForTrain(tile, timetable)
             table.insert(train.steps, {tile = stationTile})
         else
             _Log.write(string.format("Skipped missing or duplicate tile for station %s track %s on schematic %s", entry.name, entry.track, self.schematic.shortcut), Severity.ERROR)
+            _Log.write(string.format("This tile: %s, last tile: %s", tostring(stationTile and stationTile:getLocation()), tostring(train.steps[#train.steps].tile and train.steps[#train.steps].tile:getLocation())))
         end
     end
     -- Find out the correct exit tile.
@@ -126,7 +121,10 @@ function Dispatcher:generateStepsForTrain(tile, timetable)
         table.insert(train.steps, {tile = exitTile})
     end
     self.trains[timetable.id] = train
-    _Log.write(string.format("Generated step list for train %s at %s", timetable.id, tile:getLocation()), Severity.INFO)
+    _Log.write(string.format("Generated step list for train %s at %s:", timetable.id, tile:getLocation()), Severity.INFO)
+    for i, step in ipairs(train.steps) do
+        _Log.write(string.format("    %s %s", train.step == i and ">" or " ", step.tile:getLocation()))
+    end
 end
 
 ---Returns the exit tile for the specified train to go towards.
