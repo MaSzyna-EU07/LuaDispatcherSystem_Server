@@ -306,6 +306,14 @@ function SchematicIndex:getExit(name)
     return self.exits[name]
 end
 
+---Returns the tile on which the provided exit is on. If the exit doesn't exist in the index, throws an error.
+---@param name string The exit name.
+---@return Tile
+function SchematicIndex:assertGetExit(name)
+    local exit = assert(self.exits[name], "Could not find tile for exit " .. tostring(name))
+    return exit
+end
+
 ---Returns the list of exits on this schematic - the exit name is the key, and the tile it corresponds to is the value.
 ---@return table<string, Tile>
 function SchematicIndex:getExits()
@@ -335,6 +343,15 @@ end
 function SchematicIndex:assertGetRoutingInfo(exitIn, exitOut)
 	local routingInfo = assert(self:getRoutingInfo(exitIn, exitOut), string.format("Attempted to get routing info for an invalid pair of exits: %s -> %s", tostring(exitIn), tostring(exitOut)))
     return routingInfo
+end
+
+---Returns a tile that is in the specified station and track on this schematic.
+---Returns `nil` if such tile doesn't exist.
+---@param station string The station name.
+---@param track string The track name.
+---@return Tile?
+function SchematicIndex:getTileForStationAndTrack(station, track)
+    return self.stations[station] and self.stations[station].tracks[track]
 end
 
 ---Returns the tile location or `"none"` when the tile doesn't exist.

@@ -163,7 +163,12 @@ function com.doCommand(command)
 		_Obj:assertGetBlockade(operands[2]):setDirection(COM_BLOCKADES[operands[3]] or BlockadeDirection.OFF)
 	elseif operands[1] == "p" then
 		-- Pathfinds a route. `p <schematic_id> <track1_id> <track2_id> [t|s]`
-		local result = _Obj:assertGetSchematic(operands[2]):pathfind(operands[3], operands[4], operands[5] == "s" and PathMode.SHUNT or PathMode.TRAIN)
+		local schematic = _Obj:assertGetSchematic(operands[2])
+		local itineraries = schematic:pathfind(operands[3], operands[4], operands[5] == "s" and PathMode.SHUNT or PathMode.TRAIN)
+		local result = false
+		if itineraries then
+			result = schematic:dispatchItineraries(itineraries)
+		end
 		if not result then
 			com.notify("Pathfinding failed... :(", NotificationColor.RED)
 		end
@@ -171,7 +176,14 @@ function com.doCommand(command)
 		-- Pathfinds a route by specifying coordinates. `p <schematic_id> <x1> <y1> <x2> <y2> [t|s]`
 		local schematic = _Obj:assertGetSchematic(operands[2])
 		local x1, y1, x2, y2 = math.floor(assert(tonumber(operands[3]))), math.floor(assert(tonumber(operands[4]))), math.floor(assert(tonumber(operands[5]))), math.floor(assert(tonumber(operands[6])))
-		local result = schematic:pathfindTiles(schematic:assertGetTile(x1, y1), schematic:assertGetTile(x2, y2), operands[7] == "s" and PathMode.SHUNT or PathMode.TRAIN)
+		local tile1 = schematic:assertGetTile(x1, y1)
+		local tile2 = schematic:assertGetTile(x2, y2)
+		local mode = operands[7] == "s" and PathMode.SHUNT or PathMode.TRAIN
+		local itineraries = schematic:pathfindTiles(tile1, tile2, mode)
+		local result = false
+		if itineraries then
+			result = schematic:dispatchItineraries(itineraries)
+		end
 		if not result then
 			com.notify("Pathfinding failed... :(", NotificationColor.RED)
 		end

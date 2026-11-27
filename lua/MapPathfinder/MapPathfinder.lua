@@ -17,6 +17,7 @@ function MapPathfinder:new(start, target)
     self.start = start
     self.startInboundExit = nil
     self.target = target
+    self.targetTile = nil -- More precise information for the pathfinder
     self.speed = 160
     self.mode = PathMode.TRAIN
     self.electrified = false
@@ -62,6 +63,12 @@ function MapPathfinder:setInboundExit(exitIn)
     self.startInboundExit = exitIn
 end
 
+---Sets the target tile to target in the target schematic.
+---@param tile Tile? The target tile.
+function MapPathfinder:setTargetTile(tile)
+    self.targetTile = tile
+end
+
 ---Sets the dispatching mode for this MapPathfinder. This affects the possible paths and the displayed signal.
 ---@param mode PathMode The mode to be set.
 function MapPathfinder:setMode(mode)
@@ -98,10 +105,10 @@ function MapPathfinder:findPathStep()
     -- Find the unexplored tile with the lowest cost and explore it.
     -- TODO: Separate the queue?
     local schematic, exitIn = self:getNextUnexploredSchematic()
-    if not schematic then
+    if not schematic or not exitIn then
         return false
     end
-    if schematic == self.target then
+    if schematic == self.target and (not self.targetTile or schematic:doesPathExist({schematic.index:getExit(exitIn), self.targetTile}, self.mode)) then
         -- We've taken a winner!
         self.targetInboundExit = exitIn
         return true
@@ -152,6 +159,7 @@ function MapPathfinder:exploreSchematic(schematic, exitIn)
         local nextTile = tile:getWarpDestination()
         local nextSchematic = nextTile and nextTile.schematic
         local nextExit = nextTile and nextTile.warpID -- Inbound exit on the next schematic
+        -- TODO: Fetch the list of tiles to be traversed on that schematic. It can be more than just the exits.
         if nextTile and nextSchematic and nextExit and self:canPassSchematic(schematic, exitIn, exit) then -- TODO: Add `:canEnter...()` for checking whether we can go there at all or anything extra is needed
             -- For each neighbor schematic that exists, make a new entry to fill stuff into.
             local nextEntry = {
@@ -205,6 +213,12 @@ function MapPathfinder:canPassSchematic(schematic, exitIn, exitOut)
     if not exitIn then
         -- TODO: This is not always true! Depending on the track, we might be barred from accessing some exits.
         return true
+    end
+    local tileIn = schematic.index:getExit(exitIn)
+    local tileOut = schematic.index:getExit(exitOut)
+    if not tileIn or not tileOut then
+        -- Both tiles should exist. If they don't, abort.
+        return false
     end
     local info = schematic.index:assertGetRoutingInfo(exitIn, exitOut)
     if not info.traversable then

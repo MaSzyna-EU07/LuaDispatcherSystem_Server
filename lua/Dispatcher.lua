@@ -112,7 +112,8 @@ function Dispatcher:generateStepsForTrain(tile, timetable)
     -- TODO: What about passing through the schematic multiple times?
     local entries = self:getStationListForTimetable(timetable)
     for i, entry in ipairs(entries) do
-        local stationTile = self.schematic.index.stations[entry.name].tracks[entry.track]
+        -- TODO: `entry.track` can be `nil`
+        local stationTile = self.schematic.index:getTileForStationAndTrack(entry.name, entry.track)
         if stationTile then
             table.insert(train.steps, {tile = stationTile})
         else
@@ -131,6 +132,16 @@ function Dispatcher:generateStepsForTrain(tile, timetable)
         local pathfinder = MapPathfinder(self.schematic, targetSchematic)
         -- Make sure to consider only exits that this schematic can physically find the path to.
         pathfinder:setInboundExit(tile.warpID)
+        -- Fetch the target tile on the target schematic.
+        -- TODO: Select the penultimate one in case the last one doesn't work?
+        -- TODO: Make sure the pathfinder always hits all tiles it should, also on intermediate stations?
+        local finalEntry = timetable.stations[#timetable.stations]
+        local finalSchematic = _MapIndex:getSchematicForStation(finalEntry.name)
+        local finalTile = finalSchematic and finalSchematic.index:getTileForStationAndTrack(finalEntry.name, finalEntry.track)
+        if finalTile then
+            _Log.write(string.format("Final tile for the Map Pathfinder is: %s", finalTile:getLocation()))
+            pathfinder:setTargetTile(finalTile)
+        end
         -- TODO: Train properties
         local path = pathfinder:findPath()
         pathfinder:examine()
@@ -189,7 +200,12 @@ function Dispatcher:dispatchStep(timetable)
         _Log.write(string.format("Tile %s has no track ID", tile2:getLocation()))
         return false
     end
-    local success = self.schematic:pathfind(tile1.trackID, tile2.trackID, PathMode.TRAIN)
+    local itineraries = self.schematic:pathfind(tile1.trackID, tile2.trackID, PathMode.TRAIN)
+    if not itineraries then
+        _Log.write("Could not find the path!")
+        return false
+    end
+    local success = self.schematic:dispatchItineraries(itineraries)
     -- TODO: Partial step fulfillment could stop the entire thing, because the just reserved path might block itself from advancing further!
     if success then
         train.step = train.step + 1

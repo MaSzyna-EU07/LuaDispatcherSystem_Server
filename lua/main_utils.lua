@@ -124,6 +124,18 @@ function _StrSemaphoreList(semaphores)
 	return str
 end
 
+---Returns a string list of tile locations from the given tile list.
+---If no tiles are in the list, returns `"none"`.
+---@param tiles Tile[] The list of tiles to fetch the locations from.
+---@return string
+function _StrTileList(tiles)
+	local str = "none"
+	for i, tile in ipairs(tiles) do
+		str = (i == 1 and "" or (str .. ", ")) .. tile:getLocation()
+	end
+	return str
+end
+
 local asciiInput = "ąćęłńóśźżĄĆĘŁŃÓŚŹŻ"
 local asciiOutput = "acelnoszzACELNOSZZ"
 local asciiTable = {}

@@ -83,69 +83,66 @@ function Schematic:generateBlockades()
 end
 
 ---Attempts to pathfind between two given tracks on this schematic with the given path mode.
----Returns `true` on success, `false` on failure.
+---Returns the list of itineraries on success, `nil` on failure.
+---Resulting itineraries can be passed to `:dispatchItineraries()` to dispatch them.
 ---@param track1 string The ID of the first track to pathfind from. This would usually be a track a train is on.
 ---@param track2 string The ID of the destination track to pathfind to.
 ---@param mode PathMode The mode of the dispatching: whether to display a train or a shunting signal.
----@return boolean
+---@return Itinerary[]?
 function Schematic:pathfind(track1, track2, mode)
-	self:say(string.format("Pathfinding from %s to %s...", track1, track2), Severity.INFO, 1)
+	self:say(string.format("Finding path from %s to %s...", track1, track2), Severity.INFO, 1)
 	local track1Info = self.index:getTrack(track1)
 	local track2Info = self.index:getTrack(track2)
 	if not track1Info or not track2Info then
 		self:say("Failed: Not all tracks exist", Severity.FAIL, 1)
 		-- If any of the tracks doesn't exist, we're out.
-		return false
+		return nil
 	end
 	local target = mode == PathMode.TRAIN and track2Info.trainTarget or track2Info.shuntTarget
 	if not target then
 		self:say("Failed: Target point not found", Severity.FAIL, 1)
 		-- We cannot pathfind there.
-		return false
+		return nil
 	end
 	-- Attempt to pathfind from any of the semaphores on the starting track.
 	for i, semaphore in ipairs(track1Info.semaphores) do
 		self:say(string.format("Attempting with %s...", semaphore.id), Severity.INFO, 1)
 		local tile = self.index:getSemaphore(semaphore.id)
 		if tile then
-			local result = self:pathfindTiles(tile, target, mode)
-			if result then
-				-- Hooray! The route has been found and dispatched!
-				return true
+			local itineraries = self:pathfindTiles(tile, target, mode)
+			if itineraries then
+				-- Hooray! The route has been found!
+				return itineraries
 			end
 		end
 	end
 	self:say("Failed: Pathfinding failed for all semaphores", Severity.FAIL, 1)
 	-- Nothing worked... :(
-	return false
+	return nil
 end
 
 ---Attempts to pathfind between two given tiles on this schematic with the given path mode.
----Returns `true` on success, `false` on failure.
+---Returns the list of itineraries on success, `nil` on failure.
+---Resulting itineraries can be passed to `:dispatchItineraries()` to dispatch them.
 ---@param tile1 Tile The first tile to pathfind from. Must be a semaphore tile.
 ---@param tile2 Tile The destination tile to pathfind to.
 ---@param mode PathMode The mode of the dispatching: whether to display a train or a shunting signal.
----@return boolean
+---@return Itinerary[]?
 function Schematic:pathfindTiles(tile1, tile2, mode)
 	if not tile1:isSemaphore() then
 		-- The first tile must be a semaphore.
-		return false
+		return nil
 	end
 	-- Summon a pathfinder and let it find the path...
 	local pathfinder = Pathfinder(tile1, tile2)
 	pathfinder:setMode(mode)
-	local itineraries = pathfinder:findPathAndGetItineraries()
-	if itineraries then
-		-- We found a route! Dispatch it and we can start a party
-		self:dispatchItineraries(itineraries)
-		return true
-	end
-	-- We didn't find the path...
-	return false
+	return pathfinder:findPathAndGetItineraries()
 end
 
 ---Reserves all tracks, sets all switches and displays a clear signal on the semaphore.
+---Returns `true` if all itineraries have been successfully dispatched, `false` otherwise.
 ---@param itineraries Itinerary[] The list of itineraries to be dispatched.
+---@return boolean
 function Schematic:dispatchItineraries(itineraries)
     local dispatched = 0
     for i, itinerary in ipairs(itineraries) do
@@ -156,11 +153,40 @@ function Schematic:dispatchItineraries(itineraries)
             else
                 _Com.notify(string.format("Dispatched only %s out of %s itineraries! Check log for details.", dispatched, #itineraries), NotificationColor.ORANGE)
             end
-            return
+            return false
         end
         itinerary:dispatch()
         dispatched = dispatched + 1
     end
+	return true
+end
+
+---Returns `true` if the schematic can find a path between all tiles in this order.
+---All provided tiles must be a part of this schematic.
+---@param tiles Tile[] A list of tiles to find a path through.
+---@param mode PathMode The mode of the dispatching: whether to display a train or a shunting signal.
+---@return boolean
+function Schematic:doesPathExist(tiles, mode)
+	self:say(string.format("Checking whether path exists between the following tiles: %s", _StrTileList(tiles)))
+	if #tiles == 2 and tiles[1].warpID and tiles[2].warpID then
+		-- Try a more general example by using the index.
+		local routingInfo = self.index:getRoutingInfo(tiles[1].warpID, tiles[2].warpID)
+		local result = routingInfo and routingInfo.traversable or false
+		self:say(string.format("The answer is: %s!", result and "yes" or "no"))
+		return result
+	end
+	-- Custom list of tiles - do it on the fly.
+	-- TODO: Caching?
+	for i = 1, #tiles - 1 do
+		local tile1 = tiles[i]
+		local tile2 = tiles[i + 1]
+		if not self:pathfind(tile1.trackID, tile2.trackID, mode) then
+			self:say(string.format("No path found between %s and %s! The answer is: no!", tile1:getLocation(), tile2:getLocation()))
+			return false
+		end
+	end
+	self:say("The answer is: yes!")
+	return true
 end
 
 ---Sends an information about this schematic to the log.
