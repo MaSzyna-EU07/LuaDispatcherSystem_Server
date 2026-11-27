@@ -30,12 +30,12 @@ end
 ---Reloads this schematic.
 ---@param data table New schematic data.
 function Schematic:reload(data)
-	self:tell("Reloading schematic...", Severity.INFO, 3)
+	self:say("Reloading schematic...", Severity.INFO, 3)
 	self:deserialize(data)
     self.index = SchematicIndex(self)
 	self.index:generateIndex()
 	self.index:print()
-	self:tell("Schematic reloaded!", Severity.SUCCESS, 3)
+	self:say("Schematic reloaded!", Severity.SUCCESS, 3)
 	_Com.notify(self.shortcut .. ": Schematic reloaded!")
 end
 
@@ -89,23 +89,23 @@ end
 ---@param mode PathMode The mode of the dispatching: whether to display a train or a shunting signal.
 ---@return boolean
 function Schematic:pathfind(track1, track2, mode)
-	self:tell(string.format("Pathfinding from %s to %s...", track1, track2), Severity.INFO, 1)
+	self:say(string.format("Pathfinding from %s to %s...", track1, track2), Severity.INFO, 1)
 	local track1Info = self.index:getTrack(track1)
 	local track2Info = self.index:getTrack(track2)
 	if not track1Info or not track2Info then
-		self:tell("Failed: Not all tracks exist", Severity.FAIL, 1)
+		self:say("Failed: Not all tracks exist", Severity.FAIL, 1)
 		-- If any of the tracks doesn't exist, we're out.
 		return false
 	end
 	local target = mode == PathMode.TRAIN and track2Info.trainTarget or track2Info.shuntTarget
 	if not target then
-		self:tell("Failed: Target point not found", Severity.FAIL, 1)
+		self:say("Failed: Target point not found", Severity.FAIL, 1)
 		-- We cannot pathfind there.
 		return false
 	end
 	-- Attempt to pathfind from any of the semaphores on the starting track.
 	for i, semaphore in ipairs(track1Info.semaphores) do
-		self:tell(string.format("Attempting with %s...", semaphore.id), Severity.INFO, 1)
+		self:say(string.format("Attempting with %s...", semaphore.id), Severity.INFO, 1)
 		local tile = self.index:getSemaphore(semaphore.id)
 		if tile then
 			local result = self:pathfindTiles(tile, target, mode)
@@ -115,7 +115,7 @@ function Schematic:pathfind(track1, track2, mode)
 			end
 		end
 	end
-	self:tell("Failed: Pathfinding failed for all semaphores", Severity.FAIL, 1)
+	self:say("Failed: Pathfinding failed for all semaphores", Severity.FAIL, 1)
 	-- Nothing worked... :(
 	return false
 end
@@ -167,7 +167,7 @@ end
 ---@param text string The message to be written.
 ---@param severity LogSeverity? The message severity.
 ---@param weight integer? The message weight.
-function Schematic:tell(text, severity, weight)
+function Schematic:say(text, severity, weight)
 	_Log.write(string.format("%s: %s", self.shortcut, text), severity, weight)
 end
 

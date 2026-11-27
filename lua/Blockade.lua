@@ -1,6 +1,7 @@
 local Class = require("lua.core.class")
 local Severity = require("lua.core.Utils.LogSeverity")
 local Speed = require("lua.core.Enums.Speed")
+local BlockadeDirection = require("lua.core.Enums.BlockadeDirection")
 
 -- Represents a blockade (C, Eap or Eac (SBL)) between two stations.
 ---@class Blockade : Class
@@ -20,7 +21,7 @@ function Blockade:new(id, data)
     self.id = id
     self.type = data.type
     self.bidirectional = data.bidirectional
-    self.direction = false
+    self.direction = BlockadeDirection.FORWARD
     ---@type table<integer, true>
     self.occupiedBlocks = {}
     ---@type BlockadeBlockData[]
@@ -56,20 +57,20 @@ end
 ---@param text string The message.
 ---@param severity LogSeverity? Severity.
 ---@param weight integer? Weight.
-function Blockade:tell(text, severity, weight)
+function Blockade:say(text, severity, weight)
 	_Log.write("Blockade(" .. tostring(self.id) .. "): " .. text, severity, weight)
 end
 
 ---Marks the n-th block in this blockade as occupied.
 ---@param n integer The block index to be occupied.
 function Blockade:occupyBlock(n)
-    self:tell("Block " .. n .. " : occupied", Severity.INFO, 3)
+    self:say("Block " .. n .. " : occupied", Severity.INFO, 3)
     self.occupiedBlocks[n] = true
-    if self.direction == false then
+    if self.direction == BlockadeDirection.FORWARD then
         self:setSemaphoreForBlock(n, Speed.STOP, n == 1 and Speed.STOP or Speed.DIM)
-    elseif self.direction == true then
+    elseif self.direction == BlockadeDirection.BACKWARD then
         self:setSemaphoreForBlock(n, n == #self.blocks and Speed.STOP or Speed.DIM, Speed.STOP)
-    elseif self.direction == nil then
+    elseif self.direction == BlockadeDirection.OFF then
         self:setSemaphoreForBlock(n, n == #self.blocks and Speed.STOP or Speed.DIM, n == 1 and Speed.STOP or Speed.DIM)
     end
 end
@@ -77,13 +78,13 @@ end
 ---Marks the n-th block in this blockade as freed.
 ---@param n integer The block index to be freed.
 function Blockade:freeBlock(n)
-    self:tell("Block " .. n .. " : freed", Severity.INFO, 3)
+    self:say("Block " .. n .. " : freed", Severity.INFO, 3)
     self.occupiedBlocks[n] = nil
-    if self.direction == false then
+    if self.direction == BlockadeDirection.FORWARD then
         self:setSemaphoreForBlock(n, math.huge, n == 1 and math.huge or Speed.DIM)
-    elseif self.direction == true then
+    elseif self.direction == BlockadeDirection.BACKWARD then
         self:setSemaphoreForBlock(n, n == #self.blocks and math.huge or Speed.DIM, math.huge)
-    elseif self.direction == nil then
+    elseif self.direction == BlockadeDirection.OFF then
         self:setSemaphoreForBlock(n, n == #self.blocks and math.huge or Speed.DIM, n == 1 and math.huge or Speed.DIM)
     end
 end
@@ -95,7 +96,7 @@ end
 ---@param speedN Speed? The speed for the semaphore in the opposite direction.
 function Blockade:setSemaphoreForBlock(n, speed, speedN)
     if n < 1 or n > #self.blocks then
-        self:tell(string.format("Attempt to get block %s out of %s", n, #self.blocks), Severity.ERROR, 3)
+        self:say(string.format("Attempt to get block %s out of %s", n, #self.blocks), Severity.ERROR, 3)
         return
     end
     if speed and self.blocks[n].semaphore then
@@ -113,13 +114,13 @@ function Blockade:isFree()
 end
 
 ---Sets the direction on this blockade.
----@param direction boolean? `true` for the blockade to go the other way, `false` to set it to its primary direction, `nil` to unset the direction.
+---@param direction BlockadeDirection `true` for the blockade to go the other way, `false` to set it to its primary direction, `nil` to unset the direction.
 function Blockade:setDirection(direction)
     -- Can only switch direction if the blockade has this possibility and is free.
     if not self.bidirectional or not self:isFree() or self.direction == direction then
         return
     end
-    self:tell("Switching direction to " .. (direction and "N" or (direction == false and "P" or "-")), Severity.INFO, 3)
+    self:say("Switching direction to " .. (direction == BlockadeDirection.BACKWARD and "N" or (direction == BlockadeDirection.FORWARD and "P" or "-")), Severity.INFO, 3)
     self.direction = direction
     self:refreshSim()
     -- Reset all semaphores to the other direction.

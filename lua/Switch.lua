@@ -33,7 +33,7 @@ end
 ---@param text string The message.
 ---@param severity LogSeverity? Severity.
 ---@param weight integer? Weight.
-function Switch:tell(text, severity, weight)
+function Switch:say(text, severity, weight)
 	_Log.write(tostring(self.id) .. ": " .. text, severity, weight)
 end
 
@@ -41,13 +41,13 @@ end
 ---@param state boolean `true` for `+`, `false` for `-`.
 function Switch:setState(state)
 	self.state = state
-	self:tell("state=>"..tostring(state), Severity.INFO, 3)
+	self:say("state=>"..tostring(state), Severity.INFO, 3)
 	self:refreshSim()
 end
 
 function Switch:setForced(forced)
 	self.forced = forced
-	self:tell("forced=>"..tostring(forced), Severity.INFO, 3)
+	self:say("forced=>"..tostring(forced), Severity.INFO, 3)
 	self:refreshSim()
 end
 

@@ -1,6 +1,7 @@
 local json = require("lua.core.json")
 local Severity = require("lua.core.Utils.LogSeverity")
 local PathMode = require("lua.core.Enums.PathMode")
+local BlockadeDirection = require("lua.core.Enums.BlockadeDirection")
 
 local com = {}
 
@@ -13,7 +14,11 @@ local COM_IMAGES = {
 	ms1=0x80, ms2=0x81,
 	sz=0xFF, sz1=0xFF
 }
-local COM_BLOCKADES = {n = true, p = false, x = nil} -- Used only for client->server communication
+local COM_BLOCKADES = {
+	p = BlockadeDirection.FORWARD,
+	n = BlockadeDirection.BACKWARD,
+	x = BlockadeDirection.OFF
+} -- Used only for client->server communication
 
 -- Settings that should be changeable by the player!
 local COM_IO_INTERVAL = 0.25
@@ -155,7 +160,7 @@ function com.doCommand(command)
 		_Obj:addTrack(operands[2])
 	elseif operands[1] == "b" then
 		-- Switches the blockade direction. `b <blockade_id> <n|p|x>`
-		_Obj:assertGetBlockade(operands[2]):setDirection(COM_BLOCKADES[operands[3]])
+		_Obj:assertGetBlockade(operands[2]):setDirection(COM_BLOCKADES[operands[3]] or BlockadeDirection.OFF)
 	elseif operands[1] == "p" then
 		-- Pathfinds a route. `p <schematic_id> <track1_id> <track2_id> [t|s]`
 		local result = _Obj:assertGetSchematic(operands[2]):pathfind(operands[3], operands[4], operands[5] == "s" and PathMode.SHUNT or PathMode.TRAIN)

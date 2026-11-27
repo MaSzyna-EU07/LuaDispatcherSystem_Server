@@ -64,7 +64,7 @@ function Timetable:new(id, data, startTime)
     end
 
     _Log.write("- Stations:")
-    self:printData()
+    self:examine()
 
     _Log.write(string.format("Created timetable `%s`!", id))
 end
@@ -132,11 +132,11 @@ function Timetable:onTrackBusy(trackID)
         end
     end
     self:say("Ping!")
-    self:printData()
+    self:examine()
 end
 
 ---Prints the current state of this timetable to the simulation log file.
-function Timetable:printData()
+function Timetable:examine()
     _Log.write("========================================================================================================")
     _Log.write("        > Timetable for train: " .. self.id)
     _Log.write("                         | Arrival             | Departure           |       |       |       |       ")

@@ -23,8 +23,6 @@ function Semaphore:new(id, data)
 	self.image = self:getSupportedImage(self:getStopSpeed())
 	---@type boolean
 	self.w24 = false
-	---@type SemaphoreState
-	self.state = {speed = self.speed, nextSpeed = Speed.STOP, image = self.image}
 
 	---@type table<Track, true>
 	self.reservedTracks = {} -- A list of tracks this Semaphore has reserved for itself.
@@ -76,19 +74,11 @@ function Semaphore:__tostring()
 	return string.format("S[%s : image=%s]", self.id, self.image)
 end
 
----Returns the simplified state of this Semaphore, used for the tile pathfinding.
----TODO: Do this better. Currently, neither the `self.speed` and `self.next` nor `self:getDisplayedSpeed()` and `self:getDisplayedNextSpeed()` are guaranteed to return stable values...
----(Stable as in we can meddle with neighboring semaphores as we like without touching this one and the image stays until we call `:refreshSim()`)
----@return SemaphoreState
-function Semaphore:getState()
-	return self.state
-end
-
 ---Sends an information about this semaphore to the log.
 ---@param text string The message.
 ---@param severity LogSeverity? Severity.
 ---@param weight integer? Weight.
-function Semaphore:tell(text, severity, weight)
+function Semaphore:say(text, severity, weight)
 	_Log.write(tostring(self.id) .. ": " .. text, severity, weight)
 end
 
@@ -125,7 +115,7 @@ end
 function Semaphore:setSpeed(speed, next)
 	-- Resolve the default next parameter.
 	next = next or _ResolveSemaphore(self.nextDefault) or Speed.STOP -- The last one can occur when loading the scenario. If the semaphore doesn't exist (yet), assume it is displaying S1, since that's what the semaphores are initialized to anyway.
-	self:tell("Setting speed " .. tostring(speed) .. ", next: " .. tostring(next), Severity.INFO, 3)
+	self:say("Setting speed " .. tostring(speed) .. ", next: " .. tostring(next), Severity.INFO, 3)
 	-- Set the semaphore state and see if we can get away with that.
 	self.speed = speed
 	self:setNext(next)
@@ -163,7 +153,7 @@ function Semaphore:refreshImage()
 		return
 	end
 	self.image = image
-	self:tell(string.format("Refreshing image. Speeds: this=%s, next=%s, result: %s", speed, nextSpeed, image), Severity.INFO, 3)
+	self:say(string.format("Refreshing image. Speeds: this=%s, next=%s, result: %s", speed, nextSpeed, image), Severity.INFO, 3)
 	self:refreshSim()
 	-- Check the previous semaphore if it needs a signal change.
 	if self.prev and self.prev.next == self then
@@ -179,11 +169,11 @@ function Semaphore:setNext(next)
 		return
 	end
 	if self.next and type(self.next) == "table" then
-		self:tell("no longer linked to " .. self.next.id, Severity.INFO, 3)
+		self:say("no longer linked to " .. self.next.id, Severity.INFO, 3)
 		self.next.prev = nil
 	end
 	if next and type(next) == "table" then
-		self:tell("now linked to " .. next.id, Severity.INFO, 3)
+		self:say("now linked to " .. next.id, Severity.INFO, 3)
 		next.prev = self
 	end
 	self.next = next
@@ -211,7 +201,7 @@ function Semaphore:setW24(w24)
 	self.w24 = w24
 end
 
----Zwraca `5` jeżeli semafor ten jest skonfigurowany jako tarcza manewrowa. W przeciwnym wypadku `0`.
+---Returns the stop speed, `Ms1` if this is a shunting semaphore, or `S1` otherwise.
 ---@private
 ---@return Speed
 function Semaphore:getStopSpeed()
@@ -221,7 +211,13 @@ end
 ---Returns whether this semaphore is currently displaying a stop signal.
 ---@return boolean
 function Semaphore:isStop()
-	return self.speed == self:getStopSpeed()
+	return self.speed == Speed.STOP or self.speed == Speed.S1A or self.speed == Speed.MS1
+end
+
+---Returns whether this semaphore is currently not displaying anything.
+---@return boolean
+function Semaphore:isDim()
+	return self.speed == Speed.DIM
 end
 
 ---Returns the displayed speed on the next semaphore instead of the actual one.
@@ -305,9 +301,6 @@ function Semaphore:refreshSim()
 		end
 	end
 	_Com.setSemaphore(self.id, speed, nextSpeed, self.image)
-	self.state.speed = speed
-	self.state.nextSpeed = nextSpeed or Speed.STOP
-	self.state.image = self.image
 end
 
 return Semaphore
