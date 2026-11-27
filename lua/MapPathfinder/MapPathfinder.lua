@@ -105,10 +105,10 @@ function MapPathfinder:findPathStep()
     -- Find the unexplored tile with the lowest cost and explore it.
     -- TODO: Separate the queue?
     local schematic, exitIn = self:getNextUnexploredSchematic()
-    if not schematic or not exitIn then
+    if not schematic then
         return false
     end
-    if schematic == self.target and (not self.targetTile or schematic:doesPathExist({schematic.index:getExit(exitIn), self.targetTile}, self.mode)) then
+    if schematic == self.target and exitIn and (not self.targetTile or schematic:doesPathExist({schematic.index:getExit(exitIn), self.targetTile}, self.mode)) then
         -- We've taken a winner!
         self.targetInboundExit = exitIn
         return true

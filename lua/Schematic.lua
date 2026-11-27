@@ -88,8 +88,9 @@ end
 ---@param track1 string The ID of the first track to pathfind from. This would usually be a track a train is on.
 ---@param track2 string The ID of the destination track to pathfind to.
 ---@param mode PathMode The mode of the dispatching: whether to display a train or a shunting signal.
+---@param ignoreOccupied boolean? Whether track occupancy should be ignored.
 ---@return Itinerary[]?
-function Schematic:pathfind(track1, track2, mode)
+function Schematic:pathfind(track1, track2, mode, ignoreOccupied)
 	self:say(string.format("Finding path from %s to %s...", track1, track2), Severity.INFO, 1)
 	local track1Info = self.index:getTrack(track1)
 	local track2Info = self.index:getTrack(track2)
@@ -109,7 +110,7 @@ function Schematic:pathfind(track1, track2, mode)
 		self:say(string.format("Attempting with %s...", semaphore.id), Severity.INFO, 1)
 		local tile = self.index:getSemaphore(semaphore.id)
 		if tile then
-			local itineraries = self:pathfindTiles(tile, target, mode)
+			local itineraries = self:pathfindTiles(tile, target, mode, ignoreOccupied)
 			if itineraries then
 				-- Hooray! The route has been found!
 				return itineraries
@@ -127,8 +128,9 @@ end
 ---@param tile1 Tile The first tile to pathfind from. Must be a semaphore tile.
 ---@param tile2 Tile The destination tile to pathfind to.
 ---@param mode PathMode The mode of the dispatching: whether to display a train or a shunting signal.
+---@param ignoreOccupied boolean? Whether track occupancy should be ignored.
 ---@return Itinerary[]?
-function Schematic:pathfindTiles(tile1, tile2, mode)
+function Schematic:pathfindTiles(tile1, tile2, mode, ignoreOccupied)
 	if not tile1:isSemaphore() then
 		-- The first tile must be a semaphore.
 		return nil
@@ -136,6 +138,9 @@ function Schematic:pathfindTiles(tile1, tile2, mode)
 	-- Summon a pathfinder and let it find the path...
 	local pathfinder = Pathfinder(tile1, tile2)
 	pathfinder:setMode(mode)
+	if ignoreOccupied then
+		pathfinder:setIgnoreOccupied(true)
+	end
 	return pathfinder:findPathAndGetItineraries()
 end
 

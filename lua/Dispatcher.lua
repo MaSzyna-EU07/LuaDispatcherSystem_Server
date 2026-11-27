@@ -8,7 +8,8 @@ local PathMode = require("lua.core.Enums.PathMode")
 ---@overload fun(schematic: Schematic): Dispatcher
 local Dispatcher = Class:derive("Dispatcher")
 
----@alias Train {steps: {tile: Tile}[], step: integer}
+---@alias Train {steps: TrainStep[], step: integer}
+---@alias TrainStep {tile: Tile}
 
 ---Creates a Dispatcher, which dispatches routes on a schematic during the simulation.
 ---@param schematic Schematic The schematic which owns this dispatcher.
@@ -70,7 +71,7 @@ function Dispatcher:getApproachingTrainTimetableForExit(tile)
     -- The moment of truth. Did we catch the rabbit?
     local foundTile = follower:getTile()
     _Log.write(string.format("Landed on tile %s", foundTile:getLocation()))
-    local track = foundTile.trackID and _Obj:getTrack(foundTile.trackID)
+    local track = foundTile:getTrack()
     if not track or track:isClear() then
         -- We might have ended the scan at an unreserved switch. In that case, the search fails.
         _Log.write("Search ended on a dead end or an unoccupied/unreserved tile! Whoops!", Severity.FAIL, 1)
@@ -108,57 +109,70 @@ function Dispatcher:generateStepsForTrain(tile, timetable)
     -- The first step is always at the train.
     table.insert(train.steps, {tile = tile})
     -- Add any stations in between that are there on this schematic.
-    -- TODO: There should be a pool of tiles to pick from in case our track is occupied but the track next to it is free!
     -- TODO: What about passing through the schematic multiple times?
     local entries = self:getStationListForTimetable(timetable)
     for i, entry in ipairs(entries) do
-        -- TODO: `entry.track` can be `nil`
-        local stationTile = self.schematic.index:getTileForStationAndTrack(entry.name, entry.track)
-        if stationTile then
+        -- TODO: There should be a pool of tiles to pick from in case our track is occupied but the track next to it is free!
+        local stationTile = entry.track and self.schematic.index:getTileForStationAndTrack(entry.name, entry.track) or self.schematic.index:getRandomTrackTileForStation(entry.name)
+        if stationTile and stationTile ~= train.steps[#train.steps].tile then
             table.insert(train.steps, {tile = stationTile})
         else
-            _Log.write(string.format("Skipped missing tile for station %s track %s on schematic %s", entry.name, entry.track, self.schematic.shortcut), Severity.ERROR)
+            _Log.write(string.format("Skipped missing or duplicate tile for station %s track %s on schematic %s", entry.name, entry.track, self.schematic.shortcut), Severity.ERROR)
         end
     end
     -- Find out the correct exit tile.
-    local destination = timetable:getFinalStationName()
-    local targetSchematic = _MapIndex:getSchematicForStation(destination)
-    if targetSchematic ~= self.schematic then
-        -- If we don't enter this block, this is the final station! We're done!
-        if not targetSchematic then
-            _Log.write(string.format("Could not find schematic for station %s, aborting", destination))
-            return
-        end
-        local pathfinder = MapPathfinder(self.schematic, targetSchematic)
-        -- Make sure to consider only exits that this schematic can physically find the path to.
-        pathfinder:setInboundExit(tile.warpID)
-        -- Fetch the target tile on the target schematic.
-        -- TODO: Select the penultimate one in case the last one doesn't work?
-        -- TODO: Make sure the pathfinder always hits all tiles it should, also on intermediate stations?
-        local finalEntry = timetable.stations[#timetable.stations]
-        local finalSchematic = _MapIndex:getSchematicForStation(finalEntry.name)
-        local finalTile = finalSchematic and finalSchematic.index:getTileForStationAndTrack(finalEntry.name, finalEntry.track)
-        if finalTile then
-            _Log.write(string.format("Final tile for the Map Pathfinder is: %s", finalTile:getLocation()))
-            pathfinder:setTargetTile(finalTile)
-        end
-        -- TODO: Train properties
-        local path = pathfinder:findPath()
-        pathfinder:examine()
-        if not path then
-            _Log.write(string.format("Could not find path from %s to %s, aborting", self.schematic.shortcut, targetSchematic.shortcut))
-            return
-        end
-        local exitOut = assert(path[1].exitOut)
-        local exitTile = self.schematic.index:getExit(exitOut)
-        if not exitTile then
-            _Log.write(string.format("Target tile pertaining to exit %s not found, aborting", exitOut))
-            return
-        end
+    local exitTile = self:getExitTileForTrain(tile, timetable)
+    if exitTile then
         table.insert(train.steps, {tile = exitTile})
     end
     self.trains[timetable.id] = train
     _Log.write(string.format("Generated step list for train %s at %s", timetable.id, tile:getLocation()), Severity.INFO)
+end
+
+---Returns the exit tile for the specified train to go towards.
+---Returns `nil` if the tile cannot be found or this is the last station.
+---@param tile Tile The tile the train is coming from (or currently at).
+---@param timetable Timetable The timetable to source the train data from.
+---@return Tile?
+function Dispatcher:getExitTileForTrain(tile, timetable)
+    -- Find out the correct exit tile.
+    local destination = timetable:getFinalStationName()
+    local targetSchematic = _MapIndex:getSchematicForStation(destination)
+    if targetSchematic == self.schematic then
+        -- This is the final station! We're done!
+        return
+    end
+    if not targetSchematic then
+        _Log.write(string.format("Could not find schematic for station %s, aborting", destination))
+        return
+    end
+    local pathfinder = MapPathfinder(self.schematic, targetSchematic)
+    -- Make sure to consider only exits that this schematic can physically find the path to.
+    pathfinder:setInboundExit(tile.warpID)
+    -- Fetch the target tile on the target schematic.
+    -- TODO: Select the penultimate one in case the last one doesn't work?
+    -- TODO: Make sure the pathfinder always hits all tiles it should, also on intermediate stations?
+    local finalEntry = timetable.stations[#timetable.stations]
+    local finalSchematic = _MapIndex:getSchematicForStation(finalEntry.name)
+    local finalTile = finalSchematic and finalSchematic.index:getTileForStationAndTrack(finalEntry.name, finalEntry.track)
+    if finalTile then
+        _Log.write(string.format("Final tile for the Map Pathfinder is: %s", finalTile:getLocation()))
+        pathfinder:setTargetTile(finalTile)
+    end
+    -- TODO: Train properties
+    local path = pathfinder:findPath()
+    pathfinder:examine()
+    if not path then
+        _Log.write(string.format("Could not find path from %s to %s, aborting", self.schematic.shortcut, targetSchematic.shortcut))
+        return
+    end
+    local exitOut = assert(path[1].exitOut)
+    local exitTile = self.schematic.index:getExit(exitOut)
+    if not exitTile then
+        _Log.write(string.format("Target tile pertaining to exit %s not found, aborting", exitOut))
+        return
+    end
+    return exitTile
 end
 
 ---Dispatches the specified train, if it is currently on the list of trains to be dispatched.
@@ -179,7 +193,7 @@ function Dispatcher:dispatchTrain(timetable)
 end
 
 ---Dispatches the next step for the specified train, if it is currently on the list of trains to be dispatched.
----Returns `true` if the step has been fulfilled, `false` if the train doesn't exist or has been already dispatched.
+---Returns `true` if the step has been completed, `false` if the train doesn't exist, has been already dispatched, or the step has not been fully completed.
 ---@param timetable Timetable The timetable of the specified train.
 ---@return boolean
 function Dispatcher:dispatchStep(timetable)
@@ -200,6 +214,7 @@ function Dispatcher:dispatchStep(timetable)
         _Log.write(string.format("Tile %s has no track ID", tile2:getLocation()))
         return false
     end
+    -- TODO: Add `true` as the last argument after we figure out how to finish off half-completed steps.
     local itineraries = self.schematic:pathfind(tile1.trackID, tile2.trackID, PathMode.TRAIN)
     if not itineraries then
         _Log.write("Could not find the path!")
@@ -215,25 +230,58 @@ end
 
 ---Ticks the dispatcher logic.
 function Dispatcher:tick()
-    _Log.write("======================================================================")
     _Log.write("   Ticked schematic: " .. self.schematic.name)
-    _Log.write("======================================================================")
+    -- Find out the trains that are coming or on the station and need generating a plan (step list).
+    -- Coming trains:
+    for i, exitID in ipairs(_Utils.tableGetSortedKeys(self.schematic.index.exits)) do
+        local tile = self.schematic.index:assertGetExit(exitID)
+        local timetableID = self:getApproachingTrainTimetableForExit(tile)
+        if timetableID then
+            local timetable = _Obj:getTimetable(timetableID)
+            if timetable then
+                self:generateStepsForTrain(tile, timetable)
+            end
+        end
+    end
+    -- Trains already here (only when starting the scenery or spawning a train because they don't come from nowhere lol)
+    for i, station in ipairs(_Utils.tableGetSortedKeys(self.schematic.index.stations)) do
+        for j, stationTrack in ipairs(_Utils.tableGetSortedKeys(self.schematic.index.stations[station].tracks)) do
+            local tile = self.schematic.index.stations[station].tracks[stationTrack]
+            local track = tile:getTrack()
+            if track then
+                local timetableID = track:getTimetable()
+                if timetableID then
+                    local timetable = _Obj:getTimetable(timetableID)
+                    if timetable then
+                        self:generateStepsForTrain(tile, timetable)
+                    end
+                end
+            end
+        end
+    end
+    -- Dispatch trains for which we've got a plan (step list).
     for timetableID, train in pairs(self.trains) do
         self:dispatchTrain(_Obj:assertGetTimetable(timetableID))
     end
+end
+
+---Prints the Dispatcher's internal data to the log.
+function Dispatcher:examine()
+    _Log.write("======================================================================")
+    _Log.write("   Data for schematic: " .. self.schematic.name)
+    _Log.write("======================================================================")
     _Log.write("Stations:")
     for i, station in ipairs(self:getStationList()) do
         _Log.write("- " .. station.id)
     end
     _Log.write("Exits:")
     for i, exitID in ipairs(_Utils.tableGetSortedKeys(self.schematic.index.exits)) do
-        local tile = assert(self.schematic.index:getExit(exitID))
+        local tile = self.schematic.index:assertGetExit(exitID)
         local timetableID = self:getApproachingTrainTimetableForExit(tile)
         if timetableID then
             local timetable = _Obj:getTimetable(timetableID)
             if timetable then
                 _Log.write(string.format("- %s: %s -> %s", exitID, timetableID, timetable:getFinalStationName()))
-                self:generateStepsForTrain(tile, timetable)
             else
                 _Log.write(string.format("- %s: %s (Could not get timetable data!)", exitID, timetableID))
             end

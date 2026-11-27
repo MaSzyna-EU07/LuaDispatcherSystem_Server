@@ -360,6 +360,15 @@ function SchematicIndex:getTileForStationAndTrack(station, track)
     return self.stations[station] and self.stations[station].tracks[track]
 end
 
+---Returns a random tile from the specified station on this schematic.
+---Returns `nil` if such tile doesn't exist.
+---@param station string The station name.
+---@return Tile?
+function SchematicIndex:getRandomTrackTileForStation(station)
+    local tracks = self.stations[station] and self.stations[station].tracks
+    return tracks[_Utils.iTableGetRandomValue(_Utils.tableGetSortedKeys(tracks))]
+end
+
 ---Returns the tile location or `"none"` when the tile doesn't exist.
 ---@private
 ---@param tile Tile? The tile to return the location of.
